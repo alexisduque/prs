@@ -9,7 +9,7 @@
      
    HISTORY
      Revision 1.1  2005/02/21 18:34:32  afraboul
-     ajout des sources qui seront distribuées aux étudiants
+     ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
      Revision 1.11  2004/12/26 16:15:15  afraboul
 ***/
@@ -33,7 +33,7 @@
 //Definition de la structure de l'entete d'un message P2P
 struct p2p_msg_hdr_struct {
   unsigned char  version_type;	/* Les champs Version et CmdType sont
-				   codés tous les deux sur 1 octet */ 
+				   codï¿½s tous les deux sur 1 octet */ 
   unsigned char  ttl;		/* Le champ  TTTL*/
   unsigned short length;	/* Le champ longueur */
   p2p_addr src;			/* Le champ adresse source */
@@ -48,7 +48,7 @@ typedef struct p2p_msg_hdr_struct p2p_msg_hdr;
 struct p2p_msg_struct {
   p2p_msg_hdr hdr;		/* Un entete */
   unsigned char *payload;	/* Un payload qui un pointeur sur une
-				   zone mémoire de unsigned char */
+				   zone mï¿½moire de unsigned char */
 };
 
 
@@ -162,8 +162,135 @@ p2p_msg_set_type(p2p_msg msg, unsigned char type)
   msg->hdr.version_type = (p2p_msg_get_version(msg) << 4) | (type & 0x0F);
 }
 
+//renvoie le TTL de msg
+unsigned char  p2p_msg_get_ttl(const p2p_msg msg)
+{
+    //TODO
+}
 
+//initialise le TTL de msg ï¿½ ttl
+void p2p_msg_set_ttl(p2p_msg msg, unsigned char ttl)
+{
+    //TODO
+}
 
-/********************/
-/* A COMPLETER      */
-/********************/
+//renvoie la longueur de l'entete de msg
+unsigned short p2p_msg_get_length  (const p2p_msg msg)
+{
+    //TODO
+}
+
+//initialise la longueur de l'entete de msg ï¿½ length
+void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
+{
+    //TODO
+}
+
+//renvoie l'adresse source de msg
+p2p_addr p2p_msg_get_src (const p2p_msg msg)
+{
+    //TODO
+}
+
+//initialise l'adresse source de msg ï¿½ src
+void p2p_msg_set_src(p2p_msg msg, p2p_addr src)
+{
+    //TODO
+}
+
+//renvoie l'adresse destination de msg
+p2p_addr p2p_msg_get_dst(const p2p_msg msg)
+{
+    //TODO
+}
+
+//initialise l'adrersse destination de msg ï¿½ dst
+void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
+{
+    //TODO
+}
+
+/*** debug ***/
+
+//ecrit le message msg dans le fichier fd. Si print_payload != 0 ï¿½crit
+//aussi le payload du message sinon on n'ï¿½crit que l'entete.
+int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
+{
+    //TODO
+}
+
+//ï¿½crit l'entete du message msg en hexa. 
+int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
+{
+    //TODO
+}
+
+/*** tcp ***/
+//Crï¿½e une socket TCP vers le noeud P2P dst.
+int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
+{
+    //TODO
+}
+
+//Ferme la socket donnï¿½e par le descripteur fd
+int p2p_tcp_socket_close(server_params* sp, int fd)
+{
+    //TODO
+}
+
+//Envoie le message msg via la socket tcp fd
+int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
+{
+    //TODO
+}
+
+//reï¿½oie dans msg un message depuis la socket fd
+int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
+{
+    //TODO
+}
+
+//envoie le message msg via tcp au noeud destination indiquï¿½ dans le
+//champ dst de msg
+int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
+{
+    //TODO
+}
+
+/*** udp ***/
+//Crï¿½e une socket UDP vers le noeud P2P dst.
+int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
+{
+    //TODO
+}
+
+//Ferme la socket donnï¿½e par le descripteur fd
+int p2p_udp_socket_close(server_params* sp, int fd)
+{
+    //TODO
+}
+
+//Envoie le message msg via la socket UDP fd
+int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
+{
+    //TODO
+}
+
+//reï¿½oie dans msg un message depuis la socket UDP fd
+int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
+{
+    //TODO
+}
+
+//envoie le message msg via udp au noeud destination indiquï¿½ dans le
+//champ dst de msg
+int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
+{
+    //TODO
+}
+
+//rebroadcast le message msg
+int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
+{
+    //TODO
+}
