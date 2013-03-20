@@ -177,44 +177,44 @@ void p2p_msg_set_ttl(p2p_msg msg, unsigned char ttl)
 //renvoie la longueur de l'entete de msg
 unsigned short p2p_msg_get_length  (const p2p_msg msg)
 {
-    //TODO
+    return (msg->hdr.lenght);
 }
 
 //initialise la longueur de l'entete de msg � length
 void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
 {
-    //TODO
+    msg->hdr.lenght = lenght;  // A revoir //
 }
 
 //renvoie l'adresse source de msg
 p2p_addr p2p_msg_get_src (const p2p_msg msg)
 {
-    //TODO
+  return p2p_addr_copy(msg->hdr.src,src);
 }
 
 //initialise l'adresse source de msg � src
 void p2p_msg_set_src(p2p_msg msg, p2p_addr src)
 {
-    //TODO
+    msg->hdr.src = src;
 }
 
 //renvoie l'adresse destination de msg
 p2p_addr p2p_msg_get_dst(const p2p_msg msg)
 {
-    //TODO
-}
+  return p2p_addr_copy(msg->hdr.dst,dst);
+   }
 
 //initialise l'adrersse destination de msg � dst
 void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 {
-    //TODO
+    msg->hdr.dst = dst;
 }
 
 /*** debug ***/
 
 //ecrit le message msg dans le fichier fd. Si print_payload != 0 �crit
 //aussi le payload du message sinon on n'�crit que l'entete.
-int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
+/*int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
     //TODO
 }
@@ -227,7 +227,7 @@ int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 
 /*** tcp ***/
 //Cr�e une socket TCP vers le noeud P2P dst.
-int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
+/*int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
 {
     //TODO
 }
@@ -259,7 +259,7 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 
 /*** udp ***/
 //Cr�e une socket UDP vers le noeud P2P dst.
-int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
+/*int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
 {
     //TODO
 }
