@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
 
   print_options(&sp);
 
-  printf("Ce programme ne fait rien.\nVous devez modifier son code source pour le rendre compatible avec le noeud de reference.\n");
+  printf("Creation des socket\n");
   
   // Creation des variables
   int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp;
@@ -185,6 +185,7 @@ int main(int argc, char* argv[])
       return -1;
   }
   
+  printf("Entree dans la boucle principale");
   //Boucle principale
   while(1) {
       
@@ -193,6 +194,7 @@ int main(int argc, char* argv[])
       FD_SET(sock_ui, &fd);
       FD_SET(sock_tcp, &fd);
       FD_SET(sock_udp, &fd);
+      
       
       //SELECT
       
@@ -206,6 +208,9 @@ int main(int argc, char* argv[])
       
   }  
   
+  close(sock_tcp);
+  close(sock_udp);
+  close(sock_ui);
   
   return 0;
 }
