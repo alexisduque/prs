@@ -14,15 +14,17 @@
    add p2p_main.c
 
    Revision 1.1  2005/02/21 18:34:33  afraboul
-   ajout des sources qui seront distribuées aux étudiants
+   ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
    Revision 1.11  2004/12/26 16:15:15  afraboul
 ***/
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 // Pour la gestion des options sur la ligne de commande
 #define _GNU_SOURCE
@@ -158,7 +160,50 @@ int main(int argc, char* argv[])
 
   print_options(&sp);
 
-
   printf("Ce programme ne fait rien.\nVous devez modifier son code source pour le rendre compatible avec le noeud de reference.\n");
+  
+  // Creation des variables
+  int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp;
+  fd_set fd;
+  
+   // Creation socket UI
+  sock_ui = create_socket(SOCK_STREAM, sp.port_ui);
+  if (listen(sock_ui, 10) == -1){
+    return -1;  
+  } 
+  
+  //Creation socket TCP
+  sock_tcp = create_socket(SOCK_STREAM, sp.port_p2p_tcp);
+  if (listen(sock_tcp, 10) == -1){
+    return -1;
+  } 
+	
+  //Creation socket UDP
+  if ((sock_udp = create_socket(SOCK_DGRAM, sp.port_p2p_udp)) == -1){
+	  printf("Error creating UDP socket\n");
+  }
+
+  while(1) {
+      
+      //Ajout des sockets au FD_SET
+      FD_ZERO(&fd); 
+      FD_SET(sock_ui, &fd);
+      FD_SET(sock_tcp, &fd);
+      FD_SET(sock_udp, &fd);
+      
+      //SELECT
+      
+      //Si socket_tcp ready
+      
+      //Si socket_udp ready
+      
+      //Si socket_ui ready
+      
+      //Si socket_ui_connected ready
+      
+  }  
+  
+  s
+  
   return 0;
 }
