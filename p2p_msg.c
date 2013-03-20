@@ -177,37 +177,38 @@ void p2p_msg_set_ttl(p2p_msg msg, unsigned char ttl)
 //renvoie la longueur de l'entete de msg
 unsigned short p2p_msg_get_length  (const p2p_msg msg)
 {
-    return (msg->hdr.lenght);
+    return (msg->hdr.length);
 }
 
 //initialise la longueur de l'entete de msg � length
 void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
 {
-    msg->hdr.lenght = lenght;  // A revoir //
+    msg->hdr.length = length;  // A revoir //
 }
 
 //renvoie l'adresse source de msg
 p2p_addr p2p_msg_get_src (const p2p_msg msg)
 {
-  return p2p_addr_copy(msg->hdr.src,src);
+  return msg->hdr.dst;
 }
 
 //initialise l'adresse source de msg � src
 void p2p_msg_set_src(p2p_msg msg, p2p_addr src)
 {
-    msg->hdr.src = src;
+  p2p_addr_copy(msg->hdr.src,src);
 }
 
 //renvoie l'adresse destination de msg
 p2p_addr p2p_msg_get_dst(const p2p_msg msg)
 {
-  return p2p_addr_copy(msg->hdr.dst,dst);
-   }
+  return msg->hdr.dst;
+   
+}
 
 //initialise l'adrersse destination de msg � dst
 void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 {
-    msg->hdr.dst = dst;
+   p2p_addr_copy(msg->hdr.dst,dst);
 }
 
 /*** debug ***/
@@ -217,80 +218,80 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 /*int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
     //TODO
-}
+} */
 
 //�crit l'entete du message msg en hexa. 
-int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
+/*int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 {
     //TODO
-}
+}*/
 
 /*** tcp ***/
 //Cr�e une socket TCP vers le noeud P2P dst.
 /*int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
 {
     //TODO
-}
+}*/
 
 //Ferme la socket donn�e par le descripteur fd
-int p2p_tcp_socket_close(server_params* sp, int fd)
+/*int p2p_tcp_socket_close(server_params* sp, int fd)
 {
     //TODO
-}
+}*/
 
 //Envoie le message msg via la socket tcp fd
-int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
+/*int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
     //TODO
-}
+}*/
 
 //re�oie dans msg un message depuis la socket fd
-int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
+/*int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
     //TODO
-}
+}*/
 
 //envoie le message msg via tcp au noeud destination indiqu� dans le
 //champ dst de msg
-int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
+/*int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 {
     //TODO
-}
+}*/
 
 /*** udp ***/
 //Cr�e une socket UDP vers le noeud P2P dst.
 /*int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
 {
     //TODO
-}
+}*/
 
 //Ferme la socket donn�e par le descripteur fd
-int p2p_udp_socket_close(server_params* sp, int fd)
+/*int p2p_udp_socket_close(server_params* sp, int fd)
 {
     //TODO
-}
+}*/
 
 //Envoie le message msg via la socket UDP fd
-int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
+/*int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
     //TODO
-}
+}*/
 
 //re�oie dans msg un message depuis la socket UDP fd
-int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
+/*int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
     //TODO
-}
+}*/
 
 //envoie le message msg via udp au noeud destination indiqu� dans le
 //champ dst de msg
-int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
+/*int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 {
     //TODO
 }
-
+*/
 //rebroadcast le message msg
-int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
+/*int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
 {
     //TODO
-}
+}*/
