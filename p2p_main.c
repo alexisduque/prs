@@ -179,10 +179,13 @@ int main(int argc, char* argv[])
   } 
 	
   //Creation socket UDP
-  if ((sock_udp = create_socket(SOCK_DGRAM, sp.port_p2p_udp)) == -1){
-	  printf("Error creating UDP socket\n");
+  sock_udp = create_socket(SOCK_DGRAM, sp.port_p2p_udp);
+  if ((sock_udp = ) == -1){
+      printf("Error creating UDP socket\n");
+      return -1;
   }
-
+  
+  //Boucle principale
   while(1) {
       
       //Ajout des sockets au FD_SET
@@ -203,7 +206,6 @@ int main(int argc, char* argv[])
       
   }  
   
-  s
   
   return 0;
 }
