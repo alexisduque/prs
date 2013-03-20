@@ -219,21 +219,21 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 
 //ecrit le message msg dans le fichier fd. Si print_payload != 0 �crit
 //aussi le payload du message sinon on n'�crit que l'entete.
-int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
+/*int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
     return P2P_OK; // A revoir //
 
-}
+}*/
 
 //�crit l'entete du message msg en hexa. 
-int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
+/*int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 {
     return P2P_OK; // A revoir //
-}
+}*/
 
 /*** tcp ***/
 //Cr�e une socket TCP vers le noeud P2P dst.
-int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
+/*int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
 {
   struct sockadrr_in adresse;
   int fd, desc_socket // longueur=sizeof(adresse);
@@ -251,14 +251,14 @@ int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
     return(P2P_ERROR);
   }
   return fd;
-}
+}*/
 
 //Ferme la socket donn�e par le descripteur fd
-int p2p_tcp_socket_close(server_params* sp, int fd)
+/*int p2p_tcp_socket_close(server_params* sp, int fd)
 {
     close(fd);
     return P2P_OK;
-}
+}*/
 
 //Envoie le message msg via la socket tcp fd
 /*int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
@@ -287,11 +287,11 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 }*/
 
 //Ferme la socket donn�e par le descripteur fd
-int p2p_udp_socket_close(server_params* sp, int fd)
+/*int p2p_udp_socket_close(server_params* sp, int fd)
 {
   close(fd);
   return P2P_OK;
-}
+}*/
 
 //Envoie le message msg via la socket UDP fd
 /*int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
