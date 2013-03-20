@@ -132,7 +132,7 @@ p2p_msg_init_payload(p2p_msg msg,
 } /* p2p_msg_init_payload */
 
 /*********************************************************/
-/* Header                                                */
+/*               Fonctions sur les headers               */
 /*********************************************************/
 
 /********************/
@@ -183,7 +183,7 @@ unsigned short p2p_msg_get_length  (const p2p_msg msg)
 //initialise la longueur de l'entete de msg � length
 void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
 {
-    msg->hdr.length = length;  // A revoir //
+    msg->hdr.length =htons(length);  // A revoir //
 }
 
 //renvoie l'adresse source de msg
@@ -211,33 +211,54 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
    p2p_addr_copy(msg->hdr.dst,dst);
 }
 
-/*** debug ***/
+
+
+/*********************************************************/
+/*               Fonctions sur les debugs                */
+/*********************************************************/
 
 //ecrit le message msg dans le fichier fd. Si print_payload != 0 �crit
 //aussi le payload du message sinon on n'�crit que l'entete.
-/*int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
+int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
-    //TODO
-} */
+    return P2P_OK; // A revoir //
+
+}
 
 //�crit l'entete du message msg en hexa. 
-/*int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
+int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 {
-    //TODO
-}*/
+    return P2P_OK; // A revoir //
+}
 
 /*** tcp ***/
 //Cr�e une socket TCP vers le noeud P2P dst.
-/*int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
+int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
 {
-    //TODO
-}*/
+  struct sockadrr_in adresse;
+  int fd, desc_socket // longueur=sizeof(adresse);
+  
+  // Port aléatoire => 0
+  fd=create_socket(SOCK_STREAM,0);
+
+  // @destination
+  adresse.sin_family = AF_INET;
+  adresse.sin_port = htons(p2P_addr_get_tcp_port(dst));
+  adresse.sin_addr.s_addr = htonl(INADDR_ANY);
+
+  if (connect(fd, (struct sockaddr*)&adresse, longueur) == -1){
+    p2p_tcp_socket_close(sp, fd);
+    return(P2P_ERROR);
+  }
+  return fd;
+}
 
 //Ferme la socket donn�e par le descripteur fd
-/*int p2p_tcp_socket_close(server_params* sp, int fd)
+int p2p_tcp_socket_close(server_params* sp, int fd)
 {
-    //TODO
-}*/
+    close(fd);
+    return P2P_OK;
+}
 
 //Envoie le message msg via la socket tcp fd
 /*int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
@@ -266,10 +287,11 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 }*/
 
 //Ferme la socket donn�e par le descripteur fd
-/*int p2p_udp_socket_close(server_params* sp, int fd)
+int p2p_udp_socket_close(server_params* sp, int fd)
 {
-    //TODO
-}*/
+  close(fd);
+  return P2P_OK;
+}
 
 //Envoie le message msg via la socket UDP fd
 /*int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
