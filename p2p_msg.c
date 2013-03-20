@@ -165,13 +165,13 @@ p2p_msg_set_type(p2p_msg msg, unsigned char type)
 //renvoie le TTL de msg
 unsigned char  p2p_msg_get_ttl(const p2p_msg msg)
 {
-    //TODO
+    return msg->hdr.ttl;
 }
 
 //initialise le TTL de msg � ttl
 void p2p_msg_set_ttl(p2p_msg msg, unsigned char ttl)
 {
-    //TODO
+    msg->hdr.ttl = ttl;
 }
 
 //renvoie la longueur de l'entete de msg
