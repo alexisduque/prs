@@ -167,25 +167,27 @@ int main(int argc, char* argv[])
   fd_set fd;
   
    // Creation socket UI
-  sock_ui = create_socket(SOCK_STREAM, sp.port_ui);
+  sock_ui = creer_socket(SOCK_STREAM, sp.port_ui);
   if (listen(sock_ui, 10) == -1){
+    printf("Error creating UI socket\n");
     return -1;  
   } 
   
   //Creation socket TCP
-  sock_tcp = create_socket(SOCK_STREAM, sp.port_p2p_tcp);
+  sock_tcp = creer_socket(SOCK_STREAM, sp.port_p2p_tcp);
   if (listen(sock_tcp, 10) == -1){
+    printf("Error creating TCP socket\n");
     return -1;
   } 
 	
   //Creation socket UDP
-  sock_udp = create_socket(SOCK_DGRAM, sp.port_p2p_udp);
-  if ((sock_udp = ) == -1){
+  sock_udp = creer_socket(SOCK_DGRAM, sp.port_p2p_udp);
+  if (sock_udp == -1){
       printf("Error creating UDP socket\n");
       return -1;
   }
   
-  printf("Entree dans la boucle principale");
+  printf("Entree dans la boucle principale\n");
   //Boucle principale
   while(1) {
       
@@ -206,6 +208,7 @@ int main(int argc, char* argv[])
       
       //Si socket_ui_connected ready
       
+      break;
   }  
   
   close(sock_tcp);

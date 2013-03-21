@@ -4,12 +4,17 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h> 
+#include <sys/socket.h> 
+#include <netinet/in.h>
+
 #include "p2p_common.h"
 
 /****************************************************/
 /* 
-   get_tokens: à peu près similaire à strtok_r mais 
-   ne modifie pas la chaîne str
+   get_tokens: ï¿½ peu prï¿½s similaire ï¿½ strtok_r mais 
+   ne modifie pas la chaï¿½ne str
  */
 /****************************************************/
 
@@ -50,7 +55,7 @@ VERBOSE(server_params* sp, int level, char* fmt, ...)
   char buf[MAX_VNSPRINTF_BUF_LENGTH + 1];
   va_list ap;
 
-  va_start(ap, fmt);   // va_start sert à gerer la va_list:
+  va_start(ap, fmt);   // va_start sert ï¿½ gerer la va_list:
                        // list d'un nombre variable d'argument
   length = vsnprintf(buf,MAX_VNSPRINTF_BUF_LENGTH,fmt,ap);
   if (length >= MAX_VNSPRINTF_BUF_LENGTH)
@@ -84,8 +89,8 @@ VERBOSE(server_params* sp, int level, char* fmt, ...)
 
 /****************************************************/
 /* 
-   raw_print: affichage propre en hexadécimal et dans l'ordre réèl
-   des octets d'une portion de mémoire 
+   raw_print: affichage propre en hexadï¿½cimal et dans l'ordre rï¿½ï¿½l
+   des octets d'une portion de mï¿½moire 
  */
 /****************************************************/
 
@@ -102,4 +107,50 @@ void raw_print(char *buf,int size)
       if (i%16==15) printf("\n");
     }
   printf("\n");
+}
+
+/****************************************************/
+/* 
+   creer_socket: creation d'une socket
+ * type : type de la socket a creer.  
+ * port : le numero de port desire. O pour un port alÃ©atoire
+ *******************************************************************/ 
+
+int creer_socket (int type, int port)
+{
+  int desc; 
+  int valid;
+  int longueur=sizeof(struct sockaddr_in); 
+  struct sockaddr_in adresse;
+
+  /* Creation de la socket */ 
+  if ((desc=socket(AF_INET,type,0)) == -1)
+  {
+    perror("Creation de socket impossible"); 
+    return -1; 
+  } 
+
+  valid = 1;
+  if (setsockopt(desc,SOL_SOCKET,SO_REUSEADDR,(void*)&valid,sizeof(valid)) < 0)
+    {
+      perror("could not setsockopt");
+      close(desc);
+      return -1;
+    }
+
+  /* Preparation de l'adresse d'attachement */ 
+  adresse.sin_family=AF_INET; 
+  /* Conversion (representation interne) -> (reseau) avec htonl et htons */ 
+  adresse.sin_addr.s_addr=htonl(INADDR_ANY); 
+  adresse.sin_port=htons(port); 
+
+  /* Demande d'attachement de la socket */ 
+  if (bind(desc,(struct sockaddr*)&adresse,longueur) == -1)
+  {
+    perror("Attachement de la socket impossible"); 
+    close(desc); 
+    return -1; 
+  } 
+
+  return desc; 
 }

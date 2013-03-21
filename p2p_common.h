@@ -10,10 +10,10 @@
    HISTORY
      efleury - May 02, 2004: Created.
      Revision 1.7  2004/07/26 08:24:34  afraboul
-     	* [all]: première version complète du noeud de référence
+     	* [all]: premiï¿½re version complï¿½te du noeud de rï¿½fï¿½rence
 
      Revision 1.6  2004/06/16 23:07:04  afraboul
-        ajout du type de messages pour la decouverte de topology et début
+        ajout du type de messages pour la decouverte de topology et dï¿½but
         de la gestion du broadcast en UDP
 
      Revision 1.5  2004/06/15 21:45:21  afraboul
@@ -22,7 +22,7 @@
 
      Revision 1.4  2004/06/14 16:18:47  afraboul
        mise en place des canaux de comm. pour envoyer et recevoir des paquets
-       udp et tcp. Le join_req et join_ack fonctionnent. Il faut compléter avec
+       udp et tcp. Le join_req et join_ack fonctionnent. Il faut complï¿½ter avec
        les autres types de paquet.
 
      Revision 1.3  2004/06/10 23:21:05  afraboul
@@ -89,7 +89,7 @@
 /****************************************************/
 
 /*************************************
-  get_tokens : découpage d'une chaîne en éléments
+  get_tokens : dï¿½coupage d'une chaï¿½ne en ï¿½lï¿½ments
 *************************************/
 
 #define MAX_TOK 3
@@ -115,6 +115,7 @@ int get_tokens(const char *str, char tok[MAX_TOK][MAX_TOKLEN], int (*test_delim)
 void VERBOSE(server_params* sp, int level, char* fmt, ...); 
 void raw_print(char *buf,int size);
 
+int create_socket(int type, int port);
 /****************************************************/
 /****************************************************/
 
