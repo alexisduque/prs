@@ -6,8 +6,24 @@
  */
 
 
-#include "p2p_do_msg.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h> 
+#include <sys/types.h> 
+#include <sys/socket.h> 
+#include <netinet/in.h> 
+#include <netdb.h> 
+#include <assert.h>
+#include <arpa/inet.h>
+#include <inttypes.h>
+
+
+#include "p2p_common.h"
+#include "p2p_addr.h"
+#include "p2p_msg.h"
 #include "p2p_options.h"
+#include "p2p_do_msg.h"
 
 
 //Traitement du JOIN
@@ -24,7 +40,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	
 	//On remplit + init du playload
         
-	unsigned char payload[2*P2P_ADDR_SIZE];	
+	char payload[2*P2P_ADDR_SIZE];	
 	
 	memcpy(payload, sp->p2pMyId, P2P_ADDR_SIZE);
 	if (p2p_addr_is_equal(sp->p2pMyId, sp->right_neighbor)){
@@ -65,6 +81,6 @@ void p2p_do_get() {
 
 
 //Traitement dy LINK UPDATE
-void p2p_do_link_update { 
+void p2p_do_link_update() { 
     
 }
