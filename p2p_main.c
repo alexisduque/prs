@@ -125,6 +125,9 @@ int main(int argc, char* argv[])
     .port_p2p_tcp   = DEFAULT_P2P_TCP,
     .port_p2p_udp   = DEFAULT_P2P_UDP,
     .client_ui      = -1,
+    .p2pMyId	    = p2p_addr_create(),
+    .right_neighbor = p2p_addr_create(),
+    .left_neighbor  = p2p_addr_create(),
   };
 
   /* parsing command line args */
