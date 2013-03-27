@@ -32,6 +32,8 @@
 
 #include "p2p_common.h"
 #include "p2p_options.h"
+#include "p2p_do_msg.h"
+#include "p2p_msg.h"
 
 #define DEFAULT_SERVER_NAME "reference_node"
 #define DEFAULT_DIR_NAME    "."
@@ -163,8 +165,17 @@ int main(int argc, char* argv[])
   printf("Creation des socket\n");
   
   // Creation des variables
-  int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp;
+  int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
+  int return_select;
   fd_set fd;
+  struct timeval timeout;
+  struct sockaddr_in adresse;
+  unsigned int lg=sizeof(adresse);
+  p2p_msg message;
+  
+  // Init du timeout
+  timeout.tv_sec=300;
+  timeout.tv_usec=0;
   
    // Creation socket UI
   sock_ui = creer_socket(SOCK_STREAM, sp.port_ui);
@@ -197,18 +208,62 @@ int main(int argc, char* argv[])
       FD_SET(sock_tcp, &fd);
       FD_SET(sock_udp, &fd);
       
-      
       //SELECT
+      return_select = select(max(sock_ui, max(sock_tcp, sock_udp)) + 1, , &fd, NULL, NULL, &timeout);
       
-      //Si socket_tcp ready
+      // Si erreur dans le select
+      if (return_select == -1) {
+          printf("Erreur dans le select\n");
+          exit(-1);
+      } else
+          
+          //Si socket_tcp ready
+          if (FD_ISSET(sock_tcp, &fd)){
+              
+              //on accepte la connexion
+              sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
+              //preparation du message
+               message = p2p_msg_create();
+               
+               printf("Reception d'un message TCP\n");
+               p2p_tcp_msg_recvfd(&sp, message, sock_tcp_rcv);
+               
+               //En fonction du message
+               switch (p2p_msg_get_type(message)){	
+                   
+                        case P2P_MSG_JOIN_REQ  : p2p_do_join_req(&sp, message, sock_tcp_rcv);
+                                break;
+							
+                        case P2P_MSG_GET : p2p_do_get(&sp, message, sock_tcp_rcv);
+                                break;
+						
+                        case P2P_MSG_LINK_UPDATE : p2p_do_link_update(&sp, message);
+                                break;
+               }	
+              
+               //Fermeture de la soscket de reception
+               close(sock_tcp_rcv);
+              
+          } 
       
-      //Si socket_udp ready
+          //Si socket_udp ready
+          else if (FD_ISSET(sock_udp, &fd)){
+              
+          }
       
-      //Si socket_ui ready
+                  
+          //Si socket_ui ready
+          else if (FD_ISSET(sock_ui, &fd)){
+          
+          }
       
-      //Si socket_ui_connected ready
+          //Si socket_ui_connected ready
+          else if (FD_ISSET(sock_ui_connected, &fd)){
+              
+          }
       
-      break;
+          else break; // Timeout
+      
   }  
   
   close(sock_tcp);
@@ -216,4 +271,5 @@ int main(int argc, char* argv[])
   close(sock_ui);
   
   return 0;
+  
 }
