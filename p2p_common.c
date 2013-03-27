@@ -154,3 +154,19 @@ int creer_socket (int type, int port)
 
   return desc; 
 }
+
+/* max :  retourne la valeur max de 2 entiers, -1 si ils sont egaux */
+
+int max(int a, int b){
+    
+	if (a<b){
+            
+		return b;
+                
+	} else if (a>b){
+            
+			return a;
+                        
+	} else return -1;
+        
+}

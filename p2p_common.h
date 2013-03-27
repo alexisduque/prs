@@ -114,7 +114,7 @@ int get_tokens(const char *str, char tok[MAX_TOK][MAX_TOKLEN], int (*test_delim)
 
 void VERBOSE(server_params* sp, int level, char* fmt, ...); 
 void raw_print(char *buf,int size);
-
+int max(int a, int b);
 int creer_socket(int type, int port);
 /****************************************************/
 /****************************************************/
