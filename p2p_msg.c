@@ -218,7 +218,7 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 
 int p2p_msg_display(p2p_msg message){
   printf("Version :%d ", p2p_msg_get_version(message));
-  prigef("TTL :%d ", p2p_msg_get_ttl(message));
+  printf("TTL :%d ", p2p_msg_get_ttl(message));
   printf("Length : %d \n", p2p_msg_get_length(message));
   printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
   printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
