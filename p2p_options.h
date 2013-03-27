@@ -4,8 +4,8 @@
    NAME
      p2p_options.h
    PURPOSE
-     definition de la structure de donnée permettant de stocker l'état
-     global du système.
+     definition de la structure de donnï¿½e permettant de stocker l'ï¿½tat
+     global du systï¿½me.
    NOTES
      
    HISTORY
@@ -13,7 +13,7 @@
    Qqc comments dans les .h
 
    Revision 1.1  2005/02/21 18:34:33  afraboul
-   ajout des sources qui seront distribuées aux étudiants
+   ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
    Revision 1.3  2005/02/08 16:09:49  afraboul
 ***/
@@ -64,8 +64,8 @@
 
 
 //Structure contenant tous les parametres d'un noeud P2P. Permet
-//d'avoir toutes les varaibles globales définissant l'environnement
-//dans une seule structure que l'on peut ainsi passer à toutes les
+//d'avoir toutes les varaibles globales dï¿½finissant l'environnement
+//dans une seule structure que l'on peut ainsi passer ï¿½ toutes les
 //fonctions. 
 /* server parameters */
 struct server_params_t {
@@ -78,7 +78,7 @@ struct server_params_t {
   int port_p2p_tcp;		/* le numero de port TCP du noeud */
   int port_p2p_udp;		/* le numero de port UDP du noeud */
 
-  int client_ui;                /* socket connectée par telnet */
+  int client_ui;                /* socket connectï¿½e par telnet */
 
   /*********************************/
   /*********************************/
@@ -90,10 +90,14 @@ struct server_params_t {
 
   /* Topology */
   p2p_addr p2pMyId;	        /* son adresse P2P */
+  
   //  p2p_topology p2p_neighbors;	/* Ses voisins */
-
+  
+  p2p_addr right_neighbor;
+  p2p_addr left_neighbor;
+  
   /* Search */
-  //p2p_search  p2pSearchList;	/* la liste des requetes envoyées */
+  //p2p_search  p2pSearchList;	/* la liste des requetes envoyï¿½es */
 
 };
 typedef struct server_params_t server_params;
