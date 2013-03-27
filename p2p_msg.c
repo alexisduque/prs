@@ -216,6 +216,14 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
    p2p_addr_copy(msg->hdr.dst,dst);
 }
 
+int p2p_msg_display(p2p_msg message){
+  printf("Version :%d ", p2p_msg_get_version(message));
+  prigef("TTL :%d ", p2p_msg_get_ttl(message));
+  printf("Length : %d \n", p2p_msg_get_length(message));
+  printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
+  printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
+  return P2P_OK;
+}
 
 
 /*********************************************************/
@@ -272,6 +280,14 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 // Renvoie dans msg un message depuis la socket fd
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
+  int length;
+  read(fd,msg,P2P_HDR_BITFIELD_SIZE);
+  read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+  read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+  char data_payload[length=p2p_msg_get_length(msg)];
+  read(fd,data_payload,length);
+  p2p_msg_init_payload(msg,length,data_payload);
+  p2p_msg_affichage(msg);
   return P2P_OK;
 } 
 
