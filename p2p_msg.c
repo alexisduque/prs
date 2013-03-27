@@ -287,7 +287,7 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   char data_payload[length=p2p_msg_get_length(msg)];
   read(fd,data_payload,length);
   p2p_msg_init_payload(msg,length,data_payload);
-  p2p_msg_affichage(msg);
+  p2p_msg_display(msg);
   return P2P_OK;
 } 
 
