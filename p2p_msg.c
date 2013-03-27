@@ -317,7 +317,10 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 {
   int sock_udp;
   struct sockaddr_in adresse;
-  socklen_t longueur
+  socklen_t longueur = sizeof(struct sockaddr_in);
+  int port = 0;
+  if ((sock_udp))
+  return P2P_OK;
 }*/
 
 //Ferme la socket donnée par le descripteur fd
