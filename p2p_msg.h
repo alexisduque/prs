@@ -69,6 +69,8 @@ int      p2p_msg_init        (p2p_msg msg, unsigned int type, unsigned int ttl, 
 //initialise le paylod de msg avec payload de taille length
 int      p2p_msg_init_payload(p2p_msg msg, unsigned short int length, char* payload);
 
+// Récupération du payload
+unsigned char* p2p_get_payload(p2p_msg msg);
 /*** header ***/
 //renvoie la version de msg
 unsigned char  p2p_msg_get_version (const p2p_msg msg);
@@ -113,6 +115,9 @@ int p2p_msg_dumpfile       (const p2p_msg msg, const FILE* fd, int print_payload
 
 //écrit l'entete du message msg en hexa. 
 int p2p_msg_hexdumpheader  (unsigned char* msg, const FILE* fs);
+
+// Fonction d'affichage des caract. du message
+int p2p_msg_display(p2p_msg message);
 
 /*** tcp ***/
 //Crée une socket TCP vers le noeud P2P dst.

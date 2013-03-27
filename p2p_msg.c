@@ -315,14 +315,31 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 //Cr�e une socket UDP vers le noeud P2P dst.
 /*int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
 {
-  int sock_udp;
+  int socket_udp;
   struct sockaddr_in adresse;
   socklen_t longueur = sizeof(struct sockaddr_in);
   int port = 0;
-  if ((sock_udp))
-  return P2P_OK;
-}*/
 
+  if ((socket_udp=creer_socket(SOCK_DGRAM, port)==-1))
+  {
+    perror ("Création de la socket impossible");
+    close(socket_udp);
+  }
+
+  adresse.sin_family=AF_INET;
+  inet_aton(p2p_addr_get_ip_str(dst),&adresse.sin_addr.s_addr);
+  adresse.sin_port=htons(p2p_addr_get_udp_port(dst));
+
+  if (connect(socket_udp, (struct sockaddr*)&adresse,longueur)==-1)
+  {
+    perror("Attachement de la socket impossible");
+    close(socket_udp);
+    exit(-1);
+
+  }
+  return socket_udp;
+}
+*/
 //Ferme la socket donnée par le descripteur fd
 int p2p_udp_socket_close(server_params* sp, int fd)
 {
@@ -346,7 +363,9 @@ int p2p_udp_socket_close(server_params* sp, int fd)
 //champ dst de msg
 /*int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 {
-    //TODO
+  int fd = p2p_udp_socket_create(sp, msg->hdr.dst);
+  p2p_udp_msg_sendfd(sp, msg, fd);
+  return P2P_OK;
 }
 */
 //rebroadcast le message msg
