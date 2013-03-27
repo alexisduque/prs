@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       FD_SET(sock_udp, &fd);
       
       //SELECT
-      return_select = select(max(sock_ui, max(sock_tcp, sock_udp)) + 1, , &fd, NULL, NULL, &timeout);
+      return_select = select(max(sock_ui, max(sock_tcp, sock_udp)) + 1, &fd, NULL, NULL, &timeout);
       
       // Si erreur dans le select
       if (return_select == -1) {
@@ -231,13 +231,13 @@ int main(int argc, char* argv[])
                //En fonction du message
                switch (p2p_msg_get_type(message)){	
                    
-                        case P2P_MSG_JOIN_REQ  : p2p_do_join_req(&sp, message, sock_tcp_rcv);
+                        case P2P_MSG_JOIN_REQ  : //p2p_do_join_req(&sp, message, sock_tcp_rcv);
                                 break;
 							
-                        case P2P_MSG_GET : p2p_do_get(&sp, message, sock_tcp_rcv);
+                        case P2P_MSG_GET : //p2p_do_get(&sp, message, sock_tcp_rcv);
                                 break;
 						
-                        case P2P_MSG_LINK_UPDATE : p2p_do_link_update(&sp, message);
+                        case P2P_MSG_LINK_UPDATE : //p2p_do_link_update(&sp, message);
                                 break;
                }	
               
