@@ -13,7 +13,13 @@
 #include "p2p_addr.h"
 /* Fonctions de traitement des differents type de messages */
 
-//Traitement du JOIN
+//Traitement du JOIN ACK
+int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg);
+
+//Envoi du JOIN REQ
+int p2p_send_join_req (server_params *sp, p2p_addr destinataire);
+
+//Traitement du JOIN REQ                                                                                                                                                                                                
 int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket);
 
 //Traitement du GET

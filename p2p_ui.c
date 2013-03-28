@@ -10,7 +10,7 @@
 
    HISTORY
    Revision 1.1  2005/02/21 18:34:33  afraboul
-   ajout des sources qui seront distribuées aux étudiants
+   ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
    Revision 1.11  2004/12/26 16:15:15  afraboul
 ***/
@@ -29,6 +29,7 @@
 #include "p2p_addr.h"
 #include "p2p_msg.h"
 #include "p2p_ui.h"
+#include "p2p_do_msg.h"
 
 #define MAX_PATH 1024
 #define MAX_REQ 1000
@@ -185,7 +186,19 @@ p2pjoin(params *p)
 
   VERBOSE(p->sp,VSYSCL,"ui:  sending p2p join msg to %s\n\n",p2p_addr_get_str(dst));
 
-  /**** A COMPLETER ****/
+     printf(" p2pjoin : dest = %s \n", p2p_addr_get_str(dst));
+  
+  
+   //Verifie que l'on ne se connecte pas avec nous meme
+  if(p2p_addr_is_equal(dst, p->sp->p2pMyId)!=0){
+	printf("tu essaies de te connecter avec toi meme\n");
+	return(P2P_OK);
+  }
+	
+  if(p2p_send_join_req(p->sp, dst) != P2P_OK ){
+	printf("could not send the p2p join request\n");
+        return(P2P_UI_ERROR);
+  }
 
   p2p_addr_delete(dst);
   return P2P_UI_OK;
