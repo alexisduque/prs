@@ -103,6 +103,7 @@ print_options(server_params *sp)
       fprintf(stderr,"  pid          = %d\n"    ,getpid());
       fprintf(stderr,"  dir_name     = \"%s\"\n",sp->dir_name);
       fprintf(stderr,"  server_name  = \"%s\"\n",sp->server_name);
+      fprintf(stderr,"  server_ip    = %s\\n",p2p_addr_get_ip_str(sp->p2pMyId));
       fprintf(stderr,"  ui tcp       = %d\n"    ,(unsigned)sp->port_ui);
       fprintf(stderr,"  p2p tcp      = %d\n"    ,(unsigned)sp->port_p2p_tcp);
       fprintf(stderr,"  p2p udp      = %d\n"    ,(unsigned)sp->port_p2p_udp);
@@ -129,7 +130,9 @@ int main(int argc, char* argv[])
     .right_neighbor = p2p_addr_create(),
     .left_neighbor  = p2p_addr_create(),
   };
-
+  
+  p2p_addr dest = p2p_addr_create();
+  
   /* parsing command line args */
   while (1)
     {
@@ -142,7 +145,7 @@ int main(int argc, char* argv[])
 
       switch (c)
 	{
-	case 'c': /* connect: TODO */             break;
+	case 'c': p2p_addr_setstr(dest, optarg);  break;
 	case 'd': sp.dir_name     = optarg;       break;
 	case 's': sp.server_name  = optarg;       break;
 	case 'i': /* listening ip: TODO */  	  break;
@@ -162,7 +165,12 @@ int main(int argc, char* argv[])
 	  break;
 	}
     }
-
+  
+  //Initialisation de l'adresse IP su noeud
+  p2p_addr_set(sp.p2pMyId, DEFAULT_IP, sp.port_p2p_tcp, sp.port_p2p_udp);  
+  p2p_addr_copy(sp.right_neighbor, sp.p2pMyId);
+  p2p_addr_copy(sp.left_neighbor, sp.p2pMyId);
+  
   print_options(&sp);
 
   printf("Creation des socket\n");
