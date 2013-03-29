@@ -274,21 +274,26 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 //Envoi du message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-  //peut pas envoyer message a nous meme
+  //On verifie que l'on essaie pas d'envoyer un message à nous même
   if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
     return P2P_ERROR;
   
-  
+  //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
   char* toWrite = "";
+  //allocation de la mémoire pour le buffer
   toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
-  memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE);
-  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
-  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE + P2P_ADDR_SIZE], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
+  // ajout du champs "version" au buffer
+  memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE); 
+  // ajout du champs "Adresse Source"
+  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE], p2p_msg_get_src(msg), P2P_ADDR_SIZE); 
+  //ajout du champs "Adresse Dest"
+  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE + P2P_ADDR_SIZE], p2p_msg_get_dst(msg), P2P_ADDR_SIZE); 
+  // Si contenu du message non vide, ajout du champs "Message"
   if (p2p_msg_get_length(msg) != 0){
     memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), p2p_msg_get_length(msg));
   }
   
-  
+  // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
   if (write(fd, toWrite, P2P_HDR_SIZE + msg->hdr.length) != (P2P_HDR_SIZE + msg->hdr.length)){
     printf("Echec de l'envoi du message dans la socket\n");
     return P2P_ERROR;
@@ -305,7 +310,8 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   read(fd,msg,P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
-  char data_payload[length=p2p_msg_get_length(msg)];
+  length = p2p_msg_get_length(msg);
+  char data_payload[p2p_msg_get_length(msg)];
   read(fd,data_payload,length);
   p2p_msg_init_payload(msg,length,data_payload);
   p2p_msg_display(msg);
