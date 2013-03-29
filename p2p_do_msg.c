@@ -116,7 +116,11 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 // Reception du JOIN ACK
 
 int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
-	
+    
+	printf("\n!************************************************************!\n");
+        printf("              FUNCTION DO JOIN ACK\n");
+        printf("!**************************************************************!\n");
+        
 	unsigned char *ack_payload=p2p_get_payload(ack_msg);
 	
 	// on récupère les adresses stockées dans le payload du message JOIN_ACK
@@ -133,7 +137,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
 		sp->p2pMyId, left) != P2P_OK) return P2P_ERROR;
 	memcpy(link_payload, sp->p2pMyId, 8);
-	unsigned long int type = htonl(0x0000FFFF);
+	unsigned long int type = htonl(0x0000FFFF); // adresse du lien droit 
 	memcpy(&link_payload[8], &type, 4);
 	if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK) 
 		return P2P_ERROR;
@@ -143,12 +147,12 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 			return P2P_ERROR;
 		}
 	}
-		
+                        
 	//pour son ancien droit   
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
 		sp->p2pMyId, right) != P2P_OK) return P2P_ERROR;
 	memcpy(link_payload, sp->right_neighbor, 8);
-	type = htonl(0xFFFF0000);
+	type = htonl(0xFFFF0000);//adresse du lien gauche
 	memcpy(&link_payload[8], &type, 4);
 	if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK) 
 		return P2P_ERROR;
@@ -162,7 +166,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
 		sp->p2pMyId, sp->left_neighbor) != P2P_OK) return P2P_ERROR;
 	memcpy(link_payload, right, 8);
-	type = htonl(0x0000FFFF);
+	type = htonl(0x0000FFFF); // adresse du lien droit 
 	memcpy(&link_payload[8], &type, 4);
 	if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK) 
 		return P2P_ERROR;
