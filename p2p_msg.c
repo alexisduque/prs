@@ -274,7 +274,28 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 //Envoi du message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
+  //peut pas envoyer message a nous meme
+  if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
+    return P2P_ERROR;
+  
+  
+  char* toWrite = "";
+  toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
+  memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE);
+  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+  memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE + P2P_ADDR_SIZE], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
+  if (p2p_msg_get_length(msg) != 0){
+    memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), p2p_msg_get_length(msg));
+  }
+  
+  
+  if (write(fd, toWrite, P2P_HDR_SIZE + msg->hdr.length) != (P2P_HDR_SIZE + msg->hdr.length)){
+    printf("Echec de l'envoi du message dans la socket\n");
+    return P2P_ERROR;
+  } else {
     return P2P_OK;
+  }
+ 
 }
 
 // Renvoie dans msg un message depuis la socket fd
