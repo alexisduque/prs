@@ -194,7 +194,7 @@ void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
 //renvoie l'adresse source de msg
 p2p_addr p2p_msg_get_src (const p2p_msg msg)
 {
-  return msg->hdr.dst;
+  return msg->hdr.src;
 }
 
 //initialise l'adresse source de msg � src
@@ -274,6 +274,7 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 //Envoi du message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
+  VERBOSE(sp,VMCTNT,"TRY TO SEND msg ...\n");
   //On verifie que l'on essaie pas d'envoyer un message à nous même
   if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
     return P2P_ERROR;
@@ -309,18 +310,20 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   int length;
   read(fd,msg,P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
-  read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+  read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
   length = p2p_msg_get_length(msg);
   char data_payload[p2p_msg_get_length(msg)];
   read(fd,data_payload,length);
   p2p_msg_init_payload(msg,length,data_payload);
   p2p_msg_display(msg);
+  VERBOSE(sp,VMCTNT,"RECV MSG OK\n");
   return P2P_OK;
 } 
 
 // Envoi du message msg via tcp au noeud destination indiquée dans le champ dst de msg
 int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 {
+   
   int socketTMP = p2p_tcp_socket_create(sp,p2p_msg_get_dst(msg));
   if(socketTMP==P2P_ERROR)
   {
@@ -333,6 +336,7 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
     return (P2P_ERROR);
   }
   p2p_tcp_socket_close(sp,socketTMP);
+  VERBOSE(sp,VMCTNT,"SEND msg DONE\n");
   return P2P_OK;
 }
 

@@ -103,7 +103,7 @@ print_options(server_params *sp)
       fprintf(stderr,"  pid          = %d\n"    ,getpid());
       fprintf(stderr,"  dir_name     = \"%s\"\n",sp->dir_name);
       fprintf(stderr,"  server_name  = \"%s\"\n",sp->server_name);
-      fprintf(stderr,"  server_ip    = %s\\n",p2p_addr_get_ip_str(sp->p2pMyId));
+      fprintf(stderr,"  server_ip    = %s\n",p2p_addr_get_ip_str(sp->p2pMyId));
       fprintf(stderr,"  ui tcp       = %d\n"    ,(unsigned)sp->port_ui);
       fprintf(stderr,"  p2p tcp      = %d\n"    ,(unsigned)sp->port_p2p_tcp);
       fprintf(stderr,"  p2p udp      = %d\n"    ,(unsigned)sp->port_p2p_udp);
