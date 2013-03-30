@@ -28,7 +28,7 @@
 //Envoi du JOIN REQ
 int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
     
-  printf("\n!************************************************************!\n");
+  printf("\n!**************************************************************!\n");
   printf("              FUNCTION SEND JOIN REQ\n");
   printf("!**************************************************************!\n");
 	

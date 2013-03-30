@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       return -1;
   }
   
-  printf("Entree dans la boucle principale\n");
+  VERBOSE(&sp,VMCTNT,"STARTING LISTENING LOOP\n");
   //Boucle principale
   while(1) {
       
@@ -236,13 +236,15 @@ int main(int argc, char* argv[])
               //preparation du message
                message = p2p_msg_create();
                
-               printf("Reception d'un message TCP\n");
+               VERBOSE(&sp,VMCTNT,"RECEPTION TCP MSG\n");
                p2p_tcp_msg_recvfd(&sp, message, sock_tcp_rcv);
                
                //En fonction du message
                switch (p2p_msg_get_type(message)){	
                    
-                        case P2P_MSG_JOIN_REQ  : //p2p_do_join_req(&sp, message, sock_tcp_rcv);
+                        case P2P_MSG_JOIN_REQ  : 
+                                VERBOSE(&sp,VMCTNT,"RECEPTION JOIN REQ\n");
+                                p2p_do_join_req(&sp, message, sock_tcp_rcv);
                                 break;
 							
                         case P2P_MSG_GET : //p2p_do_get(&sp, message, sock_tcp_rcv);

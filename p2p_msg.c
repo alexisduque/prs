@@ -274,7 +274,7 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 //Envoi du message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-  VERBOSE(sp,VMCTNT,"TRY TO SEND msg ...\n");
+  VERBOSE(sp,VPROTO,"TRY TO SEND msg ...\n");
   //On verifie que l'on essaie pas d'envoyer un message à nous même
   if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
     return P2P_ERROR;
@@ -336,7 +336,7 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
     return (P2P_ERROR);
   }
   p2p_tcp_socket_close(sp,socketTMP);
-  VERBOSE(sp,VMCTNT,"SEND msg DONE\n");
+  VERBOSE(sp,VPROTO,"SEND msg DONE\n");
   return P2P_OK;
 }
 
