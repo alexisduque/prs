@@ -107,7 +107,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 
 	//Envoi du message JOIN ACK
 	if (p2p_tcp_msg_sendfd(sp, join_ack, socket) == P2P_OK){
-		printf("\n\n Message JOIN_ACK envoyé ! \n\n");
+		printf("Message JOIN_ACK envoyé ! \n\n");
 	}
 	
  	return P2P_OK;

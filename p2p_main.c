@@ -250,7 +250,9 @@ int main(int argc, char* argv[])
                         case P2P_MSG_GET : //p2p_do_get(&sp, message, sock_tcp_rcv);
                                 break;
 						
-                        case P2P_MSG_LINK_UPDATE : //p2p_do_link_update(&sp, message);
+                        case P2P_MSG_LINK_UPDATE : 
+                                VERBOSE(&sp,VMCTNT,"RECEPTION LINK UPDATE\n");
+                                //p2p_do_link_update(&sp, message);
                                 break;
                }	
               

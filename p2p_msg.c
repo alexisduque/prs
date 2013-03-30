@@ -130,7 +130,8 @@ p2p_msg_init_payload(p2p_msg msg,
 		     const unsigned short int length,
 		     char* payload)
 {
-  /* p2p_msg_set_length(msg,length); */
+  p2p_msg_set_length(msg,length);
+  free(msg->payload);
   assert(msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*length));
   memcpy(msg->payload,payload,length);
   return P2P_OK;
