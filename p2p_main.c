@@ -172,8 +172,7 @@ int main(int argc, char* argv[])
   p2p_addr_copy(sp.left_neighbor, sp.p2pMyId);
   
   print_options(&sp);
-
-  printf("Creation des socket\n");
+  VERBOSE(&sp,VMCTNT,"SOCKET CREATING ...\n");
   
   // Creation des variables
   int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
@@ -208,8 +207,7 @@ int main(int argc, char* argv[])
       printf("Error creating UDP socket\n");
       return -1;
   }
-  
-  VERBOSE(&sp,VMCTNT,"STARTING LISTENING LOOP\n");
+  VERBOSE(&sp,VMCTNT,"STARTING LISTENING LOOP\n\n");
   //Boucle principale
   while(1) {
       
@@ -252,7 +250,7 @@ int main(int argc, char* argv[])
 						
                         case P2P_MSG_LINK_UPDATE : 
                                 VERBOSE(&sp,VMCTNT,"RECEPTION LINK UPDATE\n");
-                                //p2p_do_link_update(&sp, message);
+                                p2p_do_link_update(&sp, message);
                                 break;
                }	
               

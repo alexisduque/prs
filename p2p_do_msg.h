@@ -26,6 +26,6 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket);
 void p2p_do_get() ;
 
 //Traitement du LINK UPDATE
-void p2p_do_link_update() ;
+int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) ;
 
 #endif /* __P2P_DO_MSG */

@@ -65,13 +65,13 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   return(P2P_OK);
 }
 
-//Traitement du JOIN REQ
+//Traitement du JOIN REQ = Envoi du JOIN_ACK
 
 int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
     
 	printf("\n!************************************************************!\n");
 	printf("              FUNCTION DO JOIN REQ\n");
-	printf("!**************************************************************!\n");
+	printf("!************************************************************!\n");
 	p2p_msg join_ack = p2p_msg_create();
 
 	//On remplit l'entête du message
@@ -196,7 +196,32 @@ void p2p_do_get() {
 }
 
 
-//Traitement dy LINK UPDATE
-void p2p_do_link_update() { 
-    
+//Traitement du LINK UPDATE
+int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) { 
+	
+	p2p_addr new_addresse = p2p_addr_create();
+	memcpy(new_addresse, p2p_get_payload(link_update_msg), 8);
+	
+	//Recuperation du type du voisin
+	unsigned long int neighbor_type;
+	memcpy(&neighbor_type,&(p2p_get_payload(link_update_msg)[8]), 4);
+	neighbor_type=ntohl(neighbor_type);
+	
+	if (neighbor_type==0xFFFF0000) {
+		//voisin gauche
+		p2p_addr_copy(sp->left_neighbor, new_addresse);
+		VERBOSE(sp,VMCTNT,"LEFT NEIGHBOR UPDATE\n\n");
+	} else if (neighbor_type==0x0000FFFF) {
+		// voisin droit	
+		p2p_addr_copy(sp->right_neighbor, new_addresse);
+		VERBOSE(sp,VMCTNT,"RIGHT NEIGHBOR UPDATE\n\n");
+	} else {
+		VERBOSE(sp,VMCTNT,"!! ERROR PARSING NEIGHBOR TYPE !!\n\n");
+	}
+	
+	//vidage de la memoire
+	p2p_addr_delete(new_addresse);
+	
+	return P2P_OK;
+
 }
