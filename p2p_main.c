@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
               VERBOSE(&sp,VMCTNT,"RECEPTION UDP MSG\n");
               
               message = p2p_msg_create();
-	      //p2p_udp_msg_recvfd(&sp, message, sock_udp);
+	      p2p_udp_msg_recvfd(&sp, message, sock_udp);
               
               //En fonction du message
 	      switch (p2p_msg_get_type(message)) {
@@ -278,7 +278,7 @@ int main(int argc, char* argv[])
                                 break;
                         case P2P_MSG_REPLY : 
                                 VERBOSE(&sp,VMCTNT,"RECEPTION REPLY\n");
-                                //p2p_do_reply(&sp, message);  ;          
+                                p2p_do_reply(&sp, message);  ;          
                                 break;
                         case P2P_MSG_NEIGHBORS_REQ :  
                                 VERBOSE(&sp,VMCTNT,"RECEPTION NEIGHBORS REQ\n");

@@ -409,7 +409,8 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   read(fd, msg, P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
   read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-  char data_payload[length=p2p_msg_get_length(msg)];
+  length = p2p_msg_get_length(msg);
+  char data_payload[length];
   read(fd, data_payload, length);
   p2p_msg_init_payload(msg, length, data_payload);
   p2p_msg_display(msg);
