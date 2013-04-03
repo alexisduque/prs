@@ -218,11 +218,14 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 }
 
 int p2p_msg_display(p2p_msg message){
+  printf("Contenu du message : \n");
   printf("Version :%d ", p2p_msg_get_version(message));
+  printf("Type : %d \n",p2p_msg_get_type(message));
   printf("TTL :%d ", p2p_msg_get_ttl(message));
   printf("Length : %d \n", p2p_msg_get_length(message));
   printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
   printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
+  printf("Payload : %s", p2p_get_payload(message));
   return P2P_OK;
 }
 
@@ -235,8 +238,7 @@ int p2p_msg_display(p2p_msg message){
 //aussi le payload du message sinon on n'�crit que l'entete.
 int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
-    return P2P_OK; 
-
+  return P2P_OK; 
 }
 
 //�crit l'entete du message msg en hexa. 
@@ -257,18 +259,19 @@ int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
   adresse.sin_port = htons(p2p_addr_get_tcp_port(dst));
   adresse.sin_addr.s_addr = htonl(INADDR_ANY);
   
-  if (connect(fd, (struct sockaddr*)&adresse,lg)==-1){
+  if (connect(fd, (struct sockaddr*)&adresse,lg)==P2P_ERROR){
     p2p_tcp_socket_close(sp,fd);
     return(P2P_ERROR);
   }
-
-return P2P_OK;
+  VERBOSE(sp,VSYSCL,"SOCKET TCP created \n");
+  return P2P_OK;
 }
 
 //Fermeture de la socket donnée par le descripteur fd
 int p2p_tcp_socket_close(server_params* sp, int fd)
 {
     close(fd);
+    VERBOSE(sp,VSYSCL,"TCP socket disconnected %d\n",fd);
     return P2P_OK;
 }
 
@@ -297,7 +300,8 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   
   // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
   if (write(fd, toWrite, P2P_HDR_SIZE + msg->hdr.length) != (P2P_HDR_SIZE + msg->hdr.length)){
-    printf("Echec de l'envoi du message dans la socket\n");
+    //printf("Echec de l'envoi du message dans la socket\n");
+    VERBOSE(sp,VPROTO,"Unable to send msg to the socket\n");
     return P2P_ERROR;
   } else {
     return P2P_OK;
@@ -328,7 +332,8 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
   int socketTMP = p2p_tcp_socket_create(sp,p2p_msg_get_dst(msg));
   if(socketTMP==P2P_ERROR)
   {
-    printf("Impossible de créer la socket TCP \n");
+    VERBOSE(sp,VPROTO,"TCP socket creation impossible \n");
+    //printf("Impossible de créer la socket TCP \n");
     return (P2P_ERROR);
   }
 
@@ -342,66 +347,72 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 }
 
 
-
 /*** Communication via UDP ***/
 //Cr�e une socket UDP vers le noeud P2P dst.
-/*int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
+int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
 {
-  int socket_udp;
+  int sock_udp;
   struct sockaddr_in adresse;
   socklen_t longueur = sizeof(struct sockaddr_in);
   int port = 0;
 
-  if ((socket_udp=creer_socket(SOCK_DGRAM, port)==-1))
-  {
-    perror ("Création de la socket impossible");
-    close(socket_udp);
+  if ((sock_udp = creer_socket(SOCK_DGRAM, port))== P2P_ERROR){
+    VERBOSE(sp,VPROTO,"UDP socket creation impossible \n");
+    return P2P_ERROR;
   }
 
   adresse.sin_family=AF_INET;
   inet_aton(p2p_addr_get_ip_str(dst),&adresse.sin_addr.s_addr);
   adresse.sin_port=htons(p2p_addr_get_udp_port(dst));
 
-  if (connect(socket_udp, (struct sockaddr*)&adresse,longueur)==-1)
+  if (connect(sock_udp,(struct sockaddr*)&adresse,longueur) == P2P_ERROR)
   {
-    perror("Attachement de la socket impossible");
-    close(socket_udp);
-    exit(-1);
-
+    VERBOSE(sp,VPROTO,"Unable to connect the socket \n");
+    close(sock_udp);
+    return P2P_ERROR;
   }
-  return socket_udp;
+  VERBOSE(sp,VSYSCL,"SOCKET UDP created \n");
+  return sock_udp;
 }
-*/
+
 //Ferme la socket donnée par le descripteur fd
 int p2p_udp_socket_close(server_params* sp, int fd)
 {
   close(fd);
+  VERBOSE(sp,VSYSCL,"UDP socket disconnected %d\n",fd);
   return P2P_OK;
 }
 
 //Envoie le message msg via la socket UDP fd
-/*int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
+int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-    //TODO
-}*/
+  
+  return P2P_OK;
+}
 
 //re�oie dans msg un message depuis la socket UDP fd
 /*int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
-    //TODO
+    return P2P_OK;
 }*/
 
 //envoie le message msg via udp au noeud destination indiqu� dans le
 //champ dst de msg
-/*int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
+int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 {
-  int fd = p2p_udp_socket_create(sp, msg->hdr.dst);
-  p2p_udp_msg_sendfd(sp, msg, fd);
+  int sock;
+  if ((sock=p2p_udp_socket_create(sp,msg->hdr.dst))==P2P_ERROR){
+    VERBOSE(sp,VPROTO,"Unable to send UDP_MSG\n");
+    return P2P_ERROR;
+  };
+  p2p_udp_msg_sendfd(sp,msg,sock);
+  p2p_udp_socket_close(sp,sock);
+  VERBOSE(sp,VSYSCL,"Send MSG done \n");
   return P2P_OK;
 }
-*/
+
 //rebroadcast le message msg
-/*int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
+int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
 {
-    //TODO
-}*/
+  return P2P_OK;
+}
