@@ -24,6 +24,7 @@
 #include "p2p_msg.h"
 #include "p2p_options.h"
 #include "p2p_do_msg.h"
+#include "p2p_file.h"
 
 //Envoi du JOIN REQ
 int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
@@ -224,4 +225,104 @@ int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
 	
 	return P2P_OK;
 
+}
+
+//Traitement du SEARCH
+int p2p_do_search(server_params *sp, p2p_msg search_msg) {
+    
+    int name_size, file_size;
+    char * file_name;
+    char * buffer;
+    p2p_addr src_adresse, dst_adresse;
+    p2p_msg reply_message;
+
+    
+    printf("\n>>>Recherche de fichier recue\n");
+    
+    // On verifie que le mesg recu n'est pas le notre
+    src_adresse = p2p_addr_create(0);
+    memcpy(src_adresse, p2p_get_payload(search_msg), P2P_ADDR_SIZE);
+    if (!p2p_addr_is_equal(src_adresse, sp->p2pMyId)){
+
+            // On recupere le nom du fichier demande
+            name_size = p2p_msg_get_length(search_msg) - P2P_ADDR_SIZE - P2P_HDR_BITFIELD_SIZE;
+            file_name = (char *)malloc(name_size +1);
+            memcpy(file_name,p2p_get_payload(search_msg) + P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE, name_size);
+            file_name[name_size] = '\0';
+            printf("Fichier recherche: %s\n",file_name);
+
+            // On teste si le fichier est present    
+            if (p2p_file_is_available(sp,file_name,&file_size)==P2P_OK) {
+
+                    printf("Fichier existant !\n");
+                    file_size = htonl(file_size);
+
+                    // Creation du messge reply
+                    reply_message = p2p_msg_create();
+                    
+                    // On recupere l'adresse de l'emetteur de la recherche
+                    
+                    dst_adresse = p2p_addr_create();
+                    memcpy(dst_adresse,p2p_get_payload(search_msg),P2P_ADDR_SIZE);
+                    p2p_msg_init(reply_message,P2P_MSG_REPLY,P2P_MSG_TTL_MAX,sp->p2pMyId,dst_adresse);
+                    
+                    // Creation du payload
+                    buffer = (char *)malloc(P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE);
+                    memcpy(buffer, p2p_get_payload(search_msg) + P2P_ADDR_SIZE, P2P_HDR_BITFIELD_SIZE);
+                    memcpy(buffer + P2P_HDR_BITFIELD_SIZE, &file_size, P2P_INT_SIZE);
+                    p2p_msg_init_payload(reply_message, P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE, buffer);
+
+                    // Envoi du message
+                    p2p_udp_msg_send(sp,reply_message);
+                    printf("Reponse a l'emmeteur de la recherche\n");
+                    
+                    // Ne pas oublier de liberer la mémoire !
+                    /*free(buffer);
+                    p2p_addr_delete(dst);
+                    p2p_msg_delete(reply);*/
+
+            } else {
+                    printf("Fichier inconnu !\n");
+                    if(file_size != 403) VERBOSE(sp,VMCTNT,"Erreur de type %d\n",file_size);
+            }  
+           
+            //On fait suivre le message aux autres noeud
+            p2p_udp_msg_rebroadcast (sp, search_msg);
+
+            // Ne pas oublier de liberer la mémoire !
+            free(file_name);
+
+    } else {
+        
+        VERBOSE(sp,VMCTNT,"!! I'VE SEND THIS SEARCH_MESSAGE !!\n\n");
+       
+    }
+    
+    
+    // Ne pas oublier de liberer la mémoire !
+    p2p_addr_delete(src_adresse);
+    
+    return P2P_OK;
+ 
+}
+
+//Traitement du REPLY  
+int p2p_do_reply(server_params *sp, p2p_msg search_msg) {
+    
+    return P2P_OK;
+    
+}
+
+//TRAITEMENT DU NEIGHBORS_REQ
+int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
+    
+    return P2P_OK;
+    
+}
+
+//TRAITEMENT DU NEIGHBORS_LIST
+int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
+    
+    return P2P_OK;
+    
 }

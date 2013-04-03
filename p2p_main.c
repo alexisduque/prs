@@ -253,15 +253,46 @@ int main(int argc, char* argv[])
                                 p2p_do_link_update(&sp, message);
                                 break;
                }	
-              
-               //Fermeture de la soscket de reception
-               close(sock_tcp_rcv);
+               
+              //Suppression du message temporaire
+              p2p_msg_delete(message);
+              //Fermeture de la soscket de reception
+              close(sock_tcp_rcv);
               
           } 
       
           //Si socket_udp ready
           else if (FD_ISSET(sock_udp, &fd)){
               
+              VERBOSE(&sp,VMCTNT,"RECEPTION UDP MSG\n");
+              
+              message = p2p_msg_create();
+	      p2p_udp_msg_recvfd(&sp, message, sock_udp);
+              
+              //En fonction du message
+	      switch (p2p_msg_get_type(message)) {
+                  
+                        case P2P_MSG_SEARCH :         
+                                VERBOSE(&sp,VMCTNT,"RECEPTION SEARCH\n");
+                                p2p_do_search(&sp, message);         
+                                break;
+                        case P2P_MSG_REPLY : 
+                                VERBOSE(&sp,VMCTNT,"RECEPTION REPLY\n");
+                                //p2p_do_reply(&sp, message);  ;          
+                                break;
+                        case P2P_MSG_NEIGHBORS_REQ :  
+                                VERBOSE(&sp,VMCTNT,"RECEPTION NEIGHBORS REQ\n");
+                                //p2p_do_neighbors_req(&sp, message);  ;  
+                                break;
+                        case P2P_MSG_NEIGHBORS_LIST : 
+                                VERBOSE(&sp,VMCTNT,"RECEPTION NEIGHBORS_LIST\n");
+                                //p2p_do_neighbors_list(&sp, message);  ; 
+                                break;
+	      }
+              
+              //Suppression du message temporaire
+	      p2p_msg_delete(message);
+               
           }
       
                   
