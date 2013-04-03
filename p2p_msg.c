@@ -391,10 +391,23 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 }
 
 //re�oie dans msg un message depuis la socket UDP fd
-/*int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
+int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
-    return P2P_OK;
-}*/
+  VERBOSE(sp, VPROTO, "TRY TO RECEIVE MSG ...");
+  
+  char data[200];
+  msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
+  recv(fd, &data, sizeof(data),0);
+  
+// Copiage des headers
+  memcpy(&(msg->hdr), data, P2P_HDR_BITFIELD_SIZE);
+  memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
+  memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
+  memcpy(msg->payload, &data[20], sizeof(data)-20);
+
+  VERBOSE(sp, VMCTNT, "RECVD MSG OK");
+  return P2P_OK;
+}
 
 //envoie le message msg via udp au noeud destination indique dans le
 //champ dst de msg
