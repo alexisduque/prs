@@ -229,8 +229,29 @@ int p2phalt(params *p)
 int
 p2psearch(params* p)
 {
-  /**** A COMPLETER ****/
-  return P2P_UI_ERROR;
+    
+        // Initialisation
+        char * buffer;
+        p2p_msg msg_search = p2p_msg_create();
+        int search_id;
+        p2p_addr src_adresse,dst_adresse;
+        
+        //Récuperation des adresses source et destionation
+        src_adresse = p2p_addr_create();
+        p2p_addr_copy(src_adresse,p->sp->p2pMyId);
+        dst_adresse = p2p_addr_create();
+        p2p_addr_copy(dst_adresse,p->sp->p2pMyId);
+        
+        // Creation de l'en-tete du message
+        p2p_msg_init(msg_search,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
+
+        /* TODO */
+        
+        //p2p_msg_delete(msg_search);
+        free(buffer);
+
+        return P2P_UI_ERROR;
+ 
 }
 
 /****************************************************/
