@@ -30,6 +30,7 @@
 #include "p2p_msg.h"
 #include "p2p_ui.h"
 #include "p2p_do_msg.h"
+#include "p2p_msg.h"
 
 #define MAX_PATH 1024
 #define MAX_REQ 1000
@@ -232,7 +233,7 @@ p2psearch(params* p)
     
         // Initialisation
         char * buffer;
-        p2p_msg msg_search = p2p_msg_create();
+        p2p_msg search_message = p2p_msg_create();
         int search_id;
         p2p_addr src_adresse,dst_adresse;
         
@@ -243,7 +244,7 @@ p2psearch(params* p)
         p2p_addr_copy(dst_adresse,p->sp->p2pMyId);
         
         // Creation de l'en-tete du message
-        p2p_msg_init(msg_search,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
+        p2p_msg_init(search_message,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
 
         /* TODO */
         
