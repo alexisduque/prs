@@ -361,8 +361,8 @@ int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
     return P2P_ERROR;
   }
 
-  adresse.sin_family=AF_INET;
-  inet_aton(p2p_addr_get_ip_str(dst),&adresse.sin_addr.s_addr);
+  adresse.sin_family  =AF_INET;
+  inet_aton(p2p_addr_get_ip_str(dst),&adresse.sin_addr);
   adresse.sin_port=htons(p2p_addr_get_udp_port(dst));
 
   if (connect(sock_udp,(struct sockaddr*)&adresse,longueur) == P2P_ERROR)
@@ -396,7 +396,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
     return P2P_OK;
 }*/
 
-//envoie le message msg via udp au noeud destination indiqu� dans le
+//envoie le message msg via udp au noeud destination indique dans le
 //champ dst de msg
 int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 {
