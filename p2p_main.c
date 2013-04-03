@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
               VERBOSE(&sp,VMCTNT,"RECEPTION UDP MSG\n");
               
               message = p2p_msg_create();
-	      p2p_udp_msg_recvfd(&sp, message, sock_udp);
+	      //p2p_udp_msg_recvfd(&sp, message, sock_udp);
               
               //En fonction du message
 	      switch (p2p_msg_get_type(message)) {
@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
               
               //Suppression du message temporaire
 	      p2p_msg_delete(message);
-               
+              
           }
       
                   

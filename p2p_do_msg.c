@@ -236,9 +236,10 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     p2p_addr src_adresse, dst_adresse;
     p2p_msg reply_message;
 
-    
-    printf("\n>>>Recherche de fichier recue\n");
-    
+    printf("\n!************************************************************!\n");
+    printf("              FUNCTION DO SEARCH\n");
+    printf("!**************************************************************!\n");
+
     // On verifie que le mesg recu n'est pas le notre
     src_adresse = p2p_addr_create(0);
     memcpy(src_adresse, p2p_get_payload(search_msg), P2P_ADDR_SIZE);
@@ -298,7 +299,6 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
        
     }
     
-    
     // Ne pas oublier de liberer la mémoire !
     p2p_addr_delete(src_adresse);
     
@@ -307,10 +307,32 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
 }
 
 //Traitement du REPLY  
-int p2p_do_reply(server_params *sp, p2p_msg search_msg) {
+int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
     
-    return P2P_OK;
-    
+        printf("\n!************************************************************!\n");
+        printf("              FUNCTION DO REPLY\n");
+        printf("!**************************************************************!\n");
+
+        int file_size, search_id;
+        p2p_addr file_owner;
+
+        //Recupératiion de la taille de fichier
+        memcpy(&file_size, p2p_get_payload(reply_msg) + P2P_HDR_BITFIELD_SIZE, P2P_INT_SIZE);
+        file_size=ntohl(file_size);
+        
+        // On va chercher le nom du fichier correspondant a la recherche
+        memcpy(&search_id, p2p_get_payload(reply_msg), P2P_INT_SIZE);
+        file_owner = p2p_addr_duplicate(p2p_msg_get_src(reply_msg));
+        search_id = ntohl(search_id);
+        printf("ID de la recherche : %d\n",search_id);
+        printf("Taille du fichier : %d\n",file_size);
+
+        /* TODO : ajouter l'id et ficheir a la liste des recherche du noeud (sp->p2p_search_list), ... */
+        
+        // Clean
+        p2p_addr_delete(file_owner);
+
+        return P2P_OK;
 }
 
 //TRAITEMENT DU NEIGHBORS_REQ
