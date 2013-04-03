@@ -387,17 +387,18 @@ int p2p_udp_socket_close(server_params* sp, int fd)
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
   VERBOSE(sp, VPROTO, "TRY TO SEND MSG ...");
-  char data[200];
-  msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
-  recv(fd, &data, sizeof(data),0);
-
-// Copiage des headers
-  memcpy(&(msg->hdr), data, P2P_HDR_BITFIELD_SIZE);
-  memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
-  memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
-  memcpy(msg->payload, &data[20], sizeof(data)-20);
-
-  VERBOSE(sp, VMCTNT, "MSG SENT OK");
+  char* toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
+  
+  memcpy(toWrite, &(msg->hdr), P2P_HDR_BITFIELD_SIZE);
+  memcpy(&toWrite[4], msg->hdr.src, P2P_ADDR_SIZE);
+  memcpy(&toWrite[12], msg->hdr.dst, P2P_ADDR_SIZE);
+  memcpy(&toWrite[20], msg->payload,p2p_msg_get_length(msg));
+  
+  if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR){
+    //printf("Could not send message\n");
+    VERBOSE(sp,VPROTO,"Unable to send msg");
+    return P2P_ERROR;
+  } 
   return P2P_OK;
 }
 
@@ -405,6 +406,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
   VERBOSE(sp, VPROTO, "TRY TO RECEIVE MSG ...");
+<<<<<<< HEAD
   int length;
   read(fd, msg, P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
@@ -414,7 +416,18 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   read(fd, data_payload, length);
   p2p_msg_init_payload(msg, length, data_payload);
   p2p_msg_display(msg);
+=======
+>>>>>>> [UDP] sendfd - recvfd
   
+  char data[200];
+  msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
+
+  recv(fd, &data, sizeof(data),0);
+  
+  memcpy(&(msg->hdr), data, P2P_HDR_BITFIELD_SIZE);
+  memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
+  memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
+  memcpy(msg->payload, &data[20], sizeof(data)-20);
   VERBOSE(sp, VMCTNT, "RECVD MSG OK");
   return P2P_OK;
 }
