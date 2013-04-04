@@ -295,19 +295,60 @@ int main(int argc, char* argv[])
               
           }
       
-                  
           //Si socket_ui ready
-          else if (FD_ISSET(sock_ui, &fd)){
-          
+          else if (FD_ISSET(sock_ui, &fd)) {
+              
+                VERBOSE(&sp,VMCTNT,"TELNET CLIENT TRY TO CONNECT\n");
+                
+                // Un seul client TELNET connecté à la fois
+                if (sp.client_ui == 0 || sp.client_ui == -1) { //0 -> premiere connection 
+
+                    VERBOSE(&sp,VMCTNT,"ui : reading listening socket\n");
+                    
+                    // créer socket s et écouter et renseigner les server params
+                    sock_ui_connected = accept(sock_ui,(struct sockaddr*) &adresse, &lg);
+
+                    if (sock_ui_connected==-1) {
+                        VERBOSE(&sp, VMCTNT,"UI CONNEXION REFUSED");
+                        break;
+                    }
+
+                    VERBOSE(&sp,VMCTNT,"UI CLIENT NOW CONNETED\n\n");
+
+                    sp.client_ui=sock_ui_connected;
+
+                    VERBOSE(&sp,CLIENT,"\n** Connection au noeud %s\n",sp.server_name);
+                    VERBOSE(&sp,CLIENT,"** P2P Adresse -->  %s\n",p2p_addr_get_str(sp.p2pMyId));
+                    VERBOSE(&sp,CLIENT,"\n%s: ",sp.server_name);
+
+
+                } else { 
+                    // On envoi un message d'erreur au client qui essai de se connecter
+
+                    //on sauvegarde la socket d'écoute du client_actuel
+                    int sock_ui_now = sock_ui_connected;
+
+                    //On se connecte finalement au client pour envoyer un message d'erreur
+                    sock_ui_connected = accept(sock_ui,(struct sockaddr*) &adresse, &lg);
+                    char* message = "\n\n** Connexion refused : another client is already connected\n\n";
+                    write(sock_ui_connected, message, strlen(message));
+                    VERBOSE(&sp,CLIENT,"\n\n** Another client try to connected **\n\n");
+                    VERBOSE(&sp,CLIENT,"\n%s:: ",sp.server_name);
+                    
+                    //On rétabli la bonne socket
+                    VERBOSE(&sp,VMCTNT,"UI SOCKET RESTABLISHED \n");
+                    sock_ui_connected = sock_ui_now;     
+                    
+                }
           }
       
           //Si socket_ui_connected ready
           else if (FD_ISSET(sock_ui_connected, &fd)){
-              
+                VERBOSE(&sp,VMCTNT,"UI MESSAGE RECEPTION \n");
           }
       
           else break; // Timeout
-      
+    
   }  
   
   close(sock_tcp);
