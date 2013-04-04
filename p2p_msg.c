@@ -406,7 +406,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
   VERBOSE(sp, VPROTO, "TRY TO RECEIVE MSG ...");
-<<<<<<< HEAD
+//<<<<<<< HEAD
   int length;
   read(fd, msg, P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
@@ -416,8 +416,8 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   read(fd, data_payload, length);
   p2p_msg_init_payload(msg, length, data_payload);
   p2p_msg_display(msg);
-=======
->>>>>>> [UDP] sendfd - recvfd
+//=======
+//>>>>>>> [UDP] sendfd - recvfd
   
   char data[200];
   msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
@@ -450,5 +450,57 @@ int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 //rebroadcast le message msg
 int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
 {
+  printf("----------------------------------rebroadcast-------------------------------------\n");
+  p2p_addr src = p2p_addr_create();
+  src = p2p_msg_get_src(msg);
+  printf("\n\n source du message : %s\n", p2p_addr_get_str(src));
+  printf("right ngb : %s\n", p2p_addr_get_str(sp->right_neighbor));
+  printf("left ngb : %s\n", p2p_addr_get_str(sp->left_neighbor));
+  
+  p2p_addr initiator = p2p_addr_create();
+  memcpy(initiator, p2p_get_payload(msg), P2P_ADDR_SIZE);
+  
+  printf("\n\n initiator = %s\n\n", p2p_addr_get_str(initiator));
+    printf("equal(me, right)  = %d\n", p2p_addr_is_equal(sp->p2pMyId, sp->right_neighbor) );
+    printf("equal(src, right)  = %d\n", p2p_addr_is_equal(src, sp->right_neighbor) );
+    printf("equal(init, right)  = %d\n", p2p_addr_is_equal(initiator, sp->right_neighbor) );
+    
+    printf("equal(me, left)  = %d\n", p2p_addr_is_equal(sp->p2pMyId, sp->left_neighbor) );
+    printf("equal(src, left)  = %d\n", p2p_addr_is_equal(src, sp->left_neighbor) );
+    printf("equal(init, left)  = %d\n", p2p_addr_is_equal(initiator, sp->left_neighbor) );
+    
+    printf("\n\n source du message : %s\n", p2p_addr_get_str(src));
+    
+  int fd;
+  if ((p2p_addr_is_equal(sp->p2pMyId, sp->right_neighbor) || p2p_addr_is_equal(src, sp->right_neighbor) || p2p_addr_is_equal(initiator, sp->right_neighbor)) != 1){
+    p2p_msg_set_src(msg, sp->p2pMyId);
+    fd = p2p_udp_socket_create(sp, sp->right_neighbor);
+    printf("send to right\n");
+    printf("equal(src, right)  = %d\n", p2p_addr_is_equal(src, sp->right_neighbor) );
+    if (p2p_udp_msg_sendfd(sp, msg, fd) != P2P_OK){
+      printf("udp_rebroadcast : echec de l'envoi \n");
+      return P2P_ERROR;
+    }
+    else {
+      printf("Message sent to %s\n", p2p_addr_get_str(sp->right_neighbor)); 
+      return P2P_OK;
+    }
+    p2p_udp_socket_close(sp, fd);
+  }
+  if ((p2p_addr_is_equal(sp->p2pMyId, sp->left_neighbor) || p2p_addr_is_equal(src, sp->left_neighbor) || p2p_addr_is_equal(initiator, sp->left_neighbor)) != 1){
+    p2p_msg_set_src(msg, sp->p2pMyId);
+    printf("send to left\n");
+    printf("equal(src, left)  = %d\n", p2p_addr_is_equal(src, sp->left_neighbor) );
+    fd = p2p_udp_socket_create(sp, sp->left_neighbor);
+    if (p2p_udp_msg_sendfd(sp, msg, fd) != P2P_OK){
+      printf("udp rebroadcast : echec de l'envoi \n");
+      return P2P_ERROR;
+    } else {
+      printf("Message sent to %s\n", p2p_addr_get_str(sp->left_neighbor)); 
+      return P2P_OK;
+    }
+    p2p_udp_socket_close(sp, fd);
+  } 
   return P2P_OK;
+
 }
