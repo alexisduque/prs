@@ -449,8 +449,7 @@ int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 
 //rebroadcast le message msg
 int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
-{
-  printf("----------------------------------rebroadcast-------------------------------------\n");
+{printf("----------------------------------rebroadcast-------------------------------------\n");
   p2p_addr src = p2p_addr_create();
   src = p2p_msg_get_src(msg);
   printf("\n\n source du message : %s\n", p2p_addr_get_str(src));
@@ -504,3 +503,4 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg)
   return P2P_OK;
 
 }
+
