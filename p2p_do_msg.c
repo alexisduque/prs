@@ -80,7 +80,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	
 	//On remplit + init du playload
         
-	char payload[2*P2P_ADDR_SIZE];	
+	unsigned char payload[2*P2P_ADDR_SIZE];	
 	
 	memcpy(payload, sp->p2pMyId, P2P_ADDR_SIZE);
 	if (p2p_addr_is_equal(sp->p2pMyId, sp->right_neighbor)){
@@ -93,6 +93,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	
 	p2p_msg_init_payload(join_ack, 2*P2P_ADDR_SIZE, payload);
 	printf("\nMessage JOIN_ACK rempli : \n");
+    
 	p2p_msg_display(join_ack);
 	
 	
@@ -122,7 +123,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
         printf("              FUNCTION DO JOIN ACK\n");
         printf("!**************************************************************!\n");
         
-	unsigned char *ack_payload=p2p_get_payload(ack_msg);
+	unsigned char *ack_payload = p2p_get_payload(ack_msg);
 	
 	// on récupère les adresses stockées dans le payload du message JOIN_ACK
 	p2p_addr left = p2p_addr_create();
@@ -132,7 +133,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 	
 	//préparation des messages link update
 	p2p_msg link_msg = p2p_msg_create();
-	char link_payload[12];
+	unsigned char link_payload[12];
 	
 	//pour mon nouveau gauche   
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
@@ -232,7 +233,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     
     int name_size, file_size;
     char * file_name;
-    char * buffer;
+    unsigned char * buffer;
     p2p_addr src_adresse, dst_adresse;
     p2p_msg reply_message;
 
@@ -268,7 +269,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
                     p2p_msg_init(reply_message,P2P_MSG_REPLY,P2P_MSG_TTL_MAX,sp->p2pMyId,dst_adresse);
                     
                     // Creation du payload
-                    buffer = (char *)malloc(P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE);
+                    buffer = (unsigned char *)malloc(P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE);
                     memcpy(buffer, p2p_get_payload(search_msg) + P2P_ADDR_SIZE, P2P_HDR_BITFIELD_SIZE);
                     memcpy(buffer + P2P_HDR_BITFIELD_SIZE, &file_size, P2P_INT_SIZE);
                     p2p_msg_init_payload(reply_message, P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE, buffer);
@@ -278,9 +279,10 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
                     printf("Reponse a l'emmeteur de la recherche\n");
                     
                     // Ne pas oublier de liberer la mémoire !
-                    /*free(buffer);
-                    p2p_addr_delete(dst);
-                    p2p_msg_delete(reply);*/
+                    free(buffer);
+                    /*
+                    p2p_addr_delete(dst_adresse);
+                    p2p_msg_delete(src_adresse);*/
 
             } else {
                     printf("Fichier inconnu !\n");

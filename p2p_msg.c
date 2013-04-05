@@ -9,7 +9,7 @@
      
    HISTORY
      Revision 1.1  2005/02/21 18:34:32  afraboul
-     ajout des sources qui seront distribu�es aux �tudiants
+     ajout des sources qui seront distribuees aux etudiants
 
      Revision 1.11  2004/12/26 16:15:15  afraboul
 ***/
@@ -36,7 +36,7 @@
 //Definition de la structure de l'entete d'un message P2P
 struct p2p_msg_hdr_struct {
   unsigned char  version_type;	/* Les champs Version et CmdType sont
-				   cod�s tous les deux sur 1 octet */ 
+				   codes tous les deux sur 1 octet */ 
   unsigned char  ttl;		/* Le champ  TTTL*/
   unsigned short length;	/* Le champ longueur */
   p2p_addr src;			/* Le champ adresse source */
@@ -51,8 +51,9 @@ typedef struct p2p_msg_hdr_struct p2p_msg_hdr;
 struct p2p_msg_struct {
   p2p_msg_hdr hdr;		/* Un entete */
   unsigned char *payload;	/* Un payload qui un pointeur sur une
-				   zone m�moire de unsigned char */
+				   zone memoire de unsigned char */
 };
+
 unsigned char* p2p_get_payload(p2p_msg msg) {
   return msg->payload;
 }
@@ -128,7 +129,7 @@ p2p_msg_init(p2p_msg msg,
 int 
 p2p_msg_init_payload(p2p_msg msg,
 		     const unsigned short int length,
-		     char* payload)
+		     unsigned char* payload)
 {
   p2p_msg_set_length(msg,length);
   free(msg->payload);
@@ -174,7 +175,7 @@ unsigned char  p2p_msg_get_ttl(const p2p_msg msg)
     return msg->hdr.ttl;
 }
 
-//initialise le TTL de msg � ttl
+//initialise le TTL de msg a ttl
 void p2p_msg_set_ttl(p2p_msg msg, unsigned char ttl)
 {
     msg->hdr.ttl = ttl;
@@ -186,7 +187,7 @@ unsigned short p2p_msg_get_length  (const p2p_msg msg)
     return (msg->hdr.length);
 }
 
-//initialise la longueur de l'entete de msg � length
+//initialise la longueur de l'entete de msg a length
 void p2p_msg_set_length  (p2p_msg msg, unsigned short length)
 {
     msg->hdr.length =htons(length); 
@@ -198,7 +199,7 @@ p2p_addr p2p_msg_get_src (const p2p_msg msg)
   return msg->hdr.src;
 }
 
-//initialise l'adresse source de msg � src
+//initialise l'adresse source de msg a src
 void p2p_msg_set_src(p2p_msg msg, p2p_addr src)
 {
   p2p_addr_copy(msg->hdr.src,src);
@@ -211,7 +212,7 @@ p2p_addr p2p_msg_get_dst(const p2p_msg msg)
    
 }
 
-//initialise l'adrersse destination de msg � dst
+//initialise l'adrersse destination de msg a dst
 void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 {
    p2p_addr_copy(msg->hdr.dst,dst);
@@ -225,7 +226,7 @@ int p2p_msg_display(p2p_msg message){
   printf("Length : %d \n", p2p_msg_get_length(message));
   printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
   printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
-  printf("Payload : %s", p2p_get_payload(message));
+  printf("Payload : %s \n\n", p2p_get_payload(message));
   return P2P_OK;
 }
 
@@ -241,7 +242,7 @@ int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
   return P2P_OK; 
 }
 
-//�crit l'entete du message msg en hexa. 
+//ecrit l'entete du message msg en hexa. 
 int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 {
     return P2P_OK; 
@@ -284,9 +285,10 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
     return P2P_ERROR;
   
   //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
-  char* toWrite = "";
+  
   //allocation de la mémoire pour le buffer
-  toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
+  unsigned char* toWrite = (unsigned char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
+  
   // ajout du champs "version" au buffer
   memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE); 
   // ajout du champs "Adresse Source"
@@ -298,8 +300,11 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
     memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), p2p_msg_get_length(msg));
   }
   
+  //Liberation de la memoire du buffer
+  free(toWrite);
+  
   // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
-  if (write(fd, toWrite, P2P_HDR_SIZE + msg->hdr.length) != (P2P_HDR_SIZE + msg->hdr.length)){
+  if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) != (P2P_HDR_SIZE +  p2p_msg_get_length(msg))){
     //printf("Echec de l'envoi du message dans la socket\n");
     VERBOSE(sp,VPROTO,"Unable to send msg to the socket\n");
     return P2P_ERROR;
@@ -309,15 +314,15 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
  
 }
 
-// Renvoie dans msg un message depuis la socket fd
+// Recoie dans msg un message depuis la socket fd
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
   int length;
   read(fd,msg,P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
   read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-  length = p2p_msg_get_length(msg);
-  char data_payload[p2p_msg_get_length(msg)];
+  length = p2p_msg_get_length(msg);    
+  unsigned char data_payload[length];
   read(fd,data_payload,length);
   p2p_msg_init_payload(msg,length,data_payload);
   p2p_msg_display(msg);
@@ -348,7 +353,7 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 
 
 /*** Communication via UDP ***/
-//Cr�e une socket UDP vers le noeud P2P dst.
+//Cree une socket UDP vers le noeud P2P dst.
 int p2p_udp_socket_create(server_params* sp, p2p_addr dst)
 {
   int sock_udp;
@@ -386,7 +391,7 @@ int p2p_udp_socket_close(server_params* sp, int fd)
 //Envoie le message msg via la socket UDP fd
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-  VERBOSE(sp, VPROTO, "TRY TO SEND MSG ...");
+  VERBOSE(sp, VPROTO, "TRY TO SEND MSG ...\n");
   char* toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
   
   memcpy(toWrite, &(msg->hdr), P2P_HDR_BITFIELD_SIZE);
@@ -396,18 +401,20 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   
   if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR){
     //printf("Could not send message\n");
-    VERBOSE(sp,VPROTO,"Unable to send msg");
+    VERBOSE(sp,VPROTO,"Unable to send msg\n");
     return P2P_ERROR;
   } 
+  
+  free(toWrite);
   return P2P_OK;
+
 }
 
-//re�oie dans msg un message depuis la socket UDP fd
+//recoie dans msg un message depuis la socket UDP fd
 int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
-  VERBOSE(sp, VPROTO, "TRY TO RECEIVE MSG ...");
-//<<<<<<< HEAD
-  int length;
+  VERBOSE(sp, VMCTNT, "TRY TO RECEIVE MSG ...\n");
+/*
   read(fd, msg, P2P_HDR_BITFIELD_SIZE);
   read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
   read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
@@ -416,20 +423,25 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
   read(fd, data_payload, length);
   p2p_msg_init_payload(msg, length, data_payload);
   p2p_msg_display(msg);
-//=======
-//>>>>>>> [UDP] sendfd - recvfd
-  
+*/
+  //Declaration du buffer
   char data[200];
+  free(msg->payload);
+  // Allocation de la mémoire pour le payload
   msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
-
+  
+  //Lecture de la soccket et remplissage du buffer
   recv(fd, &data, sizeof(data),0);
   
+  //Remplissage des champs du message à partir du buffert
   memcpy(&(msg->hdr), data, P2P_HDR_BITFIELD_SIZE);
   memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
   memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
   memcpy(msg->payload, &data[20], sizeof(data)-20);
-  VERBOSE(sp, VMCTNT, "RECVD MSG OK");
+  VERBOSE(sp, VMCTNT, "RECVD MSG OK\n");
+  
   return P2P_OK;
+  
 }
 
 //envoie le message msg via udp au noeud destination indique dans le
@@ -437,10 +449,11 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 int p2p_udp_msg_send(server_params* sp, p2p_msg msg)
 {
   int sock;
-  if ((sock=p2p_udp_socket_create(sp,msg->hdr.dst))==P2P_ERROR){
+  if ((sock = p2p_udp_socket_create(sp,msg->hdr.dst)) == P2P_ERROR) {
     VERBOSE(sp,VPROTO,"Unable to send UDP_MSG\n");
     return P2P_ERROR;
   };
+  
   p2p_udp_msg_sendfd(sp,msg,sock);
   p2p_udp_socket_close(sp,sock);
   VERBOSE(sp,VSYSCL,"Send MSG done \n");

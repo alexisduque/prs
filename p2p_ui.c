@@ -232,7 +232,7 @@ p2psearch(params* p)
 {
     
         // Initialisation
-        char * buffer;
+        unsigned char * buffer;
         p2p_msg search_message = p2p_msg_create();
         int search_id;
         p2p_addr src_adresse,dst_adresse;
@@ -249,7 +249,7 @@ p2psearch(params* p)
         /* TODO */
         
         //p2p_msg_delete(msg_search);
-        free(buffer);
+        //free(buffer);
 
         return P2P_UI_ERROR;
  

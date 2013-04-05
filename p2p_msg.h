@@ -13,7 +13,7 @@
      Qqc comments dans les .h
 
      Revision 1.1  2005/02/21 18:34:33  afraboul
-     ajout des sources qui seront distribuées aux étudiants
+     ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
      Revision 1.12  2004/12/26 16:15:15  afraboul
 ***/
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "p2p_addr.h"
 
-//definition des constantes donnée dans le RFC P2P_3TC
+//definition des constantes donnï¿½e dans le RFC P2P_3TC
 #define P2P_VERSION              1
 
 #define P2P_MSG_UNDEFINED        0
@@ -52,12 +52,12 @@ typedef struct p2p_msg_struct *p2p_msg;
 
 /*** create / destroy msg ***/
 
-//Crée (alloue) un message P2P dont le payload peut contenir une
+//Crï¿½e (alloue) un message P2P dont le payload peut contenir une
 //payload_size octets.
 p2p_msg  p2p_msg_create      (void);
 
-//Détruit le message msg, i.e., l'ensemble des structures allouées
-//(les addresses, l epaylod et le msg lui même)
+//Dï¿½truit le message msg, i.e., l'ensemble des structures allouï¿½es
+//(les addresses, l epaylod et le msg lui mï¿½me)
 void     p2p_msg_delete      (p2p_msg msg);
 
 //Duplique le message dans un nouveau message
@@ -67,89 +67,89 @@ p2p_msg  p2p_msg_duplicate   (const p2p_msg msg);
 int      p2p_msg_init        (p2p_msg msg, unsigned int type, unsigned int ttl, const p2p_addr src, const p2p_addr dst);
 
 //initialise le paylod de msg avec payload de taille length
-int      p2p_msg_init_payload(p2p_msg msg, unsigned short int length, char* payload);
+int      p2p_msg_init_payload(p2p_msg msg, unsigned short int length, unsigned char* payload);
 
-// Récupération du payload
+// Rï¿½cupï¿½ration du payload
 unsigned char* p2p_get_payload(p2p_msg msg);
 /*** header ***/
 //renvoie la version de msg
 unsigned char  p2p_msg_get_version (const p2p_msg msg);
 
-//initialise la version de msg à version
+//initialise la version de msg ï¿½ version
 void           p2p_msg_set_version (p2p_msg msg, unsigned char version);
 
 //renvoie le type de msg
 unsigned char  p2p_msg_get_type    (const p2p_msg msg);
 
-//initialise le type de msg à type
+//initialise le type de msg ï¿½ type
 void           p2p_msg_set_type    (p2p_msg msg, unsigned char type);
 
 //renvoie le TTL de msg
 unsigned char  p2p_msg_get_ttl     (const p2p_msg msg);
 
-//initialise le TTL de msg à ttl
+//initialise le TTL de msg ï¿½ ttl
 void           p2p_msg_set_ttl     (p2p_msg msg, unsigned char ttl);
 
 //renvoie la longueur de l'entete de msg
 unsigned short p2p_msg_get_length  (const p2p_msg msg);
 
-//initialise la longueur de l'entete de msg à length
+//initialise la longueur de l'entete de msg ï¿½ length
 void           p2p_msg_set_length  (p2p_msg msg, unsigned short length);
 
 //renvoie l'adresse source de msg
 p2p_addr       p2p_msg_get_src     (const p2p_msg msg);
 
-//initialise l'adresse source de msg à src
+//initialise l'adresse source de msg ï¿½ src
 void           p2p_msg_set_src     (p2p_msg msg, p2p_addr src);
 
 //renvoie l'adresse destination de msg
 p2p_addr       p2p_msg_get_dst     (const p2p_msg msg);
 
-//initialise l'adrersse destination de msg à dst
+//initialise l'adrersse destination de msg ï¿½ dst
 void           p2p_msg_set_dst     (p2p_msg msg, p2p_addr dst);
 
 /*** debug ***/
-//ecrit le message msg dans le fichier fd. Si print_payload != 0 écrit
-//aussi le payload du message sinon on n'écrit que l'entete.
+//ecrit le message msg dans le fichier fd. Si print_payload != 0 ï¿½crit
+//aussi le payload du message sinon on n'ï¿½crit que l'entete.
 int p2p_msg_dumpfile       (const p2p_msg msg, const FILE* fd, int print_payload);
 
-//écrit l'entete du message msg en hexa. 
+//ï¿½crit l'entete du message msg en hexa. 
 int p2p_msg_hexdumpheader  (unsigned char* msg, const FILE* fs);
 
 // Fonction d'affichage des caract. du message
 int p2p_msg_display(p2p_msg message);
 
 /*** tcp ***/
-//Crée une socket TCP vers le noeud P2P dst.
+//Crï¿½e une socket TCP vers le noeud P2P dst.
 int p2p_tcp_socket_create  (server_params* sp, p2p_addr dst);
 
-//Ferme la socket donnée par le descripteur fd
+//Ferme la socket donnï¿½e par le descripteur fd
 int p2p_tcp_socket_close   (server_params* sp, int fd);
 
 //Envoie le message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd     (server_params* sp, p2p_msg msg, int fd);
 
-//reçoie dans msg un message depuis la socket fd
+//reï¿½oie dans msg un message depuis la socket fd
 int p2p_tcp_msg_recvfd     (server_params* sp, p2p_msg msg, int fd);
 
-//envoie le message msg via tcp au noeud destination indiqué dans le
+//envoie le message msg via tcp au noeud destination indiquï¿½ dans le
 //champ dst de msg
 int p2p_tcp_msg_send       (server_params* sp, const p2p_msg msg);
 
 /*** udp ***/
-//Crée une socket UDP vers le noeud P2P dst.
+//Crï¿½e une socket UDP vers le noeud P2P dst.
 int p2p_udp_socket_create  (server_params* sp, p2p_addr dst);
 
-//Ferme la socket donnée par le descripteur fd
+//Ferme la socket donnï¿½e par le descripteur fd
 int p2p_udp_socket_close   (server_params* sp, int fd);
 
 //Envoie le message msg via la socket UDP fd
 int p2p_udp_msg_sendfd     (server_params* sp, p2p_msg msg, int fd);
 
-//reçoie dans msg un message depuis la socket UDP fd
+//reï¿½oie dans msg un message depuis la socket UDP fd
 int p2p_udp_msg_recvfd     (server_params* sp, p2p_msg msg, int fd);
 
-//envoie le message msg via udp au noeud destination indiqué dans le
+//envoie le message msg via udp au noeud destination indiquï¿½ dans le
 //champ dst de msg
 int p2p_udp_msg_send       (server_params* sp, p2p_msg msg);
 
