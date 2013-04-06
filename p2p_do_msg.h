@@ -24,7 +24,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire);
 int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket);
 
 //Traitement du GET
-void p2p_do_get() ;
+int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) ;
 
 //Traitement du LINK UPDATE
 int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) ;
