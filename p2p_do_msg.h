@@ -12,6 +12,8 @@
 #include "p2p_msg.h"
 #include "p2p_addr.h"
 #include "p2p_file.h"
+#include "p2p_search.h"
+ 
 /* Fonctions de traitement des differents type de messages */
 
 //Traitement du JOIN ACK

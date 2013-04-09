@@ -61,6 +61,8 @@
 /****************************************************/
 
 #include "p2p_addr.h"
+//#include "p2p_search.h"
+//#include "p2p_do_msg.h"
 
 
 //Structure contenant tous les parametres d'un noeud P2P. Permet
@@ -97,7 +99,7 @@ struct server_params_t {
   p2p_addr left_neighbor;
   
   /* Search */
-  //p2p_search  p2pSearchList;	/* la liste des requetes envoy�es */
+  //p2p_search p2pSearchList;	/* la liste des requetes envoy�es */
 
 };
 typedef struct server_params_t server_params;
