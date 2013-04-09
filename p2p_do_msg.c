@@ -25,6 +25,7 @@
 #include "p2p_options.h"
 #include "p2p_do_msg.h"
 #include "p2p_file.h"
+#include "search.h"
 
 //Envoi du JOIN REQ
 int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
@@ -408,10 +409,10 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
         printf("Taille du fichier : %d\n",file_size);
 
         //TODO : ajouter l'id et ficheir a la liste des recherche du noeud (sp->p2pSearchList), ... */
+      	p2p_search_insert_reply(&(sp->p2pSearchList),search_id,file_owner,file_size);
       	
         // Clean
         p2p_addr_delete(file_owner);
-        //p2p_msg_delete(reply_msg);
 
         return P2P_OK;
 }
