@@ -26,28 +26,15 @@
 #include "p2p_file.h"
 #include "p2p_do_msg.h"
 
-#define MAX_TAILLE_FICHIER 50
+#define MAX_DATA_SIZE 64000
+#define P2P_DATA_ERROR 0
+#define P2P_DATA_OK 200
 
-typedef struct search_req {
-	int id;
-	int file_size;
-	p2p_addr file_owner;
-	struct search_req* next;
-} search_req;
+search p2p_search_create();
 
-typedef struct search_result {
-	int search_id;
-	int nb_reply;
-	char file_name[30];
-	struct search_req* list_owners;
-	struct search_result* next;
+p2p_search p2p_searchlist_create();
 
-} search_result;
-
-typedef search_result* p2pSearchList;
-
-int p2p_search_insert_reply (search_req *pliste, int id, p2p_addr file_owner, int taille_fichier);
-
+reply p2p_reply_create();
 
 #endif	/* P2P_SEARCH_H */
 

@@ -58,14 +58,35 @@
 #define P2P_SERVICE_UNAVAILABLE        502
 
 /****************************************************/
+#define P2P_MAX_RESULT_NB 10
+#define P2P_MAX_SEARCH_NB 10
 /****************************************************/
+
 
 #include "p2p_addr.h"
 
 //Strucuture de recherche
 
-typedef int p2p_search ; //TODO
+//typedef int p2p_search ; //TODO
 
+struct reply_t {
+  int file_size;
+  p2p_addr src;
+};
+typedef struct reply_t *reply;
+
+struct search_t{
+  int reply_nb;
+  char* file_name;
+  reply reply_array[P2P_MAX_RESULT_NB];
+};
+typedef struct search_t *search;
+
+struct search_list{
+  int search_nb;
+  search search_array[P2P_MAX_SEARCH_NB];
+};
+typedef struct search_list *p2p_search;
 
 //Structure contenant tous les parametres d'un noeud P2P. Permet
 //d'avoir toutes les varaibles globales d�finissant l'environnement
