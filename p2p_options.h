@@ -61,8 +61,10 @@
 /****************************************************/
 
 #include "p2p_addr.h"
-//#include "p2p_search.h"
-//#include "p2p_do_msg.h"
+
+//Strucuture de recherche
+
+typedef int p2p_search ; //TODO
 
 
 //Structure contenant tous les parametres d'un noeud P2P. Permet
@@ -71,6 +73,7 @@
 //fonctions. 
 /* server parameters */
 struct server_params_t {
+    
   char *server_name;		/* son nom */
   char *dir_name;		/* le directory ou l'on copie les fichiers */
   int verbosity;		/* le niveau de verbosite */
@@ -100,8 +103,10 @@ struct server_params_t {
   
   /* Search */
   p2p_search p2pSearchList;	/* la liste des requetes envoy�es */
-
+  int search_id ; // L'id de la recherche
+  
 };
+
 typedef struct server_params_t server_params;
 
 #endif

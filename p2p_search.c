@@ -29,7 +29,7 @@ int p2p_search_insert_reply (search_req *pliste, int id, p2p_addr file_owner, in
 {
 	search_req *newelem;  
 	p2pSearchList liste;
-	liste=*pliste;
+	liste = *pliste;
 
 	search_result *visitor; 
 	search_req *parcour;
@@ -57,7 +57,7 @@ int p2p_search_insert_reply (search_req *pliste, int id, p2p_addr file_owner, in
 	if(HERE==0){
 		newelem=(search_req *)malloc(sizeof(search_req));
 		if (newelem==0) perror("p2p_search_insert_reply : plus de place mémoire");
-		newelem->reply_id = ++visitor->nb_reply;
+		newelem->id = ++visitor->nb_reply;
 		newelem->file_size = taille_fichier;
 		newelem->file_owner = p2p_addr_duplicate(file_owner);
 		newelem->next=visitor->list_owners;

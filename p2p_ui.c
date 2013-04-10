@@ -246,7 +246,29 @@ p2psearch(params* p)
         // Creation de l'en-tete du message
         p2p_msg_init(search_message,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
 
-        /* TODO */
+        // Creation du buffer
+        printf("\n>> Recherche du fichier : %s\n", p->options[0]);
+        buffer = malloc(P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE + sizeof(char)*strlen(p->options[0]));
+        memcpy(buffer, p->sp->p2pMyId, P2P_ADDR_SIZE);
+        search_id = htonl(p->sp->search_id);
+        memcpy(buffer + P2P_ADDR_SIZE, &search_id, P2P_HDR_BITFIELD_SIZE);
+        memcpy(buffer + P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE, p->options[0], sizeof(char)*strlen(p->options[0]));
+        
+        // Creation du payload depuis le buffer
+        p2p_msg_init_payload(search_message, P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE+sizeof(char)*strlen(p->options[0]), buffer);
+
+        //printf("DEBUG p2p_ui search envoi du msg search taille fichier %d len %d\n",sizeof(p->options[0]),sizeof(char)*strlen(p->options[0]));
+        
+        // Envoi du message UDP aux voisins
+        p2p_udp_msg_rebroadcast (p->sp, search_message);
+
+        // Ajout de la recherche dans la liste des recherches effectuees
+        //p2p_add_search(&(p->sp->p2pSearchList),p->sp->current_search_id,p->options[0]);
+        
+        // Incrementation de l'ID de recherche
+        //p->sp->search_id++;
+        
+        // Nettoyage des variables
         
         //p2p_msg_delete(msg_search);
         //free(buffer);

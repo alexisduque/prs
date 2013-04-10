@@ -409,7 +409,7 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
         printf("Taille du fichier : %d\n",file_size);
 
         //TODO : ajouter l'id et ficheir a la liste des recherche du noeud (sp->p2pSearchList), ... */
-      	p2p_search_insert_reply(&(sp->p2pSearchList),search_id,file_owner,file_size);
+      	//p2p_search_insert_reply(&(sp->p2pSearchList),search_id,file_owner,file_size);
       	
         // Clean
         p2p_addr_delete(file_owner);

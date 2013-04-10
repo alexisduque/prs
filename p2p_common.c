@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 
 #include "p2p_common.h"
-
+#include "p2p_options.h"
 /****************************************************/
 /* 
    get_tokens: � peu pr�s similaire � strtok_r mais 

@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include "p2p_addr.h"
+#include "p2p_options.h"
 
 //definition des constantes donn�e dans le RFC P2P_3TC
 #define P2P_VERSION              1

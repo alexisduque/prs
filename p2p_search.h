@@ -19,8 +19,8 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include "common.h"
-#include "options.h"
+#include "p2p_common.h"
+#include "p2p_options.h"
 #include "p2p_msg.h"
 #include "p2p_addr.h"
 #include "p2p_file.h"
@@ -43,8 +43,8 @@ typedef struct search_result {
 	struct search_result* next;
 
 } search_result;
-typedef search_result* p2pSearchList;
 
+typedef search_result* p2pSearchList;
 
 int p2p_search_insert_reply (search_req *pliste, int id, p2p_addr file_owner, int taille_fichier);
 
