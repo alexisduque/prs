@@ -211,8 +211,63 @@ p2pjoin(params *p)
 int
 p2pleave(params *p)
 {
-  /**** A COMPLETER ****/
-  return P2P_UI_ERROR;
+    
+    int neighbor_type, i;
+    p2p_addr neighbor_addresse, new_neighbor;
+    p2p_msg link_update_msg;
+    char * buffer;
+
+    // Envoi de 2 link update pour enlever le noeud de l'anneau
+
+    link_update_msg = p2p_msg_create();
+    buffer = (char*)malloc(P2P_ADDR_SIZE + P2P_INT_SIZE);
+
+    for(i=0; i<2; i++){
+        
+            // Premier envoi : le voisin de gauche a un nouveau voisin de droite
+            if(i == 0){
+                    printf(">> Envoi du LINK_UPDATE au voisin de gauche\n");
+                    neighbor_type = htonl(0x0000FFFF);
+                    neighbor_addresse = p->sp->left_neighbor;
+                    new_neighbor = p->sp->right_neighbor;
+            }
+            
+            // Deuxieme envoi : l'inverse
+            else {
+                    printf(">> Envoi demande d'update au voisin de droite\n");
+                    neighbor_type = htonl(0xFFFF0000);
+                    neighbor_addresse = p->sp->right_neighbor;
+                    new_neighbor = p->sp->left_neighbor;
+            }
+
+            // Creation du header
+            if (p2p_msg_init (link_update_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, p->sp->p2pMyId, neighbor_addresse)!= P2P_OK){
+                    perror("Erreur a l'initialisation de link update gauche\n");
+                    return P2P_ERROR;
+            }
+
+            // Creation du payload
+            memcpy(buffer, new_neighbor, P2P_ADDR_SIZE);
+            memcpy(buffer + P2P_ADDR_SIZE, &neighbor_type, P2P_INT_SIZE);
+            p2p_msg_init_payload( link_update_msg, P2P_ADDR_SIZE + P2P_INT_SIZE,(unsigned char*) buffer); 
+
+            // Envoi du message
+            if(p2p_tcp_msg_send(p->sp,link_update_msg) == P2P_ERROR){
+                    perror("Erreur envoi link update\n");
+                    return P2P_ERROR;
+            }
+
+    }       
+    
+    // Réinitialisation des voisins du noeud quitté
+    p->sp->left_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
+    p->sp->right_neighbor = p2p_addr_duplicate(p->sp->p2pMyId); 
+
+    // Nettoyage des variables
+    p2p_msg_delete(link_update_msg);
+    free(buffer);
+                
+  return P2P_UI_OK;
 }
 
 /****************************************************/
@@ -220,7 +275,7 @@ p2pleave(params *p)
 
 int p2phalt(params *p)
 {
-  /**** A COMPLETER ****/
+  p2pleave(p);
   return P2P_UI_ERROR;
 }
 
@@ -255,7 +310,7 @@ p2psearch(params* p)
         memcpy(buffer + P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE, p->options[0], sizeof(char)*strlen(p->options[0]));
         
         // Creation du payload depuis le buffer
-        p2p_msg_init_payload(search_message, P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE+sizeof(char)*strlen(p->options[0]), buffer);
+        p2p_msg_init_payload(search_message, P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE+sizeof(char)*strlen(p->options[0]),(unsigned char*) buffer);
 
         //printf("DEBUG p2p_ui search envoi du msg search taille fichier %d len %d\n",sizeof(p->options[0]),sizeof(char)*strlen(p->options[0]));
         
@@ -302,14 +357,115 @@ p2plist_result (params* p)
 
 int
 p2pget(params* p)
-{
-  int search, result;
-  result = atoi(p->options[0]);
-  search = atoi(p->options[1]);
-  VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",result, search); 
+{       
+        int search, result;
+        int socket_tcp;
+        char * file_name;
+        char * buffer;
+        unsigned char * data;
+        int begin_offset;
+        int file_size;
+        unsigned char status;
+        p2p_msg get_msg,data_msg;
+        p2p_addr dst ;
 
-  /**** A COMPLETER ****/
-  return P2P_UI_ERROR;
+        // Recuperation des ID de recherche et de resultat
+        result = atoi(p->options[0]);
+        search = atoi(p->options[1]);
+        VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",result, search); 
+        printf("\n>> Demande de recuperation de fichier :\n");
+        printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
+        // Recuperation des infos sur le fichier voulu
+        //file_size = getfileinfo funtion !!!! 
+        if (file_size == P2P_ERROR){
+                perror("p2p_get : Erreur a la recherche du nom de fichier dans la structure de search\n");
+                return P2P_ERROR;
+        }       
+                
+/*
+        printf("   Nom du fichier : %s\n", file_name);
+        printf("   Taille : %d\n", file_size);
+        printf("   Proprietaire : %s\n", p2p_addr_get_str(dst));
+*/
+        
+        // Creation du GET
+        get_msg = p2p_msg_create();
+        p2p_msg_init (get_msg, P2P_MSG_GET, P2P_MSG_TTL_ONE_HOP, p->sp->p2pMyId, dst);
+                
+        begin_offset = 0;
+        file_size = htonl(file_size - 1);
+        buffer = malloc(2*P2P_INT_SIZE + strlen(file_name));
+        memcpy(buffer, &begin_offset, P2P_INT_SIZE);
+        memcpy(buffer + P2P_INT_SIZE, &file_size, P2P_INT_SIZE);
+        memcpy(buffer + 2*P2P_INT_SIZE, file_name, strlen(file_name));
+        
+        p2p_msg_init_payload(get_msg, 2*P2P_INT_SIZE + strlen(file_name), (unsigned char*) buffer);
+        
+        // Création de la socket pour envoyer au noeud
+        socket_tcp= p2p_tcp_socket_create(p->sp,dst);
+        if (socket_tcp == P2P_ERROR) return socket_tcp;
+        
+        // Envoi du msg
+        if(p2p_tcp_msg_sendfd(p->sp, get_msg, socket_tcp) == P2P_ERROR){
+                perror("p2pget : Erreur a l'envoi du msg get\n");
+                return P2P_ERROR;
+        }
+        
+        // Nettoyage des variables
+        p2p_msg_delete(get_msg);
+        free(buffer);   
+        
+        // Reception du data
+        
+        data_msg = p2p_msg_create();
+        printf("\n>> Waiting for data...\n"); 
+        if ( p2p_tcp_msg_recvfd (p->sp, data_msg, socket_tcp) == P2P_ERROR ){
+                perror("p2pjoin : Erreur a la reception du msg data\n");
+                return P2P_ERROR;
+        }
+        
+        printf("**  Data received  ** !\n");
+        p2p_msg_dumpfile(data_msg,stdout,1);
+        VERBOSE(p->sp, VSYSCL,"msg size : %d\n",p2p_msg_get_length(data_msg));
+        
+        // Recuperation du status
+        memcpy(&status, p2p_get_payload(data_msg), 1);
+        
+        printf("   Status code : %d\n",status);
+        if (status == P2P_DATA_OK){
+                printf("   Recuperation des donnees\n");
+                // Recuperation taille des donnees
+                memcpy(&file_size, p2p_get_payload(data_msg) + P2P_HDR_BITFIELD_SIZE, P2P_INT_SIZE);
+                file_size = ntohl(file_size);
+                
+                // Creation du fichier d'accueil
+                p2p_file_create_file(p->sp, file_name, file_size);
+                
+                if(file_size > 0){
+                // Ecriture des donnees
+                printf("   Ecriture dans le fichier (taille : %d)\n", file_size);
+                data = malloc (file_size*sizeof(char));
+                memcpy(data, p2p_get_payload(data_msg) + 2*P2P_HDR_BITFIELD_SIZE, file_size);
+                p2p_file_set_chunck(p->sp, file_name, 0, file_size-1, data);
+                }
+                return P2P_OK;
+
+        } else {
+                return P2P_ERROR;
+        }
+        
+        // Nettoyage des variables
+        p2p_msg_delete(data_msg);
+        free(data);  
+        
+        // Fermeture de la socket
+        p2p_tcp_socket_close(p->sp,socket_tcp);
+        
+        //free(buffer);
+        free(file_name);
+        //p2p_msg_delete(get);
+        return P2P_OK;
+
 }
 
 /****************************************************/
