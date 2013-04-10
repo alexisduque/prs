@@ -408,12 +408,17 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
         printf("ID de la recherche : %d\n",search_id);
         printf("Taille du fichier : %d\n",file_size);
 
-        //TODO : ajouter l'id et ficheir a la liste des recherche du noeud (sp->p2pSearchList), ... */
-      	//p2p_search_insert_reply(&(sp->p2pSearchList),search_id,file_owner,file_size);
-      	
+        int reply_nb = sp->p2pSearchList->search_array[search_id]->reply_nb;
+        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb] = p2p_reply_create();
+        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->file_size=file_size;
+        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->src=p2p_addr_create();
+        p2p_addr_copy(sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->src, p2p_msg_get_src(reply_msg));
+        sp->p2pSearchList->search_array[search_id]->reply_nb++;
+
         // Clean
         p2p_addr_delete(file_owner);
-
+        VERBOSE(sp,VPROTO,"Reply successful \n");
+        
         return P2P_OK;
 }
 
