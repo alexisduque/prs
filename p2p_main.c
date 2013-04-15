@@ -34,6 +34,7 @@
 #include "p2p_options.h"
 #include "p2p_do_msg.h"
 #include "p2p_msg.h"
+#include "p2p_ui.h"
 
 #define DEFAULT_SERVER_NAME "reference_node"
 #define DEFAULT_DIR_NAME    "."
@@ -176,7 +177,7 @@ int main(int argc, char* argv[])
   
   // Creation des variables
   int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
-  int return_select;
+  int return_select, command_telnet;
   fd_set fd;
   struct timeval timeout;
   struct sockaddr_in adresse;
@@ -344,8 +345,31 @@ int main(int argc, char* argv[])
       
           //Si socket_ui_connected ready
           else if (FD_ISSET(sock_ui_connected, &fd)){
+			  
                 VERBOSE(&sp,VMCTNT,"UI MESSAGE RECEPTION \n");
-          }
+                command_telnet = ui_command(&sp);			
+				VERBOSE(&sp,CLIENT,"\n");
+				VERBOSE(&sp,CLIENT,"Client du %s: ", sp.server_name);	
+				
+				
+				if (command_telnet == P2P_UI_QUIT){
+					VERBOSE(&sp,VMCTNT,"QUIT RECEIVED FROM UI \n");
+					close(sock_ui_connected);
+					sock_ui_connected = -1;
+				}
+				
+				if (command_telnet == P2P_UI_KILL){
+					VERBOSE(&sp,VMCTNT,"KILL RECEIVED FROM UI \n");
+					close(sock_ui_connected);
+					close(sock_tcp);
+					close(sock_ui);
+					close(sock_udp);
+					close(sock_tcp_rcv);
+					VERBOSE(&sp,VMCTNT,"ALL SOCKET CLOSED \n");
+					exit(1);
+				}
+				
+		}
       
           else break; // Timeout
     
