@@ -322,8 +322,7 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
     memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), p2p_msg_get_length(msg));
   }
   
-  //Liberation de la memoire du buffer
-  free(toWrite);
+
   
   // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
   if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) != (P2P_HDR_SIZE +  p2p_msg_get_length(msg))){
@@ -333,7 +332,10 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   } else {
     return P2P_OK;
   }
- 
+  
+    //Liberation de la memoire du buffer
+  free(toWrite);
+
 }
 
 // Recoie dans msg un message depuis la socket fd

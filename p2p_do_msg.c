@@ -39,17 +39,29 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   p2p_msg ack_msg = p2p_msg_create();
   
   //on remplit le message avec une longueur nulle
-  if ( p2p_msg_init(join_msg, P2P_MSG_JOIN_REQ, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, destinataire) != P2P_OK ) 
+  if ( p2p_msg_init(join_msg, P2P_MSG_JOIN_REQ, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, destinataire) != P2P_OK ){ 
       VERBOSE(sp,VMCTNT,"ERROR MESSAGE INIT\n");
       return(P2P_ERROR);
-  p2p_msg_set_length(join_msg, 0);
+  }
+  printf("\n");
+  p2p_msg_display(join_msg);
+ // p2p_msg_set_length(join_msg, 0);
   
   // on envoi le message
-  int socket = p2p_tcp_socket_create(sp, destinataire);
+  int socket; 
+  socket = p2p_tcp_socket_create(sp, destinataire);
+  if (socket == -1) {
+        perror("Erreur attachement socket\n");
+  }
+  
+  printf("Envoie du JOIN REQ à: %s \n", p2p_addr_get_str(destinataire));
   if ( p2p_tcp_msg_sendfd(sp, join_msg, socket) != P2P_OK ) {
     VERBOSE(sp,VMCTNT,"ERROR SENDING AK\n");
     return (P2P_ERROR);
   }
+  
+  p2p_msg_delete(join_msg);
+  
   //réception du message d'acquittement
   if (p2p_tcp_msg_recvfd(sp, ack_msg, socket) != P2P_OK) {
          VERBOSE(sp,VMCTNT,"ERROR RCV ACK\n");
@@ -65,7 +77,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   }
   
   //on libère la mémoire
-  p2p_msg_delete(join_msg);
+  
   p2p_msg_delete(ack_msg);
   
   return(P2P_OK);

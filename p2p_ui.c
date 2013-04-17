@@ -185,19 +185,16 @@ p2pjoin(params *p)
       return P2P_UI_ERROR;
     }
 
-  VERBOSE(p->sp,VSYSCL,"ui:  sending p2p join msg to %s\n\n",p2p_addr_get_str(dst));
+  VERBOSE(p->sp,CLIENT,"ui: sending p2p join msg to %s\n",p2p_addr_get_str(dst));
 
-  printf(" p2pjoin : dest = %s \n", p2p_addr_get_str(dst));
-  
-  
    //Verifie que l'on ne se connecte pas avec nous meme
   if(p2p_addr_is_equal(dst, p->sp->p2pMyId)!=0){
-	printf("tu essaies de te connecter avec toi meme\n");
+	printf("Try to connet yourself ;-)\n");
 	return(P2P_OK);
   }
 	
   if(p2p_send_join_req(p->sp, dst) != P2P_OK ){
-	printf("could not send the p2p join request\n");
+	printf("Could not send the JOIN REQ\n");
         return(P2P_UI_ERROR);
   }
 
