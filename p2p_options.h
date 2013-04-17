@@ -139,7 +139,7 @@ struct server_params_t {
   p2p_addr left_neighbor;
   
   /* Search */
-  search_list p2pSearchList;	/* la liste des requetes envoy�es */
+  search_list p2pSearchList;	/* la liste des requetes envoyees */
   int search_id ; // L'id de la recherche
   
 };

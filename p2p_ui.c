@@ -378,7 +378,7 @@ p2pget(params* p)
         printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
         
         // Recuperation des infos sur le fichier voulu
-        file_size = p2p_search_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
+        file_size = p2p_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
         if (file_size == P2P_ERROR){
                 perror("Error : File not FOUND \n\n");
                 return P2P_ERROR;

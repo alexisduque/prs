@@ -26,36 +26,6 @@
 #include "p2p_file.h"
 
 
-p2p_search p2p_searchlist_create(){
-	int i;
-	p2p_search searchlist = (p2p_search)malloc(sizeof(struct search_list));
-	searchlist->search_nb = 0;
-	for (i=0; i < P2P_MAX_SEARCH_NB;i++)
-	{
-		searchlist->search_array[i]=NULL;
-	}
-	return searchlist;
-}
-
-search p2p_search_create(){
-	int i;
-	search s = (search)malloc(sizeof(struct search_t));
-	s->reply_nb=0;
-	s->file_name=NULL;
-	for (i=0;i<P2P_MAX_RESULT_NB;i++)
-	{
-		s->reply_array[i]=NULL;
-	}
-	return s;
-}
-
-reply p2p_reply_create(){
-	reply r =(reply)malloc(sizeof(struct reply_t));
-	r->file_size=0;
-	r->src=NULL;
-	return r;
-}
-
 // Insertion d'une nouvelle recherche dans la structure
 int p2p_add_search (search_list *pliste, int id, char file_name[30]) {
 
@@ -113,7 +83,7 @@ void p2p_list_search(server_params *sp) {
 }
 
 // Récupération des infos sur un fichier
-int p2p_search_get_owner_file(search_list liste, int search_id, int reply_id, char** file_name, p2p_addr * owner){
+int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** file_name, p2p_addr * owner){
 
         search_result *visitor;
         search_quidonc *quidonc;
