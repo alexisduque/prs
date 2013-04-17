@@ -349,8 +349,11 @@ p2plist_search (params* p)
 int 
 p2plist_result (params* p)
 {
-  /**** A COMPLETER ****/
-  return P2P_UI_ERROR;
+    
+        printf("\n>> Liste des resultats de la recherche %s\n",p->options[0]);
+        p2p_list_results(p->sp,atoi(p->options[0]));
+
+        return P2P_UI_OK;
 }
 
 /****************************************************/
@@ -376,6 +379,7 @@ p2pget(params* p)
         VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",result, search); 
         printf("\n>> Demande de recuperation de fichier :\n");
         printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
+        
         // Recuperation des infos sur le fichier voulu
         file_size = p2p_search_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
         if (file_size == P2P_ERROR){

@@ -246,7 +246,9 @@ int main(int argc, char* argv[])
                                 p2p_do_join_req(&sp, message, sock_tcp_rcv);
                                 break;
 							
-                        case P2P_MSG_GET : //p2p_do_get(&sp, message, sock_tcp_rcv);
+                        case P2P_MSG_GET : 
+                                VERBOSE(&sp,VMCTNT,"RECEPTION GET       \n");
+                                p2p_do_get(&sp, message, sock_tcp_rcv);
                                 break;
 						
                         case P2P_MSG_LINK_UPDATE : 

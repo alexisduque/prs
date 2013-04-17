@@ -112,7 +112,10 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	if (p2p_tcp_msg_sendfd(sp, join_ack, socket) == P2P_OK){
 		printf("Message JOIN_ACK envoyé ! \n\n");
 	}
-	
+        
+        p2p_addr_delete(MyId);
+        p2p_addr_delete(right_neighbor);
+        p2p_msg_delete(join_ack);
  	return P2P_OK;
 }
 
@@ -233,7 +236,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 		status = P2P_DATA_OK;
 		
 		if (p2p_file_get_chunck(sp, file_name, (int)begin_offset, (int)end_offset, &octets_data) == P2P_OK){
-			
+			VERBOSE(sp,VMCTNT,"Get CHUNK DONE\n");
                         //Récuperation OK
 			value = end_offset-begin_offset+1 ;
 			payload_length = (unsigned short int)(2*P2P_INT_SIZE + end_offset -begin_offset + 1);
@@ -265,9 +268,8 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 	p2p_tcp_msg_sendfd(sp, data_msg, socket);
 	
 	VERBOSE(sp,VMCTNT,"\n");
-        VERBOSE(sp,VMCTNT,"MSG DATA SEND : ");
-	VERBOSE(sp,VMCTNT,"DATA::FILE::%s::%ld::%ld::%ld::%s\n", file_name, file_size, 
-			begin_offset, end_offset, p2p_addr_get_str(p2p_msg_get_dst(data_msg)));
+        VERBOSE(sp,VMCTNT,"MSG DATA SEND :\n");
+	VERBOSE(sp,VMCTNT,"DATA::FILE::%s::%ld::%ld::%ld::%s\n", file_name, file_size, begin_offset, end_offset, p2p_addr_get_str(p2p_msg_get_dst(data_msg)));
 	
 	//Nettoyage
 	free(data_payload);
