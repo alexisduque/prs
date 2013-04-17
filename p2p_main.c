@@ -36,7 +36,7 @@
 #include "p2p_msg.h"
 #include "p2p_ui.h"
 
-#define DEFAULT_SERVER_NAME "reference_node"
+#define DEFAULT_SERVER_NAME "alex_node"
 #define DEFAULT_DIR_NAME    "."
 
 #define DEFAULT_IP          "127.0.0.1"
@@ -363,7 +363,7 @@ int main(int argc, char* argv[])
                 VERBOSE(&sp,VMCTNT,"UI MESSAGE RECEPTION \n");
                 command_telnet = ui_command(&sp);			
 				VERBOSE(&sp,CLIENT,"\n");
-				VERBOSE(&sp,CLIENT,"Client du %s: ", sp.server_name);	
+				VERBOSE(&sp,CLIENT,"%s: ", sp.server_name);	
 				
 				
 				if (command_telnet == P2P_UI_QUIT){

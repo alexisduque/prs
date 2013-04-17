@@ -46,11 +46,13 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   
   // on envoi le message
   int socket = p2p_tcp_socket_create(sp, destinataire);
-  if ( p2p_tcp_msg_sendfd(sp, join_msg, socket) != P2P_OK )
+  if ( p2p_tcp_msg_sendfd(sp, join_msg, socket) != P2P_OK ) {
+    VERBOSE(sp,VMCTNT,"ERROR SENDING AK\n");
     return (P2P_ERROR);
-    
+  }
   //réception du message d'acquittement
   if (p2p_tcp_msg_recvfd(sp, ack_msg, socket) != P2P_OK) {
+         VERBOSE(sp,VMCTNT,"ERROR RCV ACK\n");
   	return (P2P_ERROR);
   }
   //on peut fermer la socket
@@ -58,6 +60,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   
   //on traite le message d'acquittement
   if (p2p_do_join_ack(sp, ack_msg) != P2P_OK) {
+       VERBOSE(sp,VMCTNT,"ERROR TREAT ACK\n");
   	return P2P_ERROR;
   }
   

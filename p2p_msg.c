@@ -250,22 +250,44 @@ int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
 
 /*** Méthode socket pour TCP ***/
 //Crée une socket TCP vers le noeud P2P dst.
-int p2p_tcp_socket_create(server_params* sp, p2p_addr dst)
-{
-  struct sockaddr_in adresse;
-  int fd, lg = sizeof(adresse);
-  fd = creer_socket(SOCK_STREAM, 0);
-  
-  adresse.sin_family = AF_INET;
-  adresse.sin_port = htons(p2p_addr_get_tcp_port(dst));
-  adresse.sin_addr.s_addr = htonl(INADDR_ANY);
-  
-  if (connect(fd, (struct sockaddr*)&adresse,lg)==P2P_ERROR){
-    p2p_tcp_socket_close(sp,fd);
-    return(P2P_ERROR);
-  }
-  VERBOSE(sp,VSYSCL,"SOCKET TCP created \n");
-  return P2P_OK;
+int p2p_tcp_socket_create (server_params* sp, p2p_addr dst) {
+
+        // Definition des variables locales
+        struct sockaddr_in adresse; 
+        int port, desc;
+        int lg = sizeof(adresse); 
+        struct hostent *hp; 
+        char * ip;
+
+        // Creation et attachement de la socket sur un port quelconque 
+        port = 0; 
+        if ((desc = creer_socket(SOCK_STREAM, port)) == P2P_ERROR) {
+                perror("tcp_socket_create : Creation de socket impossible\n"); 
+                return P2P_ERROR; 
+        } 
+
+        // Recherche de l'adresse internet du serveur 
+        ip = p2p_addr_get_ip_str(dst);
+        if ((hp = gethostbyname(ip)) == NULL) {
+                printf("tcp_socket_create : Machine %s inconnue\n", ip); 
+                return P2P_ERROR; 
+        }
+
+        // Preparation de l'adresse destinatrice 
+        port = p2p_addr_get_tcp_port(dst);
+        adresse.sin_family=AF_INET; 
+        adresse.sin_port=htons(port); 
+        memcpy(&(adresse.sin_addr.s_addr), hp->h_addr, hp->h_length); 
+
+        // Demande de connexion au serveur 
+        if(connect(desc,(struct sockaddr*) &adresse, lg) == -1) {
+                perror("tcp_socket_create : Erreur de connection au serveur\n"); 
+                return P2P_ERROR; 
+        } 
+        VERBOSE(sp,VPROTO,"SOCKET CREATED\n");
+        // On renvoie le descripteur de socket
+        return desc;
+
 }
 
 //Fermeture de la socket donnée par le descripteur fd
