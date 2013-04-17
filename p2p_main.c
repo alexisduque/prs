@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
   
   // Creation des variables
   int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
-  int return_select, command_telnet;
+  int return_select, command_telnet, maxfd;
   fd_set fd;
   struct timeval timeout;
   struct sockaddr_in adresse;
@@ -217,9 +217,21 @@ int main(int argc, char* argv[])
       FD_SET(sock_ui, &fd);
       FD_SET(sock_tcp, &fd);
       FD_SET(sock_udp, &fd);
+      FD_SET(0, &fd);
+
+      maxfd = max(sock_ui,max(sock_tcp,sock_udp));
+      
+      //Test si ui connecte
+      if (sp.client_ui > 0){
+        FD_SET(sp.client_ui, &fd);
+        maxfd = max(sp.client_ui, maxfd);
+        VERBOSE(&sp,VMCTNT,"SOCK UI : CLIENT CONNECTED\n");
+      } 
+      
       
       //SELECT
-      return_select = select(max(sock_ui, max(sock_tcp, sock_udp)) + 1, &fd, NULL, NULL, &timeout);
+      VERBOSE(&sp,VMCTNT,"DOING SELECT\n");
+      return_select = select(maxfd + 1, &fd, NULL, NULL, &timeout);
       
       // Si erreur dans le select
       if (return_select == -1) {
@@ -318,8 +330,8 @@ int main(int argc, char* argv[])
 
                     VERBOSE(&sp,VMCTNT,"UI CLIENT NOW CONNETED\n\n");
 
-                    sp.client_ui=sock_ui_connected;
-
+                    sp.client_ui = sock_ui_connected;
+                    
                     VERBOSE(&sp,CLIENT,"\n** Connection au noeud %s\n",sp.server_name);
                     VERBOSE(&sp,CLIENT,"** P2P Adresse -->  %s\n",p2p_addr_get_str(sp.p2pMyId));
                     VERBOSE(&sp,CLIENT,"\n%s: ",sp.server_name);

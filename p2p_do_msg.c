@@ -40,7 +40,8 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   
   //on remplit le message avec une longueur nulle
   if ( p2p_msg_init(join_msg, P2P_MSG_JOIN_REQ, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, destinataire) != P2P_OK ) 
-    return(P2P_ERROR);
+      VERBOSE(sp,VMCTNT,"ERROR MESSAGE INIT\n");
+      return(P2P_ERROR);
   p2p_msg_set_length(join_msg, 0);
   
   // on envoi le message

@@ -187,7 +187,7 @@ p2pjoin(params *p)
 
   VERBOSE(p->sp,VSYSCL,"ui:  sending p2p join msg to %s\n\n",p2p_addr_get_str(dst));
 
-     printf(" p2pjoin : dest = %s \n", p2p_addr_get_str(dst));
+  printf(" p2pjoin : dest = %s \n", p2p_addr_get_str(dst));
   
   
    //Verifie que l'on ne se connecte pas avec nous meme
