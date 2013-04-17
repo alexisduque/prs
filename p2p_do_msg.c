@@ -422,11 +422,13 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
         return P2P_OK;
 }
 
-/*//TRAITEMENT DU NEIGHBORS_REQ
+//TRAITEMENT DU NEIGHBORS_REQ
 int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
+
     VERBOSE(sp,VPROTO,"Traitement du msg neighbors_req");
     p2p_addr msg_src = p2p_addr_create();
     memcpy(msg_src, p2p_get_payload(neighbors_req_msg),P2P_ADDR_SIZE);
+    
     printf("Debug : Reçois neighbors_request de %s pour %s \n", p2p_addr_get_str(p2p_msg_get_src(neighbors_req_msg)),p2p_addr_get_str(msg_src));
     
 
@@ -434,24 +436,27 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     p2p_msg_init(answer, P2P_MSG_NEIGHBORS_LIST, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, msg_src);
     char toWrite[2*P2P_ADDR_SIZE+P2P_INT_SIZE+strlen(sp->server_name)+1];
     toWrite[0]=2;
+    
     memcpy(&toWrite[P2P_INT_SIZE],sp->left_neighbor,P2P_ADDR_SIZE);
     memcpy(&toWrite[P2P_INT_SIZE+P2P_ADDR_SIZE], sp->right_neighbor,P2P_ADDR_SIZE);
-    memcpy(&toWrite[P2P_INT_SIZE+2*P2P_ADDR_SIZE],sp->server_name,srlen(sp->server_name)+1);
-    p2p_msg_init_payload(answer,2*P2P_ADDR_SIZE+P2P_INT_SIZE+strlen(sp->server_name)+1,toWrite);
-    printf("envoi \n");
+    memcpy(&toWrite[P2P_INT_SIZE+2*P2P_ADDR_SIZE],sp->server_name,strlen(sp->server_name)+1);
+    //Necessité de cast le 3e argument en unsigned char
+    p2p_msg_init_payload(answer,2*P2P_ADDR_SIZE+P2P_INT_SIZE+strlen(sp->server_name)+1,(unsigned char *)toWrite);
+    
+    VERBOSE(sp,VPROTO, "Tentative d'envoi ...");
     if (p2p_udp_msg_send(sp,answer)!=P2P_OK)
     {
-    	VERBOSE(sp,VPROTO,"Error msg_udp_send \n");
+    	VERBOSE(sp,VPROTO,"Error UDP MSG SEND \n");
     	return(P2P_ERROR);
 	}
-    printf("OK MSG SEND\n");
+    VERBOSE(sp,VPROTO,"MSG MESSAGE SENT\n");
 
     // Cleaning memory
     p2p_msg_delete(answer);
     p2p_addr_delete(msg_src);
     return P2P_OK;
     
-}*/
+}
 
 //TRAITEMENT DU NEIGHBORS_LIST
 int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
