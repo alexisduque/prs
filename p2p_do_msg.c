@@ -394,30 +394,28 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
         printf("              FUNCTION DO REPLY\n");
         printf("!**************************************************************!\n");
 
-        int file_size, search_id;
+        unsigned int file_size, id;
         p2p_addr file_owner;
+	unsigned char* payload = p2p_get_payload(reply_msg);
+	
+	memcpy(&file_size,&payload[4],P2P_INT_SIZE);
 
-        //Recupératiion de la taille de fichier
-        memcpy(&file_size, p2p_get_payload(reply_msg) + P2P_HDR_BITFIELD_SIZE, P2P_INT_SIZE);
-        file_size=ntohl(file_size);
+        file_size = ntohl(file_size);
         
-        // On va chercher le nom du fichier correspondant a la recherche
-        memcpy(&search_id, p2p_get_payload(reply_msg), P2P_INT_SIZE);
+        printf("\n>> Reception d'un reponse a l'une de vos recherches\n");
+
+        // Reuperation du nom du fichier
+        memcpy(&id, payload, P2P_INT_SIZE);
         file_owner = p2p_addr_duplicate(p2p_msg_get_src(reply_msg));
-        search_id = ntohl(search_id);
-        printf("ID de la recherche : %d\n",search_id);
-        printf("Taille du fichier : %d\n",file_size);
+        id = ntohl(id);
+        printf("   ID de la recherche : %d\n",id);
+        printf("   Taille du fichier : %d\n",file_size);
 
-        int reply_nb = sp->p2pSearchList->search_array[search_id]->reply_nb;
-        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb] = p2p_reply_create();
-        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->file_size=file_size;
-        sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->src=p2p_addr_create();
-        p2p_addr_copy(sp->p2pSearchList->search_array[search_id]->reply_array[reply_nb]->src, p2p_msg_get_src(reply_msg));
-        sp->p2pSearchList->search_array[search_id]->reply_nb++;
+        p2p_insert_reply(&(sp->p2pSearchList),id,file_owner,file_size);
 
-        // Clean
         p2p_addr_delete(file_owner);
-        VERBOSE(sp,VPROTO,"Reply successful \n");
+        
+        VERBOSE(sp,VPROTO,"Reply Done \n");
         
         return P2P_OK;
 }

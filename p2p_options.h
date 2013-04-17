@@ -66,6 +66,22 @@
 #include "p2p_addr.h"
 
 //Strucuture de recherche
+typedef struct search_quidonc {
+        int reply_id;
+        int filesize;
+        p2p_addr file_owner;
+        struct search_quidonc* next;
+} search_quidonc;
+
+typedef struct search_result {
+        int search_id;
+        int nb_reply;
+        char file_name[30];
+        struct search_quidonc* list_owners;
+        struct search_result* next;
+} search_result;
+
+typedef search_result* search_list;
 
 //typedef int p2p_search ; //TODO
 
@@ -123,7 +139,7 @@ struct server_params_t {
   p2p_addr left_neighbor;
   
   /* Search */
-  p2p_search p2pSearchList;	/* la liste des requetes envoy�es */
+  search_list p2pSearchList;	/* la liste des requetes envoy�es */
   int search_id ; // L'id de la recherche
   
 };

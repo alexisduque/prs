@@ -30,11 +30,25 @@
 #define P2P_DATA_ERROR 0
 #define P2P_DATA_OK 200
 
+
+
 search p2p_search_create();
 
 p2p_search p2p_searchlist_create();
 
 reply p2p_reply_create();
+
+int p2p_add_search (search_list *pliste, int id, char file_name[30]);
+
+void p2p_list_search(server_params *sp);
+
+int p2p_search_get_owner_file(search_list liste, int search_id, int reply_id, char** file_name, p2p_addr * owner);
+
+int p2p_insert_reply (search_list *pliste, int id, p2p_addr file_owner, int taille_fichier);
+
+int p2p_list_results(server_params *sp, int id);
+
+
 
 #endif	/* P2P_SEARCH_H */
 

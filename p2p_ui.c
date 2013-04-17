@@ -318,17 +318,17 @@ p2psearch(params* p)
         p2p_udp_msg_rebroadcast (p->sp, search_message);
 
         // Ajout de la recherche dans la liste des recherches effectuees
-        //p2p_add_search(&(p->sp->p2pSearchList),p->sp->current_search_id,p->options[0]);
+        p2p_add_search(&(p->sp->p2pSearchList),p->sp->search_id,p->options[0]);
         
-        // Incrementation de l'ID de recherche
-        //p->sp->search_id++;
+        //Incrementation de l'ID de recherche
+        p->sp->search_id++;
         
         // Nettoyage des variables
         
-        //p2p_msg_delete(msg_search);
-        //free(buffer);
+        p2p_msg_delete(search_message);
+        free(buffer);
 
-        return P2P_UI_ERROR;
+        return P2P_UI_OK;
  
 }
 
@@ -338,8 +338,9 @@ p2psearch(params* p)
 int 
 p2plist_search (params* p)
 {
-  /**** A COMPLETER ****/
-  return P2P_UI_ERROR;
+    printf(">> Liste des recherches\n");
+    p2p_list_search(p->sp);
+    return P2P_UI_OK;
 }
 
 /****************************************************/
@@ -376,7 +377,7 @@ p2pget(params* p)
         printf("\n>> Demande de recuperation de fichier :\n");
         printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
         // Recuperation des infos sur le fichier voulu
-        //file_size = getfileinfo funtion !!!! 
+        file_size = p2p_search_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
         if (file_size == P2P_ERROR){
                 perror("p2p_get : Erreur a la recherche du nom de fichier dans la structure de search\n");
                 return P2P_ERROR;
