@@ -335,7 +335,7 @@ p2psearch(params* p)
 int 
 p2plist_search (params* p)
 {
-    printf("\nUI: Liste des recherches\n");
+    printf("\nUI: Liste des recherches\n\n");
     p2p_list_search(p->sp);
     return P2P_UI_OK;
 }
@@ -347,7 +347,7 @@ int
 p2plist_result (params* p)
 {
     
-        printf("\nUI: Liste des resultats de la recherche %s\n",p->options[0]);
+        printf("\nUI: Liste des resultats de la recherche %s\n\n",p->options[0]);
         p2p_list_results(p->sp,atoi(p->options[0]));
 
         return P2P_UI_OK;
@@ -373,14 +373,14 @@ p2pget(params* p)
         // Recuperation des ID de recherche et de resultat
         result = atoi(p->options[0]);
         search = atoi(p->options[1]);
-        VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",result, search); 
-        printf("\n>> Demande de recuperation de fichier :\n");
+        VERBOSE(p->sp,VSYSCL,"UI: starting get result [%d] from search [%d]\n",result, search); 
+            printf("\nUI: Demande de recuperation de fichier :\n");
         printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
         
         // Recuperation des infos sur le fichier voulu
         file_size = p2p_search_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
         if (file_size == P2P_ERROR){
-                perror("p2p_get : Erreur a la recherche du nom de fichier dans la structure de search\n");
+                perror("Error : File not FOUND \n\n");
                 return P2P_ERROR;
         }       
                 
@@ -409,7 +409,7 @@ p2pget(params* p)
         
         // Envoi du msg
         if(p2p_tcp_msg_sendfd(p->sp, get_msg, socket_tcp) == P2P_ERROR){
-                perror("p2pget : Erreur a l'envoi du msg get\n");
+                perror("Error sending GET message\n\n");
                 return P2P_ERROR;
         }
         
@@ -422,13 +422,13 @@ p2pget(params* p)
         data_msg = p2p_msg_create();
         printf("\n>> Waiting for data...\n"); 
         if ( p2p_tcp_msg_recvfd (p->sp, data_msg, socket_tcp) == P2P_ERROR ){
-                perror("p2pjoin : Erreur a la reception du msg data\n");
+                perror("Error receiving DATA messsage\n\n");
                 return P2P_ERROR;
         }
         
         printf("**  Data received  ** !\n");
         p2p_msg_dumpfile(data_msg,stdout,1);
-        VERBOSE(p->sp, VSYSCL,"msg size : %d\n",p2p_msg_get_length(data_msg));
+        VERBOSE(p->sp, VSYSCL,"MSG size : %d\n",p2p_msg_get_length(data_msg));
         
         // Recuperation du status
         memcpy(&status, p2p_get_payload(data_msg), 1);
@@ -445,7 +445,7 @@ p2pget(params* p)
                 
                 if(file_size > 0){
                 // Ecriture des donnees
-                printf("   Ecriture dans le fichier (taille : %d)\n", file_size);
+                printf("   Ecriture dans le fichier (taille : %d)\n\n", file_size);
                 data = malloc (file_size*sizeof(char));
                 memcpy(data, p2p_get_payload(data_msg) + 2*P2P_HDR_BITFIELD_SIZE, file_size);
                 p2p_file_set_chunck(p->sp, file_name, 0, file_size-1, data);

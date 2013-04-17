@@ -230,7 +230,6 @@ int main(int argc, char* argv[])
       
       
       //SELECT
-      VERBOSE(&sp,VMCTNT,"DOING SELECT\n");
       return_select = select(maxfd + 1, &fd, NULL, NULL, &timeout);
       
       // Si erreur dans le select
