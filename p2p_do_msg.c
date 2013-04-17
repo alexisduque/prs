@@ -433,7 +433,7 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
 
         p2p_addr_delete(file_owner);
         
-        VERBOSE(sp,VPROTO,"Reply Done \n");
+        VERBOSE(sp,VPROTO,"Reply Done \n\n");
         
         return P2P_OK;
 }

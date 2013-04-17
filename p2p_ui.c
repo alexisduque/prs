@@ -148,7 +148,7 @@ int file_list(params *p)
       VERBOSE(p->sp,CLIENT,"\n\n  ** cannot open the shared directory on server ** \n\n");
       return P2P_UI_OK;
     }
-  VERBOSE(p->sp,VSYSCL,"ui: getting list file for %s\n",dirname);
+  VERBOSE(p->sp,VSYSCL,"UI: getting list file for %s\n",dirname);
   VERBOSE(p->sp,CLIENT,"\nFile list\n");
   while ((file = readdir(dir)) != NULL) 
     {
@@ -181,20 +181,20 @@ p2pjoin(params *p)
   
   if (p2p_addr_setstr(dst,p->options[0]) != P2P_OK)
     {
-      VERBOSE(p->sp,CLIENT,"ui: could not parse p2p address\n");
+      VERBOSE(p->sp,CLIENT,">> Could not parse p2p address\n");
       return P2P_UI_ERROR;
     }
 
-  VERBOSE(p->sp,CLIENT,"ui: sending p2p join msg to %s\n",p2p_addr_get_str(dst));
+  VERBOSE(p->sp,CLIENT,">> Sending p2p join msg to %s\n",p2p_addr_get_str(dst));
 
    //Verifie que l'on ne se connecte pas avec nous meme
   if(p2p_addr_is_equal(dst, p->sp->p2pMyId)!=0){
-	printf("Try to connet yourself ;-)\n");
+	printf(">> Try to connet yourself ;-)\n");
 	return(P2P_OK);
   }
 	
   if(p2p_send_join_req(p->sp, dst) != P2P_OK ){
-	printf("Could not send the JOIN REQ\n");
+	printf(">> Could not send the JOIN REQ\n");
         return(P2P_UI_ERROR);
   }
 
@@ -223,7 +223,7 @@ p2pleave(params *p)
         
             // Premier envoi : le voisin de gauche a un nouveau voisin de droite
             if(i == 0){
-                    printf(">> Envoi du LINK_UPDATE au voisin de gauche\n");
+                    printf("UI: Envoi du LINK_UPDATE au voisin de gauche\n");
                     neighbor_type = htonl(0x0000FFFF);
                     neighbor_addresse = p->sp->left_neighbor;
                     new_neighbor = p->sp->right_neighbor;
@@ -231,7 +231,7 @@ p2pleave(params *p)
             
             // Deuxieme envoi : l'inverse
             else {
-                    printf(">> Envoi demande d'update au voisin de droite\n");
+                    printf("UI: Envoi demande d'update au voisin de droite\n");
                     neighbor_type = htonl(0xFFFF0000);
                     neighbor_addresse = p->sp->right_neighbor;
                     new_neighbor = p->sp->left_neighbor;
@@ -299,7 +299,7 @@ p2psearch(params* p)
         p2p_msg_init(search_message,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
 
         // Creation du buffer
-        printf("\n>> Recherche du fichier : %s\n", p->options[0]);
+        printf("\nUI: Recherche du fichier : %s\n", p->options[0]);
         buffer = malloc(P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE + sizeof(char)*strlen(p->options[0]));
         memcpy(buffer, p->sp->p2pMyId, P2P_ADDR_SIZE);
         search_id = htonl(p->sp->search_id);
@@ -335,7 +335,7 @@ p2psearch(params* p)
 int 
 p2plist_search (params* p)
 {
-    printf(">> Liste des recherches\n");
+    printf("\nUI: Liste des recherches\n");
     p2p_list_search(p->sp);
     return P2P_UI_OK;
 }
@@ -347,7 +347,7 @@ int
 p2plist_result (params* p)
 {
     
-        printf("\n>> Liste des resultats de la recherche %s\n",p->options[0]);
+        printf("\nUI: Liste des resultats de la recherche %s\n",p->options[0]);
         p2p_list_results(p->sp,atoi(p->options[0]));
 
         return P2P_UI_OK;

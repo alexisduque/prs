@@ -110,7 +110,6 @@ void p2p_list_search(server_params *sp) {
 
         // Fin
         VERBOSE(sp,CLIENT,"\n");
-        VERBOSE(sp,CLIENT,"END_OF_TRANSMISSION\n");
 }
 
 // Récupération des infos sur un fichier
