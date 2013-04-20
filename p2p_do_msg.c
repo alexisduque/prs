@@ -63,6 +63,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   p2p_msg_delete(join_msg);
   
   //réception du message d'acquittement
+  VERBOSE(sp,VMCTNT,"WAITING FOR ACK MESSAGE...;\n");
   if (p2p_tcp_msg_recvfd(sp, ack_msg, socket) != P2P_OK) {
          VERBOSE(sp,VMCTNT,"ERROR RCV ACK\n");
   	return (P2P_ERROR);

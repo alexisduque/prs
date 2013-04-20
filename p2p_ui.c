@@ -375,7 +375,7 @@ p2pget(params* p)
         search = atoi(p->options[1]);
         VERBOSE(p->sp,VSYSCL,"UI: starting get result [%d] from search [%d]\n",result, search); 
             printf("\nUI: Demande de recuperation de fichier :\n");
-        printf("   Reponse [%d] a la recherche [%d]\n",result, search); 
+        printf("Reponse [%d] a la recherche [%d]\n\n",result, search); 
         
         // Recuperation des infos sur le fichier voulu
         file_size = p2p_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
@@ -426,7 +426,7 @@ p2pget(params* p)
                 return P2P_ERROR;
         }
         
-        printf("**  Data received  ** !\n");
+        printf("****  Data received  **** !\n");
         p2p_msg_dumpfile(data_msg,stdout,1);
         VERBOSE(p->sp, VSYSCL,"MSG size : %d\n",p2p_msg_get_length(data_msg));
         
@@ -445,7 +445,8 @@ p2pget(params* p)
                 
                 if(file_size > 0){
                 // Ecriture des donnees
-                printf("   Ecriture dans le fichier (taille : %d)\n\n", file_size);
+                printf("   Ecriture dans le fichier (taille : %d)\n", file_size);
+                printf("***********************************************\n\n");
                 data = malloc (file_size*sizeof(char));
                 memcpy(data, p2p_get_payload(data_msg) + 2*P2P_HDR_BITFIELD_SIZE, file_size);
                 p2p_file_set_chunck(p->sp, file_name, 0, file_size-1, data);

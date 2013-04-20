@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
   p2p_msg message;
   
   // Init du timeout
-  timeout.tv_sec=300;
+  timeout.tv_sec=3000;
   timeout.tv_usec=0;
   
    // Creation socket UI

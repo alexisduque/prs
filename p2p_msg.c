@@ -239,13 +239,43 @@ int p2p_msg_display(p2p_msg message){
 //aussi le payload du message sinon on n'�crit que l'entete.
 int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
-  return P2P_OK; 
+    fprintf(fd,"Version: %u\n",p2p_msg_get_version(msg));
+    fprintf(fd,"Type: %u\n",p2p_msg_get_type(msg));
+    fprintf(fd,"TTL: %u\n",p2p_msg_get_ttl(msg));
+    fprintf(fd,"Length: %u\n",p2p_msg_get_length(msg));
+    fprintf(fd,"Src: %s\n",p2p_addr_get_str(p2p_msg_get_src(msg)));
+    fprintf(fd,"Dst: %s\n",p2p_addr_get_str(p2p_msg_get_dst(msg)));
+    if ((print_payload !=0) && (msg->payload!=NULL)) fprintf(fd,"payload: %s\n",msg->payload);
+    return P2P_OK;
 }
 
 //ecrit l'entete du message msg en hexa. 
-int p2p_msg_hexdumpheader(unsigned char* msg, const FILE* fs)
+int p2p_msg_hexdumpheader(const p2p_msg msg, const FILE* fs)
 {
-    return P2P_OK; 
+    unsigned char *message;
+    printf("MSG:: ");
+    message = (unsigned char*)malloc(P2P_ADDR_SIZE);
+    memcpy(&message[0], &(msg->hdr.version_type),1);
+    fprintf((FILE*) fs,"Ox%.2X:",*message);
+    memcpy(&message[0],&(msg->hdr.ttl),1);
+    fprintf((FILE*) fs,"%.2X:",*message);
+    memcpy(&message[0],&(msg->hdr.length),2);
+    int i;
+    for(i=0;i<2;i++){
+        fprintf((FILE*) fs,"%.2X:",message[i]);
+    }
+    memcpy(&message[0],(msg->hdr.src),P2P_ADDR_SIZE);
+    for(i=0;i<P2P_ADDR_SIZE;i++){
+        fprintf((FILE*) fs,"%.2X:",message[i]);
+    }
+    memcpy(&message[0],(msg->hdr.dst),P2P_ADDR_SIZE);
+    for(i=0;i<P2P_ADDR_SIZE;i++){
+        fprintf((FILE*) fs,"%.2X:",message[i]);
+    }
+    
+    fprintf((FILE*) fs,"\n");
+    free(message);
+    return P2P_OK;
 }
 
 /*** Méthode socket pour TCP ***/
@@ -301,7 +331,7 @@ int p2p_tcp_socket_close(server_params* sp, int fd)
 //Envoi du message msg via la socket tcp fd
 int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-  VERBOSE(sp,VPROTO,"TRY TO SEND msg ...\n");
+  VERBOSE(sp,VPROTO,"TRY TO SEND TCP msg ...\n");
   //On verifie que l'on essaie pas d'envoyer un message à nous même
   if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
     return P2P_ERROR;
@@ -325,15 +355,18 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   
   // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
   if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) != (P2P_HDR_SIZE +  p2p_msg_get_length(msg))){
-    //printf("Echec de l'envoi du message dans la socket\n");
-    VERBOSE(sp,VPROTO,"Unable to send msg to the socket\n");
+    VERBOSE(sp,VPROTO,"Unable to send msg to the socket\n\n");
+    //Liberation de la memoire du buffer
+    free(toWrite);
     return P2P_ERROR;
   } else {
+    VERBOSE(sp,VPROTO,"TCP MSG SUCCESFULL SEND\n\n");
+    //Liberation de la memoire du buffer
+    free(toWrite);
     return P2P_OK;
   }
   
-    //Liberation de la memoire du buffer
-  free(toWrite);
+
 
 }
 
@@ -358,7 +391,7 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg)
 {
    
   int socketTMP = p2p_tcp_socket_create(sp,p2p_msg_get_dst(msg));
-  if(socketTMP==P2P_ERROR)
+  if(socketTMP == P2P_ERROR)
   {
     VERBOSE(sp,VPROTO,"TCP socket creation impossible \n");
     //printf("Impossible de créer la socket TCP \n");
@@ -414,7 +447,7 @@ int p2p_udp_socket_close(server_params* sp, int fd)
 //Envoie le message msg via la socket UDP fd
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
-  VERBOSE(sp, VPROTO, "TRY TO SEND MSG ...\n");
+  VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
   char* toWrite = (char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
   
   memcpy(toWrite, &(msg->hdr), P2P_HDR_BITFIELD_SIZE);
@@ -423,12 +456,13 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   memcpy(&toWrite[20], msg->payload,p2p_msg_get_length(msg));
   
   if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR){
-    //printf("Could not send message\n");
     VERBOSE(sp,VPROTO,"Unable to send msg\n");
+    free(toWrite);
     return P2P_ERROR;
   } 
   
   free(toWrite);
+  VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
   return P2P_OK;
 
 }
@@ -449,7 +483,7 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 */
   //Declaration du buffer
   char data[200];
-  free(msg->payload);
+  //free(msg->payload);
   // Allocation de la mémoire pour le payload
   msg->payload = (unsigned char*)malloc(sizeof(unsigned char)*200);
   

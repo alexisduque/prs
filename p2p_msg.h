@@ -115,7 +115,7 @@ void           p2p_msg_set_dst     (p2p_msg msg, p2p_addr dst);
 int p2p_msg_dumpfile       (const p2p_msg msg, const FILE* fd, int print_payload);
 
 //�crit l'entete du message msg en hexa. 
-int p2p_msg_hexdumpheader  (unsigned char* msg, const FILE* fs);
+int p2p_msg_hexdumpheader  (const p2p_msg msg, const FILE* fs);
 
 // Fonction d'affichage des caract. du message
 int p2p_msg_display(p2p_msg message);
