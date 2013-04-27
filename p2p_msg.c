@@ -69,7 +69,7 @@ p2p_msg_create()
   
   p2p_msg_set_version (msg,P2P_VERSION);
   p2p_msg_set_type    (msg,P2P_MSG_UNDEFINED);
-  /*  p2p_msg_set_ttl     (msg,P2P_MSG_TTL_NULL);*/
+  p2p_msg_set_ttl     (msg,P2P_MSG_TTL_MAX);
   /*  p2p_msg_set_length  (msg,payload_size);    */
   assert(msg->hdr.src = p2p_addr_create());
   assert(msg->hdr.dst = p2p_addr_create());

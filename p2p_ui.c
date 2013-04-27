@@ -224,7 +224,7 @@ p2pleave(params *p)
         
             // Premier envoi : le voisin de gauche a un nouveau voisin de droite
             if(i == 0){
-                    printf("UI: Envoi du LINK_UPDATE au voisin de gauche\n");
+                    printf("UI: Sending LINK_UPDATE to left neighbor\n");
                     neighbor_type = htonl(0x0000FFFF);
                     neighbor_addresse = p->sp->p2p_neighbors.left_neighbor;
                     new_neighbor = p->sp->p2p_neighbors.right_neighbor;
@@ -232,7 +232,7 @@ p2pleave(params *p)
             
             // Deuxieme envoi : l'inverse
             else {
-                    printf("UI: Envoi demande d'update au voisin de droite\n");
+                    printf("UI: Sending LINK_UPDATE to right neighbor\n");
                     neighbor_type = htonl(0xFFFF0000);
                     neighbor_addresse = p->sp->p2p_neighbors.right_neighbor;
                     new_neighbor = p->sp->p2p_neighbors.left_neighbor;
@@ -274,7 +274,7 @@ p2pleave(params *p)
 int p2phalt(params *p)
 {
   p2pleave(p);
-  return P2P_UI_ERROR;
+  return P2P_UI_KILL;
 }
 
 /****************************************************/
@@ -491,7 +491,7 @@ VERBOSE(p->sp,VSYSCL,"Decouverte de topology -- Mise a jour de la liste des vois
 		p2p_msg_set_length(neighbors_req_msg,ntohs(p2p_msg_get_length(neighbors_req_msg)));
 		
 		p2p_msg_init(neighbors_req_msg, P2P_MSG_NEIGHBORS_REQ,P2P_MSG_TTL_MAX, p->sp->p2pMyId, broad);
-		p2p_msg_init_payload(neighbors_req_msg,P2P_ADDR_SIZE ,p->sp->p2pMyId);
+		p2p_msg_init_payload(neighbors_req_msg,P2P_ADDR_SIZE , (unsigned char *)p2p_addr_get_str(p->sp->p2pMyId));
              //   p2p_get_payload(neighbors_req_msg) = (unsigned char*)malloc(sizeof(unsigned char)*length);
 		//memcpy(&(p2p_get_payload(neighbors_req_msg)[0]), p->sp->p2pMyId,P2P_ADDR_SIZE);
 		

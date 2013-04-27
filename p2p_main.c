@@ -297,11 +297,11 @@ int main(int argc, char* argv[])
                                 break;
                         case P2P_MSG_NEIGHBORS_REQ :  
                                 VERBOSE(&sp,VMCTNT,"RECEPTION NEIGHBORS REQ\n");
-                                //p2p_do_neighbors_req(&sp, message);  ;  
+                                p2p_do_neighbors_req(&sp, message);  ;  
                                 break;
                         case P2P_MSG_NEIGHBORS_LIST : 
                                 VERBOSE(&sp,VMCTNT,"RECEPTION NEIGHBORS_LIST\n");
-                                //p2p_do_neighbors_list(&sp, message);  ; 
+                                p2p_do_neighbors_list(&sp, message);  ; 
                                 break;
 	      }
               
@@ -370,10 +370,13 @@ int main(int argc, char* argv[])
 					VERBOSE(&sp,VMCTNT,"QUIT RECEIVED FROM UI \n");
 					close(sock_ui_connected);
 					sock_ui_connected = -1;
+                                        sp.client_ui = -1 ;
+                                        //close(sock_ui);
 				}
 				
 				if (command_telnet == P2P_UI_KILL){
 					VERBOSE(&sp,VMCTNT,"KILL RECEIVED FROM UI \n");
+                                        sp.client_ui = -1 ;
 					close(sock_ui_connected);
 					close(sock_tcp);
 					close(sock_ui);
