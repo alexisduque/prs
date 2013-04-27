@@ -9,7 +9,7 @@
      
    HISTORY
      Revision 1.1  2005/02/21 18:34:33  afraboul
-     ajout des sources qui seront distribuées aux étudiants
+     ajout des sources qui seront distribuees aux etudiants
 
      Revision 1.4  2004/07/26 08:24:38  afraboul
 ***/

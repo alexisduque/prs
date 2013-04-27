@@ -14,7 +14,7 @@
    add p2p_main.c
 
    Revision 1.1  2005/02/21 18:34:33  afraboul
-   ajout des sources qui seront distribu�es aux �tudiants
+   ajout des sources qui seront distribuees aux etudiants
 
    Revision 1.11  2004/12/26 16:15:15  afraboul
 ***/
@@ -128,8 +128,9 @@ int main(int argc, char* argv[])
     .port_p2p_udp   = DEFAULT_P2P_UDP,
     .client_ui      = -1,
     .p2pMyId	    = p2p_addr_create(),
-    .right_neighbor = p2p_addr_create(),
-    .left_neighbor  = p2p_addr_create(),
+    .p2p_neighbors.right_neighbor = p2p_addr_create(),
+    .p2p_neighbors.left_neighbor  = p2p_addr_create(),
+    .friends.nb_node = 0
   };
   
   p2p_addr dest = p2p_addr_create();
@@ -169,8 +170,8 @@ int main(int argc, char* argv[])
   
   //Initialisation de l'adresse IP su noeud
   p2p_addr_set(sp.p2pMyId, DEFAULT_IP, sp.port_p2p_tcp, sp.port_p2p_udp);  
-  p2p_addr_copy(sp.right_neighbor, sp.p2pMyId);
-  p2p_addr_copy(sp.left_neighbor, sp.p2pMyId);
+  p2p_addr_copy(sp.p2p_neighbors.right_neighbor, sp.p2pMyId);
+  p2p_addr_copy(sp.p2p_neighbors.left_neighbor, sp.p2pMyId);
   
   print_options(&sp);
   VERBOSE(&sp,VMCTNT,"SOCKET CREATING ...\n");

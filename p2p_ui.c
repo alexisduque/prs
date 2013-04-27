@@ -52,11 +52,12 @@ int file_list      (params*);
 int p2pjoin        (params*);
 int p2pleave       (params*);
 int p2phalt        (params*);
-
+int p2pdiscover    (params*); 
 int p2psearch      (params*);
 int p2plist_search (params*);
 int p2plist_result (params*);
 int p2pget         (params*);
+
 
 /****************************************************/
 /****************************************************/
@@ -77,7 +78,7 @@ static struct cmd_t commands[] = {
   { "leave"   , 0, "leave the p2p network"            , p2pleave },
   { "quit"    , 0, "detach ui from the server"        , quit },
   { "halt"    , 0, "leave the p2p and stop the server", p2phalt},
-  { ""        , 0, ""                                 , NULL},
+  { "discover", 0, "discover topology "               , p2pdiscover},
   { "search"  , 1, "search the [file]"                , p2psearch },
   { "list_search", 0, "list searches"                 , p2plist_search },
   { "list_result", 1, "list the results of search [n]", p2plist_result },
@@ -225,16 +226,16 @@ p2pleave(params *p)
             if(i == 0){
                     printf("UI: Envoi du LINK_UPDATE au voisin de gauche\n");
                     neighbor_type = htonl(0x0000FFFF);
-                    neighbor_addresse = p->sp->left_neighbor;
-                    new_neighbor = p->sp->right_neighbor;
+                    neighbor_addresse = p->sp->p2p_neighbors.left_neighbor;
+                    new_neighbor = p->sp->p2p_neighbors.right_neighbor;
             }
             
             // Deuxieme envoi : l'inverse
             else {
                     printf("UI: Envoi demande d'update au voisin de droite\n");
                     neighbor_type = htonl(0xFFFF0000);
-                    neighbor_addresse = p->sp->right_neighbor;
-                    new_neighbor = p->sp->left_neighbor;
+                    neighbor_addresse = p->sp->p2p_neighbors.right_neighbor;
+                    new_neighbor = p->sp->p2p_neighbors.left_neighbor;
             }
 
             // Creation du header
@@ -257,8 +258,8 @@ p2pleave(params *p)
     }       
     
     // Réinitialisation des voisins du noeud quitté
-    p->sp->left_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
-    p->sp->right_neighbor = p2p_addr_duplicate(p->sp->p2pMyId); 
+    p->sp->p2p_neighbors.left_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
+    p->sp->p2p_neighbors.right_neighbor = p2p_addr_duplicate(p->sp->p2pMyId); 
 
     // Nettoyage des variables
     p2p_msg_delete(link_update_msg);
@@ -469,6 +470,48 @@ p2pget(params* p)
         //p2p_msg_delete(get);
         return P2P_OK;
 
+}
+
+int p2pdiscover(params *p)
+{
+VERBOSE(p->sp,VSYSCL,"Decouverte de topology -- Mise a jour de la liste des voisins\n");
+	
+		// Writing Neighbors_REQ Message
+		
+		//Message INIT
+		int length = P2P_ADDR_SIZE;
+		p2p_addr broad;
+		broad = p2p_addr_create();
+		broad = p2p_addr_broadcast();
+		p2p_msg neighbors_req_msg;
+
+		
+		neighbors_req_msg = p2p_msg_create();//p2p_msg_dumpfile(msg,stdout,1);
+		p2p_msg_set_length(neighbors_req_msg,length);
+		p2p_msg_set_length(neighbors_req_msg,ntohs(p2p_msg_get_length(neighbors_req_msg)));
+		
+		p2p_msg_init(neighbors_req_msg, P2P_MSG_NEIGHBORS_REQ,P2P_MSG_TTL_MAX, p->sp->p2pMyId, broad);
+		p2p_msg_init_payload(neighbors_req_msg,P2P_ADDR_SIZE ,p->sp->p2pMyId);
+             //   p2p_get_payload(neighbors_req_msg) = (unsigned char*)malloc(sizeof(unsigned char)*length);
+		//memcpy(&(p2p_get_payload(neighbors_req_msg)[0]), p->sp->p2pMyId,P2P_ADDR_SIZE);
+		
+		p2p_get_payload(neighbors_req_msg)[length] = '\0';
+
+	
+	//Send to left
+		//if (p2p_udp_msg_send(p->sp, neighbors_req_msg, p->sp->p2p_neighbors.right_neighbor) == -1) return P2P_UI_ERROR;
+	
+	//Send to right
+		//if (p2p_udp_msg_send(p->sp,neighbors_req_msg,p->sp->p2p_neighbors.left_neighbor) == -1) return P2P_UI_ERROR;
+	// Broadcast Send
+                if (p2p_udp_msg_send(p->sp,neighbors_req_msg) == -1) return P2P_UI_ERROR;
+                
+	
+	//Destroy msg
+		printf("Fin envoi du message P2P_NEIGHBORS_REQ\n");
+		p2p_msg_delete(neighbors_req_msg);
+		
+	return P2P_UI_OK;
 }
 
 /****************************************************/

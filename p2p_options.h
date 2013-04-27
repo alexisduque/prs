@@ -4,8 +4,8 @@
    NAME
      p2p_options.h
    PURPOSE
-     definition de la structure de donn�e permettant de stocker l'�tat
-     global du syst�me.
+     definition de la structure de donnee permettant de stocker l'etat
+     global du systeme.
    NOTES
      
    HISTORY
@@ -13,7 +13,7 @@
    Qqc comments dans les .h
 
    Revision 1.1  2005/02/21 18:34:33  afraboul
-   ajout des sources qui seront distribu�es aux �tudiants
+   ajout des sources qui seront distribuees aux etudiants
 
    Revision 1.3  2005/02/08 16:09:49  afraboul
 ***/
@@ -83,8 +83,6 @@ typedef struct search_result {
 
 typedef search_result* search_list;
 
-//typedef int p2p_search ; //TODO
-
 struct reply_t {
   int file_size;
   p2p_addr src;
@@ -104,10 +102,29 @@ struct search_list{
 };
 typedef struct search_list *p2p_search;
 
+/* Structure pour la decouverte de topologie */
+
+typedef struct p2p_topology_t{
+  p2p_addr left_neighbor;
+  p2p_addr right_neighbor;
+} p2p_topology;
+
+typedef struct p2p_node_t{
+  char* node_name;
+  p2p_addr addr_node;
+  p2p_topology node_neighbors;
+} p2p_node;
+
+typedef struct p2p_table_node_t{
+  int nb_node;
+  p2p_node node [P2P_MAX_SEARCH_NB];
+} p2p_table;
+
 //Structure contenant tous les parametres d'un noeud P2P. Permet
-//d'avoir toutes les varaibles globales d�finissant l'environnement
-//dans une seule structure que l'on peut ainsi passer � toutes les
+//d'avoir toutes les varaibles globales definissant l'environnement
+//dans une seule structure que l'on peut ainsi passer a toutes les
 //fonctions. 
+
 /* server parameters */
 struct server_params_t {
     
@@ -120,23 +137,16 @@ struct server_params_t {
   int port_p2p_tcp;		/* le numero de port TCP du noeud */
   int port_p2p_udp;		/* le numero de port UDP du noeud */
 
-  int client_ui;                /* socket connect�e par telnet */
-
-  /*********************************/
-  /*********************************/
-  /*                               */
-  /* A COMPLETER                   */
-  /*                               */
-  /*********************************/
-  /*********************************/
+  int client_ui;                /* socket connectee par telnet */
 
   /* Topology */
   p2p_addr p2pMyId;	        /* son adresse P2P */
   
-  //  p2p_topology p2p_neighbors;	/* Ses voisins */
+  p2p_topology p2p_neighbors;	/* Ses voisins */
   
-  p2p_addr right_neighbor;
-  p2p_addr left_neighbor;
+  //p2p_addr right_neighbor;
+  //p2p_addr left_neighbor;
+  p2p_table friends; 
   
   /* Search */
   search_list p2pSearchList;	/* la liste des requetes envoyees */

@@ -101,11 +101,11 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	unsigned char payload[2*P2P_ADDR_SIZE];	
 	
 	memcpy(payload, sp->p2pMyId, P2P_ADDR_SIZE);
-	if (p2p_addr_is_equal(sp->p2pMyId, sp->right_neighbor)){
+	if (p2p_addr_is_equal(sp->p2pMyId, sp->p2p_neighbors.right_neighbor)){
 		memcpy(&payload[P2P_ADDR_SIZE], sp->p2pMyId, P2P_ADDR_SIZE);		
 	} 
 	else {
-		memcpy(&payload[P2P_ADDR_SIZE], sp->right_neighbor, P2P_ADDR_SIZE);
+		memcpy(&payload[P2P_ADDR_SIZE], sp->p2p_neighbors.right_neighbor, P2P_ADDR_SIZE);
 	}
 	
 	
@@ -174,7 +174,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 	//pour son ancien droit   
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
 		sp->p2pMyId, right) != P2P_OK) return P2P_ERROR;
-	memcpy(link_payload, sp->right_neighbor, 8);
+	memcpy(link_payload, sp->p2p_neighbors.right_neighbor, 8);
 	type = htonl(0xFFFF0000);//adresse du lien gauche
 	memcpy(&link_payload[8], &type, 4);
 	if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK) 
@@ -187,7 +187,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 	
 	//pour mon ancien gauche   
 	if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, 
-		sp->p2pMyId, sp->left_neighbor) != P2P_OK) return P2P_ERROR;
+		sp->p2pMyId, sp->p2p_neighbors.left_neighbor) != P2P_OK) return P2P_ERROR;
 	memcpy(link_payload, right, 8);
 	type = htonl(0x0000FFFF); // adresse du lien droit 
 	memcpy(&link_payload[8], &type, 4);
@@ -198,13 +198,13 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
 		if (p2p_tcp_msg_send(sp, link_msg) != P2P_OK)
 			return P2P_ERROR;
 	} else {
-		p2p_addr_delete(sp->right_neighbor);
-		sp->right_neighbor=p2p_addr_duplicate(right);
+		p2p_addr_delete(sp->p2p_neighbors.right_neighbor);
+		sp->p2p_neighbors.right_neighbor=p2p_addr_duplicate(right);
 	}
 	
 	//pour moi
-	p2p_addr_delete(sp->left_neighbor);
-	sp->left_neighbor  = left;
+	p2p_addr_delete(sp->p2p_neighbors.left_neighbor);
+	sp->p2p_neighbors.left_neighbor  = left;
 	
 	//free
 	p2p_addr_delete(right);
@@ -310,11 +310,11 @@ int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
 	
 	if (neighbor_type==0xFFFF0000) {
 		//voisin gauche
-		p2p_addr_copy(sp->left_neighbor, new_addresse);
+		p2p_addr_copy(sp->p2p_neighbors.left_neighbor, new_addresse);
 		VERBOSE(sp,VMCTNT,"LEFT NEIGHBOR UPDATE\n\n");
 	} else if (neighbor_type==0x0000FFFF) {
 		// voisin droit	
-		p2p_addr_copy(sp->right_neighbor, new_addresse);
+		p2p_addr_copy(sp->p2p_neighbors.right_neighbor, new_addresse);
 		VERBOSE(sp,VMCTNT,"RIGHT NEIGHBOR UPDATE\n\n");
 	} else {
 		VERBOSE(sp,VMCTNT,"!! ERROR PARSING NEIGHBOR TYPE !!\n\n");
@@ -388,7 +388,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
                     if(file_size != 403) VERBOSE(sp,VMCTNT,"Erreur de type %d\n",file_size);
             }  
            
-            //On fait suivre le message aux autres noeud
+            //On fait suivre le message aux autres node
             p2p_udp_msg_rebroadcast (sp, search_msg);
 
             // Ne pas oublier de liberer la mémoire !
@@ -451,21 +451,23 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
 
     p2p_msg answer = p2p_msg_create();
     p2p_msg_init(answer, P2P_MSG_NEIGHBORS_LIST, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, msg_src);
-    char toWrite[2*P2P_ADDR_SIZE+P2P_INT_SIZE+strlen(sp->server_name)+1];
-    toWrite[0]=2;
+    char toWrite[2*P2P_ADDR_SIZE+P2P_INT_SIZE + strlen(sp->server_name)+1];
+    toWrite[0] = 2;
     
-    memcpy(&toWrite[P2P_INT_SIZE],sp->left_neighbor,P2P_ADDR_SIZE);
-    memcpy(&toWrite[P2P_INT_SIZE+P2P_ADDR_SIZE], sp->right_neighbor,P2P_ADDR_SIZE);
-    memcpy(&toWrite[P2P_INT_SIZE+2*P2P_ADDR_SIZE],sp->server_name,strlen(sp->server_name)+1);
+    memcpy(&toWrite[P2P_INT_SIZE],sp->p2p_neighbors.left_neighbor,P2P_ADDR_SIZE);
+    memcpy(&toWrite[P2P_INT_SIZE + P2P_ADDR_SIZE], sp->p2p_neighbors.right_neighbor,P2P_ADDR_SIZE);
+    memcpy(&toWrite[P2P_INT_SIZE + 2*P2P_ADDR_SIZE], sp->server_name, strlen(sp->server_name) + 1);
     //Necessité de cast le 3e argument en unsigned char
-    p2p_msg_init_payload(answer,2*P2P_ADDR_SIZE+P2P_INT_SIZE+strlen(sp->server_name)+1,(unsigned char *)toWrite);
+    p2p_msg_init_payload(answer, 2*P2P_ADDR_SIZE+P2P_INT_SIZE + strlen(sp->server_name) + 1, (unsigned char *)toWrite);
     
     VERBOSE(sp,VPROTO, "Tentative d'envoi ...");
+    
     if (p2p_udp_msg_send(sp,answer)!=P2P_OK)
     {
     	VERBOSE(sp,VPROTO,"Error UDP MSG SEND \n");
     	return(P2P_ERROR);
-	}
+    }
+    
     VERBOSE(sp,VPROTO,"MSG MESSAGE SENT\n");
 
     // Cleaning memory
@@ -478,6 +480,38 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
 //TRAITEMENT DU NEIGHBORS_LIST
 int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
     
-    return P2P_OK;
+  int i, ok = P2P_OK;
+  
+  VERBOSE(sp,VMRECV,"\n");
+  VERBOSE(sp,VMRECV,"Receive NEIGHBORS_LIST from %s\n",p2p_addr_get_str(p2p_msg_get_src(neighbors_list_msg)));
+  
+  char* tmp=(char*)malloc(p2p_msg_get_length(neighbors_list_msg));
+  memcpy(tmp,p2p_get_payload(neighbors_list_msg),p2p_msg_get_length(neighbors_list_msg));
+  
+  for (i = 0; i < (sp->friends.nb_node); i++){
+    if (p2p_addr_is_equal(sp->friends.node[i].addr_node, p2p_msg_get_src(neighbors_list_msg))) ok = P2P_ERROR;
+  }
+    
+  if (ok == P2P_OK) {
+    VERBOSE(sp,VMRECV,"Updating Node Topology \n");
+    VERBOSE(sp,VMRECV,"\n");
+    
+    sp->friends.node[sp->friends.nb_node].addr_node=p2p_addr_create();
+    p2p_addr_copy((sp->friends.node[sp->friends.nb_node].addr_node), p2p_msg_get_src(neighbors_list_msg));
+    
+    sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();;;
+    memcpy((sp->friends.node[sp->friends.nb_node].node_neighbors.left_neighbor),tmp+4,P2P_ADDR_SIZE);
+    
+    sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();
+    memcpy((sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor),tmp+4+P2P_ADDR_SIZE,P2P_ADDR_SIZE);
+    
+    sp->friends.node[sp->friends.nb_node].node_name = (char*)malloc(p2p_msg_get_length(neighbors_list_msg)-4-2*P2P_ADDR_SIZE);
+    memcpy((sp->friends.node[sp->friends.nb_node].node_name), tmp + 4 + 2*P2P_ADDR_SIZE, p2p_msg_get_length(neighbors_list_msg) - 4 - 2*P2P_ADDR_SIZE);
+    
+    sp->friends.nb_node++;
+  }
+  
+  free(tmp);
+  return P2P_OK; 
     
 }
