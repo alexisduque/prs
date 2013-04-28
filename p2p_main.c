@@ -226,8 +226,7 @@ int main(int argc, char* argv[])
       if (sp.client_ui > 0){
         FD_SET(sp.client_ui, &fd);
         maxfd = max(sp.client_ui, maxfd);
-        VERBOSE(&sp,VMCTNT,"SOCK UI : CLIENT CONNECTED\n");
-      } 
+      }  else VERBOSE(&sp,VMCTNT,"SOCK UI : NO CLIENT CONNECTED\n");
       
       
       //SELECT

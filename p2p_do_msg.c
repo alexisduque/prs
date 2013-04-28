@@ -32,7 +32,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
     
   printf("\n!**************************************************************!\n");
   printf("                FUNCTION SEND JOIN REQ\n");
-  printf("!**************************************************************!\n");
+  printf("!**************************************************************!\n\n");
 	
  //création des messages à envoyer
   p2p_msg join_msg = p2p_msg_create();
@@ -90,7 +90,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
     
 	printf("\n!************************************************************!\n");
 	printf("              JOIN REQ TREATMENT\n");
-	printf("!************************************************************!\n");
+	printf("!************************************************************!\n\n");
 	p2p_msg join_ack = p2p_msg_create();
 
 	//On remplit l'entête du message
@@ -142,7 +142,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg) {
     
 	printf("\n!************************************************************!\n");
         printf("               JOIN ACK TREATMENT\n");
-        printf("!**************************************************************!\n");
+        printf("!**************************************************************!\n\n");
         
 	unsigned char *ack_payload = p2p_get_payload(ack_msg);
 	
@@ -226,7 +226,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 	
         printf("\n!************************************************************!\n");
         printf("                   GET TREATMENT\n");
-        printf("!**************************************************************!\n");
+        printf("!**************************************************************!\n\n");
         
 	//récupération des info contenues dans le message GET
 	long int begin_offset;
@@ -305,7 +305,7 @@ int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
 	
         printf("\n!************************************************************!\n");
         printf("                   LINK UPDATE TREATMENT\n");
-        printf("!**************************************************************!\n");
+        printf("!**************************************************************!\n\n");
         
 	//Recuperation du type du voisin
 	unsigned long int neighbor_type;
