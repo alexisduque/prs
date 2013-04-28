@@ -294,7 +294,7 @@ p2psearch(params* p)
         src_adresse = p2p_addr_create();
         p2p_addr_copy(src_adresse,p->sp->p2pMyId);
         dst_adresse = p2p_addr_create();
-        p2p_addr_copy(dst_adresse,p->sp->p2pMyId);
+        p2p_addr_copy(dst_adresse,p2p_addr_broadcast());
         
         // Creation de l'en-tete du message
         p2p_msg_init(search_message,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
