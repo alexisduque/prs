@@ -56,7 +56,6 @@
 #define P2P_INTERNAL_SERVER_ERROR      500
 #define P2P_NOT_IMPLEMENTED            501
 #define P2P_SERVICE_UNAVAILABLE        502
-
 /****************************************************/
 #define P2P_MAX_RESULT_NB 10
 #define P2P_MAX_SEARCH_NB 10

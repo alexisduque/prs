@@ -7,6 +7,7 @@
 
 #ifndef P2P_DO_MSG_H
 #define	P2P_DO_MSG_H
+#define MAX_DATA_SIZE 64000
 
 #include <stdio.h>
 #include "p2p_msg.h"

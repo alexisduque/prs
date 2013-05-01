@@ -549,17 +549,17 @@ int p2p_get_file(server_params *sp, int filesize, int searchID, int replyID){
 	p2p_get_owner_file(sp->p2pSearchList, searchID, replyID, &file_name, &dst);
         printf("filename  = %s\n\n", file_name);
 	printf("dest du message get %s\n", p2p_addr_get_str(dst));
-	
+	printf("filesize = %d\n\n", filesize);
 	endOffset = -1;
 
-	while(endOffset < filesize){
+	while(endOffset < filesize - 1){
             	int fds = p2p_tcp_socket_create(sp, dst);
 		beginOffset = endOffset + 1;
 		if (endOffset < filesize - MAX_DATA_SIZE){
 			endOffset = endOffset + MAX_DATA_SIZE;
 		}
 		else {
-			endOffset = filesize;
+			endOffset = filesize - 1;
 		}
 		printf("beginoffset = %d    / 		endOffset = %d\n\n", beginOffset, endOffset);
 		printf("Etat du telechargement : %d \n", beginOffset/filesize);
@@ -592,6 +592,7 @@ int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffse
 	char* payload =  (char*) malloc(2*P2P_INT_SIZE + strlen(filename) + 1);
 	beginOffset = htonl(beginOffset);
 	endOffset = htonl(endOffset);
+      
 	memcpy(payload, &beginOffset, 4);
 	memcpy(payload + P2P_INT_SIZE, &endOffset, 4);	
 	memcpy(payload + 2*P2P_INT_SIZE, filename, strlen(filename)+1 );
