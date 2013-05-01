@@ -43,4 +43,12 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) ;
 //TRAITEMENT DU NEIGHBORS_LIST
 int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) ;
 
+
+int p2p_treat_get(server_params *sp, p2p_msg get, int fd);
+
+
+int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset, int fd);
+int p2p_get_file(server_params *sp, int filesize, int searchID, int replyID);
+int p2p_treat_data(server_params *sp, p2p_msg data, char* filename, int beginOffset, int endOffset);
+
 #endif /* __P2P_DO_MSG */

@@ -30,7 +30,6 @@
 #include "p2p_msg.h"
 #include "p2p_ui.h"
 #include "p2p_do_msg.h"
-#include "p2p_msg.h"
 
 #define MAX_PATH 1024
 #define MAX_REQ 1000
@@ -360,115 +359,31 @@ p2plist_result (params* p)
 int
 p2pget(params* p)
 {       
-        int search, result;
-        int socket_tcp;
-        char * file_name;
-        char * buffer;
-        unsigned char * data;
-        int begin_offset;
-        int file_size;
-        unsigned char status;
-        p2p_msg get_msg,data_msg;
-        p2p_addr dst ;
+    int searchID, resultID;
+    char * file_name;
+    p2p_addr dst ;
+    resultID = atoi(p->options[0]);
+    searchID = atoi(p->options[1]);
+    VERBOSE(p->sp, VSYSCL, "searchID = %d   / replyID = %d\n\n", searchID, resultID);
+    int file_size = p2p_get_owner_file(p->sp->p2pSearchList, searchID, resultID, &file_name, &dst);
+    if (file_size == P2P_ERROR){
+        perror("Error : File not FOUND \n\n");
+        return P2P_ERROR;
+    }       
+    
+    printf("   Nom du fichier : %s\n", file_name);
+    printf("   Taille : %d\n", file_size);
+    printf("   Proprietaire : %s\n", p2p_addr_get_str(dst));
 
-        // Recuperation des ID de recherche et de resultat
-        result = atoi(p->options[0]);
-        search = atoi(p->options[1]);
-        VERBOSE(p->sp,VSYSCL,"UI: starting get result [%d] from search [%d]\n",result, search); 
-            printf("\nUI: Demande de recuperation de fichier :\n");
-        printf("Reponse [%d] a la recherche [%d]\n\n",result, search); 
-        
-        // Recuperation des infos sur le fichier voulu
-        file_size = p2p_get_owner_file(p->sp->p2pSearchList, search, result, &file_name, &dst);
-        if (file_size == P2P_ERROR){
-                perror("Error : File not FOUND \n\n");
-                return P2P_ERROR;
-        }       
-                
-/*
-        printf("   Nom du fichier : %s\n", file_name);
-        printf("   Taille : %d\n", file_size);
-        printf("   Proprietaire : %s\n", p2p_addr_get_str(dst));
-*/
-        
-        // Creation du GET
-        get_msg = p2p_msg_create();
-        p2p_msg_init (get_msg, P2P_MSG_GET, P2P_MSG_TTL_ONE_HOP, p->sp->p2pMyId, dst);
-                
-        begin_offset = 0;
-        file_size = htonl(file_size - 1);
-        buffer = malloc(2*P2P_INT_SIZE + strlen(file_name));
-        memcpy(buffer, &begin_offset, P2P_INT_SIZE);
-        memcpy(buffer + P2P_INT_SIZE, &file_size, P2P_INT_SIZE);
-        memcpy(buffer + 2*P2P_INT_SIZE, file_name, strlen(file_name));
-        
-        p2p_msg_init_payload(get_msg, 2*P2P_INT_SIZE + strlen(file_name), (unsigned char*) buffer);
-        
-        // Création de la socket pour envoyer au noeud
-        socket_tcp= p2p_tcp_socket_create(p->sp,dst);
-        if (socket_tcp == P2P_ERROR) return socket_tcp;
-        
-        // Envoi du msg
-        if(p2p_tcp_msg_sendfd(p->sp, get_msg, socket_tcp) == P2P_ERROR){
-                perror("Error sending GET message\n\n");
-                return P2P_ERROR;
-        }
-        
-        // Nettoyage des variables
-        p2p_msg_delete(get_msg);
-        free(buffer);   
-        
-        // Reception du data
-        
-        data_msg = p2p_msg_create();
-        printf("\n>> Waiting for data...\n"); 
-        if ( p2p_tcp_msg_recvfd (p->sp, data_msg, socket_tcp) == P2P_ERROR ){
-                perror("Error receiving DATA messsage\n\n");
-                return P2P_ERROR;
-        }
-        
-        printf("****  Data received  **** !\n");
-        p2p_msg_dumpfile(data_msg,stdout,1);
-        VERBOSE(p->sp, VSYSCL,"MSG size : %d\n",p2p_msg_get_length(data_msg));
-        
-        // Recuperation du status
-        memcpy(&status, p2p_get_payload(data_msg), 1);
-        
-        printf("   Status code : %d\n",status);
-        if (status == P2P_DATA_OK){
-                printf("   Recuperation des donnees\n");
-                // Recuperation taille des donnees
-                memcpy(&file_size, p2p_get_payload(data_msg) + P2P_HDR_BITFIELD_SIZE, P2P_INT_SIZE);
-                file_size = ntohl(file_size);
-                
-                // Creation du fichier d'accueil
-                p2p_file_create_file(p->sp, file_name, file_size);
-                
-                if(file_size > 0){
-                // Ecriture des donnees
-                printf("   Ecriture dans le fichier (taille : %d)\n", file_size);
-                printf("***********************************************\n\n");
-                data = malloc (file_size*sizeof(char));
-                memcpy(data, p2p_get_payload(data_msg) + 2*P2P_HDR_BITFIELD_SIZE, file_size);
-                p2p_file_set_chunck(p->sp, file_name, 0, file_size-1, data);
-                }
-                return P2P_OK;
+    VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",resultID, searchID); 
+    
+    if (p2p_get_file(p->sp, file_size, searchID, resultID) != P2P_OK)
+    {
+        printf("*** GET ERROR****");
+        return P2P_UI_ERROR;
+    }
 
-        } else {
-                return P2P_ERROR;
-        }
-        
-        // Nettoyage des variables
-        p2p_msg_delete(data_msg);
-        free(data);  
-        
-        // Fermeture de la socket
-        p2p_tcp_socket_close(p->sp,socket_tcp);
-        
-        //free(buffer);
-        free(file_name);
-        //p2p_msg_delete(get);
-        return P2P_OK;
+    return(P2P_OK);
 
 }
 
