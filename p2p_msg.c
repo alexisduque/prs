@@ -118,7 +118,7 @@ p2p_msg_init(p2p_msg msg,
 {
   p2p_msg_set_version(msg,P2P_VERSION);
   p2p_msg_set_type   (msg,type);
-  /* p2p_msg_set_ttl    (msg,ttl); */
+  p2p_msg_set_ttl    (msg,ttl);
   p2p_addr_copy      (msg->hdr.src,src);
   p2p_addr_copy      (msg->hdr.dst,dst);
 
@@ -333,13 +333,16 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 {
   VERBOSE(sp,VPROTO,"TRY TO SEND TCP msg ...\n");
   //On verifie que l'on essaie pas d'envoyer un message à nous même
-  if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) 
+  if (p2p_addr_is_equal(sp->p2pMyId,p2p_msg_get_dst(msg))!=0 ) { 
+    VERBOSE(sp,VPROTO,"ERROR : SENDING TCP msg YOURSELF\n");
     return P2P_ERROR;
+  }
   
   //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
   
   //allocation de la mémoire pour le buffer
-  unsigned char* toWrite = (unsigned char*)malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
+  int message_size  = (int)htons(p2p_msg_get_length(msg));
+  unsigned char* toWrite = (unsigned char*)malloc(P2P_HDR_SIZE + message_size);
   
   // ajout du champs "version" au buffer
   memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE); 
@@ -348,13 +351,13 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   //ajout du champs "Adresse Dest"
   memcpy(&toWrite[P2P_HDR_BITFIELD_SIZE + P2P_ADDR_SIZE], p2p_msg_get_dst(msg), P2P_ADDR_SIZE); 
   // Si contenu du message non vide, ajout du champs "Message"
-  if (p2p_msg_get_length(msg) != 0){
-    memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), p2p_msg_get_length(msg));
+  if (message_size > 0){
+    memcpy(&toWrite[P2P_HDR_SIZE], p2p_get_payload(msg), message_size);
   }
   
   
   // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
-  if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) != (P2P_HDR_SIZE +  p2p_msg_get_length(msg))){
+  if (write(fd, toWrite, P2P_HDR_SIZE + message_size) != (P2P_HDR_SIZE +  message_size)){
     VERBOSE(sp,VPROTO,"Unable to send msg to the socket\n\n");
     //Liberation de la memoire du buffer
     free(toWrite);
@@ -576,6 +579,8 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     p2p_udp_socket_close(sp, fd);
   
   } 
+  p2p_addr_delete(initiator);
+  p2p_addr_delete(src);
   
   return P2P_OK;
 

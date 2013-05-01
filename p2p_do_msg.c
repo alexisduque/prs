@@ -221,6 +221,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 	unsigned long int value = 0;
 	int file_size = 0;
 	unsigned char status;
+        
 	unsigned char *data_payload = (unsigned char*)malloc(sizeof(unsigned char)*2*P2P_INT_SIZE);
 	
         printf("\n!************************************************************!\n");
@@ -258,7 +259,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
                         //Récuperation OK       
 			value = end_offset - begin_offset + 1 ;
 			payload_length = (unsigned short int)(2*P2P_INT_SIZE + end_offset - begin_offset + 1);
-			data_payload = (unsigned char*)realloc(data_payload,sizeof(unsigned char)*payload_length);
+			data_payload = (unsigned char*)realloc(data_payload, payload_length);
 			memcpy(&data_payload[2*P2P_INT_SIZE], octets_data, payload_length - 2*P2P_INT_SIZE);
 			free(octets_data);
 	
@@ -267,23 +268,29 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
                         VERBOSE(sp,VMCTNT,"Can't Get CHUNK !\n");
 			status = P2P_DATA_ERROR;
 			value = P2P_INTERNAL_SERVER_ERROR;
+                        payload_length = 2*P2P_INT_SIZE;
+                        
+                        
 		}
-		
+                	
 	} else {
 		//fichier indisponible 
                 VERBOSE(sp,VMCTNT,"File not Available !\n");
 		status = P2P_DATA_ERROR;
+                value = P2P_DATA_NOT_FOUND;
+                payload_length = 2*P2P_INT_SIZE;
 	}
 	
 	//Remplissage du payload avec le status
 	data_payload[0] = status;
         //3 octets de bourrage selon le CDC
-	for ( i = 0; i < P2P_INT_SIZE - 1; i++) data_payload[i+1] = 0x00;
+	//for ( i = 0; i < P2P_INT_SIZE - 1; i++) data_payload[i+1] = 0x00;
+        VERBOSE(sp,VMCTNT,"Value : %d\n", value);
 	value = htonl(value);
 	memcpy(&data_payload[P2P_INT_SIZE], &value, P2P_INT_SIZE);
 	
 	p2p_msg_init_payload(data_msg, payload_length, data_payload);
-	
+	p2p_msg_display(data_msg);
 	//envoi du message
 	p2p_tcp_msg_sendfd(sp, data_msg, socket);
 	
@@ -294,7 +301,6 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 	//Nettoyage
 	free(data_payload);
 	p2p_msg_delete(data_msg);
-	
 	return P2P_OK;
     
 }
@@ -409,7 +415,8 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     
     // Ne pas oublier de liberer la mémoire !
     p2p_addr_delete(src_adresse);
-    
+    p2p_addr_delete(dst_adresse);
+    p2p_msg_delete(reply_message);
     return P2P_OK;
  
 }
@@ -486,6 +493,7 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     // Cleaning memory
     p2p_msg_delete(msg_neighbors_list);
     p2p_addr_delete(msg_src);
+    free(buffer);
     return P2P_OK;
     
 }
@@ -543,10 +551,9 @@ int p2p_get_file(server_params *sp, int filesize, int searchID, int replyID){
 	printf("dest du message get %s\n", p2p_addr_get_str(dst));
 	
 	endOffset = -1;
-	
-	int fd = p2p_tcp_socket_create(sp, dst);
-	
+
 	while(endOffset < filesize){
+            	int fds = p2p_tcp_socket_create(sp, dst);
 		beginOffset = endOffset + 1;
 		if (endOffset < filesize - MAX_DATA_SIZE){
 			endOffset = endOffset + MAX_DATA_SIZE;
@@ -559,13 +566,14 @@ int p2p_get_file(server_params *sp, int filesize, int searchID, int replyID){
 		
 		//Send get message to file owner
 		printf("just before sending : dest du message get  = %s\n", p2p_addr_get_str(dst));
-		p2p_send_get(sp, dst, file_name, beginOffset, endOffset, fd);
+		p2p_send_get(sp, dst, file_name, beginOffset, endOffset, fds);
 		
 		//Then wait for DATA message and stock information
 		p2p_msg msg_data = p2p_msg_create();
-		p2p_tcp_msg_recvfd(sp, msg_data, fd);
+		p2p_tcp_msg_recvfd(sp, msg_data, fds);
 		p2p_treat_data(sp, msg_data, file_name, beginOffset, endOffset);
                 p2p_msg_delete(msg_data);
+                p2p_tcp_socket_close(sp, fds);
                
         }
   p2p_addr_delete(dst);
@@ -573,35 +581,34 @@ int p2p_get_file(server_params *sp, int filesize, int searchID, int replyID){
   return P2P_OK;
 }
 
-int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset, int fd){
+int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset, int fds){
 	printf("\n--------------------------------------------------------------\n");
 	printf("              FONCTION SEND GET\n");
 	printf("--------------------------------------------------------------\n");
 	p2p_msg msg_get = p2p_msg_create();
 	p2p_msg_init(msg_get, P2P_MSG_GET, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, dst);
 	printf("dest du message get %s\n", p2p_addr_get_str(p2p_msg_get_dst(msg_get)));
-	printf("dest du message get %s\n", p2p_addr_get_str(dst));
-	
-	
-	unsigned char payload[2*4 + strlen(filename)+1];
+	printf("source du message get %s\n", p2p_addr_get_str(sp->p2pMyId));
+	char* payload =  (char*) malloc(2*P2P_INT_SIZE + strlen(filename) + 1);
 	beginOffset = htonl(beginOffset);
 	endOffset = htonl(endOffset);
 	memcpy(payload, &beginOffset, 4);
-	memcpy(&payload[4], &endOffset, 4);	
-	memcpy(&payload[8], filename, strlen(filename)+1);
+	memcpy(payload + P2P_INT_SIZE, &endOffset, 4);	
+	memcpy(payload + 2*P2P_INT_SIZE, filename, strlen(filename)+1 );
 	beginOffset = ntohl(beginOffset);
 	endOffset = ntohl(endOffset);
 	
-	p2p_msg_init_payload(msg_get, 2*4 + strlen(filename)+1, payload);
-	p2p_tcp_msg_sendfd(sp, msg_get, fd);
-        free(payload);
+	p2p_msg_init_payload(msg_get, 2*4 + strlen(filename)+1, (unsigned char *)payload);
+	p2p_tcp_msg_sendfd(sp, msg_get, fds);
         p2p_msg_delete(msg_get);
 	printf("End of function send_get()\n");
+        free(payload);
 	return P2P_OK;	
 }
 
 
 /*
+
 int p2p_do_get(server_params *sp, p2p_msg get, int fd){
 		printf("\n--------------------------------------------------------------\n");
 	printf("              FONCTION TREAT GET\n");
@@ -683,7 +690,7 @@ int p2p_treat_data(server_params *sp, p2p_msg data, char* filename, int beginOff
 	else printf("File is not available\n");
 	
   free(content);
-  free(data_payload) ;
+
   printf("End of function treat_data()\n");
   return P2P_OK;
 }
