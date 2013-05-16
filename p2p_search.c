@@ -87,33 +87,35 @@ int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** fi
 
         search_result *visitor;
         search_quidonc *quidonc;
-        visitor=liste;
+        visitor = liste;
 
         // On parcourt la liste
         while(visitor!=NULL){
                 if(visitor->search_id == search_id){
                         // On récupère les infos sur le fichier
-                        *file_name=malloc((strlen(visitor->file_name))+1);
+                        *file_name = malloc((strlen(visitor->file_name))+1);
                         memcpy(*file_name,visitor->file_name,strlen(visitor->file_name));
                         (*file_name)[strlen(visitor->file_name)] = '\0';
                         // On parcourt les réponses
-                        quidonc=visitor->list_owners;
+                        quidonc = visitor->list_owners;
                         while(quidonc!=NULL){
                                 if(reply_id == quidonc->reply_id){
                                         // On récupère l'adresse du proprio
-                                        *owner=p2p_addr_duplicate(quidonc->file_owner);
+                                     p2p_addr_copy(*owner,quidonc->file_owner );
+                                        //*owner = p2p_addr_duplicate(quidonc->file_owner);
                                         return quidonc->filesize;
                                 }
                                 if(visitor->list_owners->next!=NULL){
-                                        quidonc=visitor->list_owners->next;
+                                        quidonc = visitor->list_owners->next;
                                 }else{
-                                        quidonc=NULL;
+                                        quidonc = NULL;
                                 }       
                         }
                 }
                 visitor=visitor->next;
         }
-
+        free(visitor);
+        free(quidonc) ;
         // Rien trouvé
         return P2P_ERROR;
 }

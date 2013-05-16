@@ -226,7 +226,8 @@ int p2p_msg_display(p2p_msg message){
   printf("Length : %d \n", p2p_msg_get_length(message));
   printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
   printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
-  printf("Payload : %s \n\n", p2p_get_payload(message));
+ //printf("Payload : %s \n\n", p2p_get_payload(message));
+  //raw_print((char*)p2p_get_payload(message),p2p_msg_get_length(message) );
   return P2P_OK;
 }
 
@@ -235,8 +236,10 @@ int p2p_msg_display(p2p_msg message){
 /*               Fonctions sur les debugs                */
 /*********************************************************/
 
-//ecrit le message msg dans le fichier fd. Si print_payload != 0 �crit
-//aussi le payload du message sinon on n'�crit que l'entete.
+
+// ecrit le message msg dans le fichier fd.
+
+/*
 int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
 {
     fprintf(fd,"Version: %u\n",p2p_msg_get_version(msg));
@@ -248,6 +251,8 @@ int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
     if ((print_payload !=0) && (msg->payload!=NULL)) fprintf(fd,"payload: %s\n",msg->payload);
     return P2P_OK;
 }
+ */
+
 
 //ecrit l'entete du message msg en hexa. 
 int p2p_msg_hexdumpheader(const p2p_msg msg, const FILE* fs)
@@ -323,9 +328,17 @@ int p2p_tcp_socket_create (server_params* sp, p2p_addr dst) {
 //Fermeture de la socket donnée par le descripteur fd
 int p2p_tcp_socket_close(server_params* sp, int fd)
 {
-    close(fd);
-    VERBOSE(sp,VSYSCL,"TCP socket disconnected %d\n",fd);
-    return P2P_OK;
+    if (close(fd) == -1){
+        perror("tcp_socket_close : Erreur fermeture socket TCP\n");
+        VERBOSE(sp,CLIENT,"tcp_socket_close : Erreur fermeture socket TCP\n");
+        VERBOSE(sp,CLIENT,"END_OF_TRANSMISSION\n");
+        return P2P_ERROR;
+    }
+    else {
+           VERBOSE(sp,VSYSCL,"TCP socket disconnected %d\n",fd);
+            return P2P_OK;
+    }
+
 }
 
 //Envoi du message msg via la socket tcp fd
@@ -474,16 +487,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
 int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd)
 {
   VERBOSE(sp, VMCTNT, "TRY TO RECEIVE MSG ...\n");
-/*
-  read(fd, msg, P2P_HDR_BITFIELD_SIZE);
-  read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
-  read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-  length = p2p_msg_get_length(msg);
-  char data_payload[length];
-  read(fd, data_payload, length);
-  p2p_msg_init_payload(msg, length, data_payload);
-  p2p_msg_display(msg);
-*/
+  
   //Declaration du buffer
   char data[200];
   //free(msg->payload);
@@ -526,8 +530,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
   printf("----------------------Rebroadcast-----------------------------\n");
   
   int fd;
-  p2p_addr src = p2p_addr_create();
-  src = p2p_msg_get_src(msg);
+  p2p_addr src = p2p_msg_get_src(msg);
   printf("Message Source : %s\n", p2p_addr_get_str(src));
   printf("Right ngb : %s\n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
   printf("Left ngb : %s\n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
@@ -581,7 +584,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
   } 
   p2p_addr_delete(initiator);
   p2p_addr_delete(src);
-  
+ 
   return P2P_OK;
 
 }

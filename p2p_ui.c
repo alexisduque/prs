@@ -322,9 +322,10 @@ p2psearch(params* p)
         
         // Nettoyage des variables
         
-        p2p_msg_delete(search_message);
+        //p2p_msg_delete(search_message);
         free(buffer);
-
+        p2p_addr_delete(src_adresse);
+        p2p_addr_delete(dst_adresse);
         return P2P_UI_OK;
  
 }
@@ -360,31 +361,30 @@ int
 p2pget(params* p)
 {       
     int searchID, resultID;
-    char * file_name;
-    p2p_addr dst ;
     resultID = atoi(p->options[0]);
     searchID = atoi(p->options[1]);
     VERBOSE(p->sp, VSYSCL, "searchID = %d   / replyID = %d\n\n", searchID, resultID);
+/*
     int file_size = p2p_get_owner_file(p->sp->p2pSearchList, searchID, resultID, &file_name, &dst);
     if (file_size == P2P_ERROR){
         perror("Error : File not FOUND \n\n");
         return P2P_ERROR;
     }       
-    
-    printf("   Nom du fichier : %s\n", file_name);
-    printf("   Taille : %d\n", file_size);
-    printf("   Proprietaire : %s\n", p2p_addr_get_str(dst));
+*/
 
     VERBOSE(p->sp,VSYSCL,"ui: starting get result [%d] from search [%d]\n",resultID, searchID); 
     
-    if (p2p_get_file(p->sp, file_size, searchID, resultID) != P2P_OK)
+    if (p2p_get_file(p->sp, searchID, resultID) != P2P_OK)
     {
         printf("*** GET ERROR****");
         return P2P_UI_ERROR;
     }
 
     return(P2P_OK);
-
+/*
+    p2p_addr_delete(dst);
+    free(file_name);
+*/
 }
 
 int p2pdiscover(params *p)
