@@ -196,6 +196,7 @@ int p2p_list_results(server_params *sp, int id) {
         }
 
         // On parcourt la liste
+        
         while(terminator!=NULL) {
                 VERBOSE(sp,CLIENT,"   %d : %s [%d o]\n",terminator->reply_id,p2p_addr_get_str(terminator->file_owner),terminator->filesize);
                 // On passe ensuite à la recherche suivante

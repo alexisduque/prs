@@ -555,7 +555,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     printf("Equal(src, right)  = %d\n", p2p_addr_is_equal(src, sp->p2p_neighbors.right_neighbor) );
    
     if (p2p_udp_msg_sendfd(sp, msg, fd) != P2P_OK) {
-      printf("UDP_rebroadcast : echec de l'envoi \n\n");
+      printf("UDP_rebroadcast : sending FAILED\n\n");
       return P2P_ERROR;
     } else {
       printf("Message sent to %s\n\n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor)); 
@@ -573,7 +573,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     fd = p2p_udp_socket_create(sp, sp->p2p_neighbors.left_neighbor);
     
     if (p2p_udp_msg_sendfd(sp, msg, fd) != P2P_OK) {
-      printf("UDP rebroadcast : fail sending \n\n");
+      printf("UDP rebroadcast : Sending FAILED \n\n");
       return P2P_ERROR;
     } else {
       printf("Message sent to %s\n\n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor)); 
