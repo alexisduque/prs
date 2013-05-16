@@ -359,7 +359,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
 
             // On recupere le nom du fichier demande
             name_size = p2p_msg_get_length(search_msg) - P2P_ADDR_SIZE - P2P_HDR_BITFIELD_SIZE;
-            file_name = (char *)malloc(name_size +1);
+            file_name = (char *)malloc(sizeof(unsigned char)*name_size +1);
             memcpy(file_name,p2p_get_payload(search_msg) + P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE, name_size);
             file_name[name_size] = '\0';
             printf("Search File: %s\n",file_name);
@@ -414,8 +414,8 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     
     // Ne pas oublier de liberer la mémoire !
     p2p_addr_delete(src_adresse);
-    p2p_addr_delete(dst_adresse);
-    p2p_msg_delete(reply_message);
+    //p2p_addr_delete(dst_adresse);
+    //p2p_msg_delete(reply_message);
     return P2P_OK;
  
 }

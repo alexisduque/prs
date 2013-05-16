@@ -355,7 +355,7 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd)
   
   //allocation de la mémoire pour le buffer
   int message_size  = (int)htons(p2p_msg_get_length(msg));
-  unsigned char* toWrite = (unsigned char*)malloc(P2P_HDR_SIZE + message_size);
+  unsigned char* toWrite = (unsigned char*)malloc(P2P_HDR_SIZE + sizeof(unsigned char)*message_size);
   
   // ajout du champs "version" au buffer
   memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE); 
@@ -583,7 +583,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
   
   } 
   p2p_addr_delete(initiator);
-  p2p_addr_delete(src);
+  //p2p_addr_delete(src);
  
   return P2P_OK;
 
