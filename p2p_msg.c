@@ -219,13 +219,13 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst)
 }
 
 int p2p_msg_display(p2p_msg message){
-  printf("Contenu du message : \n");
+  printf("Message Content : \n");
   printf("Version :%d ", p2p_msg_get_version(message));
   printf("Type : %d \n",p2p_msg_get_type(message));
   printf("TTL :%d ", p2p_msg_get_ttl(message));
   printf("Length : %d \n", p2p_msg_get_length(message));
-  printf("Source adress : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
-  printf("Destination adress : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
+  printf("Source address : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
+  printf("Destination address : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
  //printf("Payload : %s \n\n", p2p_get_payload(message));
   //raw_print((char*)p2p_get_payload(message),p2p_msg_get_length(message) );
   return P2P_OK;
@@ -297,14 +297,14 @@ int p2p_tcp_socket_create (server_params* sp, p2p_addr dst) {
         // Creation et attachement de la socket sur un port quelconque 
         port = 0; 
         if ((desc = creer_socket(SOCK_STREAM, port)) == P2P_ERROR) {
-                perror("tcp_socket_create : Creation de socket impossible\n"); 
+                perror("tcp_socket_create : Error creating the socket\n"); 
                 return P2P_ERROR; 
         } 
 
         // Recherche de l'adresse internet du serveur 
         ip = p2p_addr_get_ip_str(dst);
         if ((hp = gethostbyname(ip)) == NULL) {
-                printf("tcp_socket_create : Machine %s inconnue\n", ip); 
+                printf("tcp_socket_create : Computer %s unknown\n", ip); 
                 return P2P_ERROR; 
         }
 
@@ -316,7 +316,7 @@ int p2p_tcp_socket_create (server_params* sp, p2p_addr dst) {
 
         // Demande de connexion au serveur 
         if(connect(desc,(struct sockaddr*) &adresse, lg) == -1) {
-                perror("tcp_socket_create : Erreur de connection au serveur\n"); 
+                perror("tcp_socket_create : Error connecting to server\n"); 
                 return P2P_ERROR; 
         } 
         VERBOSE(sp,VPROTO,"SOCKET CREATED\n");
@@ -329,8 +329,8 @@ int p2p_tcp_socket_create (server_params* sp, p2p_addr dst) {
 int p2p_tcp_socket_close(server_params* sp, int fd)
 {
     if (close(fd) == -1){
-        perror("tcp_socket_close : Erreur fermeture socket TCP\n");
-        VERBOSE(sp,CLIENT,"tcp_socket_close : Erreur fermeture socket TCP\n");
+        perror("tcp_socket_close : Error closing TCP socket\n");
+        VERBOSE(sp,CLIENT,"tcp_socket_close : Error closing TCP socket\n");
         VERBOSE(sp,CLIENT,"END_OF_TRANSMISSION\n");
         return P2P_ERROR;
     }
@@ -573,7 +573,7 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     fd = p2p_udp_socket_create(sp, sp->p2p_neighbors.left_neighbor);
     
     if (p2p_udp_msg_sendfd(sp, msg, fd) != P2P_OK) {
-      printf("UDP rebroadcast : echec de l'envoi \n\n");
+      printf("UDP rebroadcast : fail sending \n\n");
       return P2P_ERROR;
     } else {
       printf("Message sent to %s\n\n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor)); 

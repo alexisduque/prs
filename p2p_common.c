@@ -126,14 +126,14 @@ int creer_socket (int type, int port)
   /* Creation de la socket */ 
   if ((desc=socket(AF_INET,type,0)) == -1)
   {
-    perror("Creation de socket impossible"); 
+    perror("Impossible to create the socket"); 
     return -1; 
   } 
 
   valid = 1;
   if (setsockopt(desc,SOL_SOCKET,SO_REUSEADDR,(void*)&valid,sizeof(valid)) < 0)
     {
-      perror("could not setsockopt");
+      perror("Could'nt setsockopt");
       close(desc);
       return -1;
     }
@@ -147,7 +147,7 @@ int creer_socket (int type, int port)
   /* Demande d'attachement de la socket */ 
   if (bind(desc,(struct sockaddr*)&adresse,longueur) == -1)
   {
-    perror("Attachement de la socket impossible"); 
+    perror(" Socket attachement failed"); 
     close(desc); 
     return -1; 
   } 

@@ -239,7 +239,7 @@ p2pleave(params *p)
 
             // Creation du header
             if (p2p_msg_init (link_update_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP, p->sp->p2pMyId, neighbor_addresse)!= P2P_OK){
-                    perror("Erreur a l'initialisation de link update gauche\n");
+                    perror(" Error during the initialisation link update left\n");
                     return P2P_ERROR;
             }
 
@@ -250,7 +250,7 @@ p2pleave(params *p)
 
             // Envoi du message
             if(p2p_tcp_msg_send(p->sp,link_update_msg) == P2P_ERROR){
-                    perror("Erreur envoi link update\n");
+                    perror(" Error send link update\n");
                     return P2P_ERROR;
             }
 
@@ -299,7 +299,7 @@ p2psearch(params* p)
         p2p_msg_init(search_message,P2P_MSG_SEARCH,P2P_MSG_TTL_MAX,src_adresse,dst_adresse);
 
         // Creation du buffer
-        printf("\nUI: Recherche du fichier : %s\n", p->options[0]);
+        printf("\nUI: Research file : %s\n", p->options[0]);
         buffer = malloc(P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE + sizeof(char)*strlen(p->options[0]));
         memcpy(buffer, p->sp->p2pMyId, P2P_ADDR_SIZE);
         search_id = htonl(p->sp->search_id);
@@ -336,7 +336,7 @@ p2psearch(params* p)
 int 
 p2plist_search (params* p)
 {
-    printf("\nUI: Liste des recherches\n\n");
+    printf("\nUI: Researches List :\n\n");
     p2p_list_search(p->sp);
     return P2P_UI_OK;
 }
@@ -348,7 +348,7 @@ int
 p2plist_result (params* p)
 {
     
-        printf("\nUI: Liste des resultats de la recherche %s\n\n",p->options[0]);
+        printf("\nUI: Results list of the research %s\n\n",p->options[0]);
         p2p_list_results(p->sp,atoi(p->options[0]));
 
         return P2P_UI_OK;
@@ -389,7 +389,7 @@ p2pget(params* p)
 
 int p2pdiscover(params *p)
 {
-VERBOSE(p->sp,VSYSCL,"Decouverte de topology -- Mise a jour de la liste des voisins\n");
+VERBOSE(p->sp,VSYSCL," Discover topology - Refresh neighbors list\n");
 	
 		// Writing Neighbors_REQ Message
 		
@@ -423,7 +423,7 @@ VERBOSE(p->sp,VSYSCL,"Decouverte de topology -- Mise a jour de la liste des vois
                 
 	
 	//Destroy msg
-		printf("Fin envoi du message P2P_NEIGHBORS_REQ\n");
+		printf(" Message P2P_NEIGHBORS_REQ sent\n");
 		p2p_msg_delete(neighbors_req_msg);
 		
 	return P2P_UI_OK;

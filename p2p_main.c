@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
       
       // Si erreur dans le select
       if (return_select == -1) {
-          printf("Erreur dans le select\n");
+          printf("Error in the select\n");
           exit(-1);
       } else
           
@@ -331,8 +331,8 @@ int main(int argc, char* argv[])
 
                     sp.client_ui = sock_ui_connected;
                     
-                    VERBOSE(&sp,CLIENT,"\n** Connection au noeud %s\n",sp.server_name);
-                    VERBOSE(&sp,CLIENT,"** P2P Adresse -->  %s\n",p2p_addr_get_str(sp.p2pMyId));
+                    VERBOSE(&sp,CLIENT,"\n** Connexion to the node: %s\n",sp.server_name);
+                    VERBOSE(&sp,CLIENT,"** P2P Address: -->  %s\n",p2p_addr_get_str(sp.p2pMyId));
                     VERBOSE(&sp,CLIENT,"\n%s: ",sp.server_name);
 
 

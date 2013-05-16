@@ -51,10 +51,9 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire) {
   int socket; 
   socket = p2p_tcp_socket_create(sp, destinataire);
   if (socket == -1) {
-        perror("Erreur attachement socket\n");
+  		perror("Error socket attachement \n");
   }
-  
-  printf("Envoie du JOIN REQ à: %s \n", p2p_addr_get_str(destinataire));
+  printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
   if ( p2p_tcp_msg_sendfd(sp, join_msg, socket) != P2P_OK ) {
     VERBOSE(sp,VMCTNT,"ERROR SENDING AK\n");
     return (P2P_ERROR);
@@ -110,8 +109,9 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	
 	
 	p2p_msg_init_payload(join_ack, 2*P2P_ADDR_SIZE, payload);
-	printf("\nMessage JOIN_ACK rempli : \n");
-    
+	printf("\n Message JOIN_ACK done : \n" );
+		
+ 
 	p2p_msg_display(join_ack);
 	
 	
@@ -122,12 +122,12 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket){
 	memcpy(right_neighbor, &(p2p_get_payload(join_ack))[P2P_ADDR_SIZE], P2P_ADDR_SIZE);
 	
 	
-	printf("Voisin de gauche : %s \n", p2p_addr_get_str(MyId));
-	printf("Voisin de droite %s \n", p2p_addr_get_str(right_neighbor));
+	printf("Left neighbor : %s \n", p2p_addr_get_str(MyId));
+	printf("Right neighbor : %s \n", p2p_addr_get_str(right_neighbor));
 
 	//Envoi du message JOIN ACK
 	if (p2p_tcp_msg_sendfd(sp, join_ack, socket) == P2P_OK){
-		printf("Message JOIN_ACK envoyé ! \n\n");
+		printf("Message JOIN_ACK sent ! \n\n");
 	}
         
         p2p_addr_delete(MyId);
@@ -491,11 +491,11 @@ int p2p_get_file(server_params *sp, int searchID, int replyID){
 		printf("BeginOffset = %d    / 	EndOffset = %d\n\n", beginOffset, endOffset);
 		printf("Download Statut : %d %%\n\n", download_statut);
 		
-		//Envoie du message GET au noeud possedant le fichier
+		//Envoi du message GET au noeud possedant le fichier
 		printf("Dest GET message  = %s\n", p2p_addr_get_str(dst));
 		p2p_send_get(sp, dst, file_name, beginOffset, endOffset, fd);
 		
-		// Recptionne le message DATA contenant les données ud fichier et traite
+		// Réceptionne le message DATA contenant les données ud fichier et traite
 		p2p_msg msg_data = p2p_msg_create();
 		p2p_tcp_msg_recvfd(sp, msg_data, fd);
 		p2p_do_data(sp, msg_data, file_name, beginOffset, endOffset);
@@ -508,8 +508,6 @@ int p2p_get_file(server_params *sp, int searchID, int replyID){
         // Liberation de la memoire
         p2p_addr_delete(dst);
         free(file_name);
-
-        
         printf("\nEnd of function get_file()\n\n");
         return P2P_OK;
 }
