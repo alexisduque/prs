@@ -37,7 +37,7 @@ int p2p_add_search (search_list *pliste, int id, char file_name[30]) {
         // Création de la nouvelle entrée
         newelem = (search_result *) malloc (sizeof(search_result));
         if (newelem==0) {
-                perror("p2p_insert_new_search : Plus de place mémoire");
+                perror("p2p_insert_new_search : Memory FULL");
                 return P2P_ERROR;
         }
 
@@ -60,15 +60,15 @@ int p2p_add_search (search_list *pliste, int id, char file_name[30]) {
 void p2p_list_search(server_params *sp) {
         struct search_result *visitor;
 
-        VERBOSE(sp,CLIENT,"\nListe des recherches :\n");
-        VERBOSE(sp,CLIENT,"   ID : Nom de fichier [Nb rep]\n");
+        VERBOSE(sp,CLIENT,"\nResearch List : :\n");
+        VERBOSE(sp,CLIENT,"   ID : File's name [Nb rep]\n");
 
         // On fait pointer visitor sur le début de la liste
         visitor=sp->p2pSearchList;
 
         // On teste si des recherches ont déjà été faites
         if(visitor == NULL) {
-                VERBOSE(sp,CLIENT,"   !! Pas de recherche effectuée pour le moment !\n");
+                VERBOSE(sp,CLIENT,"   !! No research done for the moment !\n");
         }
 
         // On parcourt la liste
@@ -151,7 +151,7 @@ int p2p_insert_reply (search_list *pliste, int id, p2p_addr file_owner, int tail
         // Si non, on l'ajoute
         if(dejala==0){
                 newelem=(search_quidonc *)malloc(sizeof(search_quidonc));
-                if (newelem==0) perror("p2p_search_insert_reply : plus de place mémoire");
+                if (newelem==0) perror("p2p_search_insert_reply : MEMORY FULL");
                 newelem->reply_id = ++visitor->nb_reply;
                 newelem->filesize = taille_fichier;
                 newelem->file_owner = p2p_addr_duplicate(file_owner);
@@ -174,14 +174,14 @@ int p2p_list_results(server_params *sp, int id) {
         visitor = sp->p2pSearchList;
 
         // Initialisation de la chaine resultat
-        VERBOSE(sp,CLIENT,"\nResultats de la recherche %d :\n",id);
-        VERBOSE(sp,CLIENT,"   ID : Proprietaire [Taille]\n");
+        VERBOSE(sp,CLIENT,"\nResearch results %d :\n",id);
+        VERBOSE(sp,CLIENT,"   ID : Owner [Length]\n");
 
         while((visitor!=NULL) && (visitor->search_id != id)) {
                 visitor=visitor->next;
         }
         if(visitor == NULL){
-                VERBOSE(sp,CLIENT,"   !! Pas de recherche correspondant à l'ID indiqué !\n");
+                VERBOSE(sp,CLIENT,"   !! There isnt research for this ID!\n");
                 VERBOSE(sp,CLIENT,"END_OF_TRANSMISSION\n");
                 return P2P_OK;
         }
@@ -192,10 +192,11 @@ int p2p_list_results(server_params *sp, int id) {
 
         // On teste si des recherches ont déjà été faites
         if(terminator == NULL) {
-                VERBOSE(sp,CLIENT,"   !! Pas de réponses à cette recherche !\n");
+                VERBOSE(sp,CLIENT,"   !! No answer for this research !\n");
         }
 
         // On parcourt la liste
+        
         while(terminator!=NULL) {
                 VERBOSE(sp,CLIENT,"   %d : %s [%d o]\n",terminator->reply_id,p2p_addr_get_str(terminator->file_owner),terminator->filesize);
                 // On passe ensuite à la recherche suivante
