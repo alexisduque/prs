@@ -44,9 +44,9 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
         VERBOSE(sp, VMCTNT, "ERROR MESSAGE INIT\n");
         return (P2P_ERROR);
     }
-    printf("\n");
+    
+    p2p_msg_set_length(join_msg, 0);
     p2p_msg_display(join_msg);
-    // p2p_msg_set_length(join_msg, 0);
 
     // on envoi le message
     int socket;
@@ -362,7 +362,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     if (!p2p_addr_is_equal(src_adresse, sp->p2pMyId)) {
 
         // On recupere le nom du fichier demande
-        name_size = p2p_msg_get_length(search_msg) - P2P_ADDR_SIZE - P2P_HDR_BITFIELD_SIZE;
+        name_size = (int)htons(p2p_msg_get_length(search_msg)) - P2P_ADDR_SIZE - P2P_HDR_BITFIELD_SIZE;
         file_name = (char *) malloc(sizeof (unsigned char)*name_size + 1);
         memcpy(file_name, p2p_get_payload(search_msg) + P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE, name_size);
         file_name[name_size] = '\0';
@@ -580,7 +580,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     if (status == P2P_DATA_OK) {
         if (value != P2P_INTERNAL_SERVER_ERROR) {
             // SI les donnees sont OK
-            unsigned char* content = (unsigned char*) malloc(sizeof (unsigned char)*value);
+            unsigned char* content = (unsigned char*) malloc(value);
             memcpy(content, temp + 2 * P2P_INT_SIZE, value);
             printf("Beginoffset = %d    / 	EndOffset = %d\n\n", beginOffset, endOffset);
 
@@ -671,8 +671,7 @@ int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
         p2p_addr_copy((sp->friends.node[sp->friends.nb_node].addr_node), p2p_msg_get_src(neighbors_list_msg));
 
         sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();
-        ;
-        ;
+
         memcpy((sp->friends.node[sp->friends.nb_node].node_neighbors.left_neighbor), buffer + 4, P2P_ADDR_SIZE);
 
         sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();
@@ -687,4 +686,38 @@ int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
     free(buffer);
     return P2P_OK;
 
+}
+
+int p2p_send_neighbor_req(server_params *sp){
+    
+	VERBOSE(sp,VSYSCL,"Function p2p_send_neighbor_req\n");
+	p2p_msg ngb_req = p2p_msg_create();
+	p2p_addr broadcast_addr = p2p_addr_create();
+	p2p_addr_set_broadcast(broadcast_addr);
+	p2p_msg_init(ngb_req, P2P_MSG_NEIGHBORS_REQ, P2P_MSG_TTL_MAX, sp->p2pMyId, broadcast_addr);
+	
+	unsigned char payload[P2P_ADDR_SIZE];
+	memcpy(payload, sp->p2pMyId, P2P_ADDR_SIZE);
+	p2p_msg_init_payload(ngb_req, P2P_ADDR_SIZE, payload);
+	
+	VERBOSE(sp,VSYSCL,"Message initialized \n");
+	p2p_msg_display(ngb_req);
+	
+	//To left neighbor
+	VERBOSE(sp,VSYSCL,"Sending message to left neighbor \n");
+	int fd = p2p_udp_socket_create(sp,sp->p2p_neighbors.left_neighbor);
+	if (p2p_udp_msg_sendfd(sp, ngb_req, fd) != P2P_OK){
+		return P2P_ERROR;
+	}
+	p2p_udp_socket_close(sp, fd);
+	
+	//To right neighbor
+	VERBOSE(sp,VSYSCL,"Sending message to right neighbor\n");
+	fd = p2p_udp_socket_create(sp,sp->p2p_neighbors.right_neighbor);
+	if (p2p_udp_msg_sendfd(sp, ngb_req, fd) != P2P_OK){
+		return P2P_ERROR;
+	}
+	p2p_udp_socket_close(sp, fd);
+	
+	return P2P_OK;
 }

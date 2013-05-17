@@ -208,6 +208,7 @@ void p2p_msg_set_dst(p2p_msg msg, p2p_addr dst) {
 }
 
 int p2p_msg_display(p2p_msg message) {
+    printf("\n-----------------------------\n");
     printf("Message Content : \n");
     printf("Version :%d ", p2p_msg_get_version(message));
     printf("Type : %d \n", p2p_msg_get_type(message));
@@ -216,6 +217,7 @@ int p2p_msg_display(p2p_msg message) {
     printf("Source address : %s \n", p2p_addr_get_str(p2p_msg_get_src(message)));
     printf("Destination address : %s \n", p2p_addr_get_str(p2p_msg_get_dst(message)));
     //printf("Payload : %s \n\n", p2p_get_payload(message));
+    printf("--------------------------------\n\n");
     //raw_print((char*)p2p_get_payload(message),p2p_msg_get_length(message) );
     return P2P_OK;
 }
@@ -344,7 +346,7 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 
     //allocation de la mémoire pour le buffer
     int message_size = (int) htons(p2p_msg_get_length(msg));
-    unsigned char* toWrite = (unsigned char*) malloc(P2P_HDR_SIZE + sizeof (unsigned char)*message_size);
+    unsigned char* toWrite = (unsigned char*) malloc(P2P_HDR_SIZE + message_size);
 
     // ajout du champs "version" au buffer
     memcpy(toWrite, &(msg->hdr.version_type), P2P_HDR_BITFIELD_SIZE);
@@ -450,20 +452,20 @@ int p2p_udp_socket_close(server_params* sp, int fd) {
 
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
-    char* toWrite = (char*) malloc(P2P_HDR_SIZE + p2p_msg_get_length(msg));
-
-    memcpy(toWrite, &(msg->hdr), P2P_HDR_BITFIELD_SIZE);
-    memcpy(&toWrite[4], msg->hdr.src, P2P_ADDR_SIZE);
-    memcpy(&toWrite[12], msg->hdr.dst, P2P_ADDR_SIZE);
-    memcpy(&toWrite[20], msg->payload, p2p_msg_get_length(msg));
+    unsigned char toWrite [P2P_HDR_SIZE + p2p_msg_get_length(msg)];
+    int message_size = (int) htons(p2p_msg_get_length(msg));
+    memcpy(toWrite, msg, P2P_HDR_BITFIELD_SIZE);
+    memcpy(&toWrite[4], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+    memcpy(&toWrite[12], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
+    memcpy(&toWrite[20], p2p_get_payload(msg), message_size);
 
     if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "Unable to send msg\n");
-        free(toWrite);
+     //   free(toWrite);
         return P2P_ERROR;
     }
 
-    free(toWrite);
+   // free(toWrite);
     VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
     return P2P_OK;
 
@@ -488,6 +490,7 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
     memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
     memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
     memcpy(msg->payload, &data[20], sizeof (data) - 20);
+    p2p_msg_display(msg);
     VERBOSE(sp, VMCTNT, "RECVD MSG OK\n");
 
     return P2P_OK;

@@ -372,44 +372,9 @@ p2pget(params* p) {
 }
 
 int p2pdiscover(params *p) {
-    VERBOSE(p->sp, VSYSCL, " Discover topology - Refresh neighbors list\n");
-
-    // Writing Neighbors_REQ Message
-
-    //Message INIT
-    int length = P2P_ADDR_SIZE;
-    p2p_addr broad;
-    broad = p2p_addr_create();
-    broad = p2p_addr_broadcast();
-    p2p_msg neighbors_req_msg;
-
-
-    neighbors_req_msg = p2p_msg_create();
-    p2p_msg_set_length(neighbors_req_msg, length);
-    p2p_msg_set_length(neighbors_req_msg, ntohs(p2p_msg_get_length(neighbors_req_msg)));
-
-    p2p_msg_init(neighbors_req_msg, P2P_MSG_NEIGHBORS_REQ, P2P_MSG_TTL_MAX, p->sp->p2pMyId, broad);
-    p2p_msg_init_payload(neighbors_req_msg, P2P_ADDR_SIZE, (unsigned char *) p2p_addr_get_str(p->sp->p2pMyId));
-    //   p2p_get_payload(neighbors_req_msg) = (unsigned char*)malloc(sizeof(unsigned char)*length);
-    //memcpy(&(p2p_get_payload(neighbors_req_msg)[0]), p->sp->p2pMyId,P2P_ADDR_SIZE);
-
-    p2p_get_payload(neighbors_req_msg)[length] = '\0';
-
-
-    //Send to left
-    //if (p2p_udp_msg_send(p->sp, neighbors_req_msg, p->sp->p2p_neighbors.right_neighbor) == -1) return P2P_UI_ERROR;
-
-    //Send to right
-    //if (p2p_udp_msg_send(p->sp,neighbors_req_msg,p->sp->p2p_neighbors.left_neighbor) == -1) return P2P_UI_ERROR;
-    // Broadcast Send
-    if (p2p_udp_msg_send(p->sp, neighbors_req_msg) == -1) return P2P_UI_ERROR;
-
-
-    //Destroy msg
-    printf(" Message P2P_NEIGHBORS_REQ sent\n");
-    p2p_msg_delete(neighbors_req_msg);
-
-    return P2P_UI_OK;
+    	if (p2p_send_neighbor_req(p->sp) == P2P_OK){
+		return(P2P_UI_OK);
+	} else return P2P_UI_ERROR;
 }
 
 /****************************************************/

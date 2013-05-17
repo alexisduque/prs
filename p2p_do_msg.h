@@ -52,5 +52,5 @@ int p2p_get_file(server_params *sp, int searchID, int replyID);
 
 //Traitement du message DATA
 int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset, int endOffset);
-
+int p2p_send_neighbor_req(server_params *sp);
 #endif /* __P2P_DO_MSG */
