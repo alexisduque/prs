@@ -580,7 +580,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     if (status == P2P_DATA_OK) {
         if (value != P2P_INTERNAL_SERVER_ERROR) {
             // SI les donnees sont OK
-            unsigned char* content = (unsigned char*) malloc(sizeof(unsigned char)*(value));
+            unsigned char* content = (unsigned char*) malloc(sizeof(unsigned char)*(data_length));
             memcpy(content, temp + 2 * P2P_INT_SIZE, value);
             printf("Beginoffset = %d    / 	EndOffset = %d\n\n", beginOffset, endOffset);
 
