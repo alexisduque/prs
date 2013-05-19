@@ -35,6 +35,7 @@
 #include "p2p_do_msg.h"
 #include "p2p_msg.h"
 #include "p2p_ui.h"
+#include "p2p_common_ssl.h"
 
 #define DEFAULT_SERVER_NAME "alex_node"
 #define DEFAULT_DIR_NAME    "."
@@ -179,6 +180,7 @@ int main(int argc, char* argv[]) {
     VERBOSE(&sp, VMCTNT, "SOCKET CREATING ...\n");
 
     // Creation des variables
+    SSLconnection* sock_tcp_ssl;
     int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
     int return_select, command_telnet, maxfd;
     fd_set fd;
@@ -244,24 +246,24 @@ int main(int argc, char* argv[]) {
             if (FD_ISSET(sock_tcp, &fd)) {
 
             //on accepte la connexion
-            sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
+            sock_tcp_ssl = accept_ssl(sock_tcp, adresse, lg);
             //preparation du message
             message = p2p_msg_create();
 
             VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
-            p2p_tcp_msg_recvfd(&sp, message, sock_tcp_rcv);
+            p2p_tcp_ssl_msg_recvfd(&sp, message, sock_tcp_ssl);
 
             //En fonction du message
             switch (p2p_msg_get_type(message)) {
 
                 case P2P_MSG_JOIN_REQ:
                     VERBOSE(&sp, VMCTNT, "RECEPTION JOIN REQ\n");
-                    p2p_do_join_req(&sp, message, sock_tcp_rcv);
+                    p2p_do_join_req(&sp, message,  sock_tcp_ssl);
                     break;
 
                 case P2P_MSG_GET:
                     VERBOSE(&sp, VMCTNT, "RECEPTION GET       \n");
-                    p2p_do_get(&sp, message, sock_tcp_rcv);
+                    //p2p_do_get(&sp, message, sock_tcp_rcv);
                     break;
 
                 case P2P_MSG_LINK_UPDATE:
@@ -273,7 +275,7 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
             //Fermeture de la soscket de reception
-            close(sock_tcp_rcv);
+            sslDisconnect(sock_tcp_ssl);
 
         }
 

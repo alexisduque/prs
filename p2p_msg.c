@@ -29,32 +29,11 @@
 #include "p2p_addr.h"
 #include "p2p_msg.h"
 #include "p2p_options.h"
+#include "p2p_common_ssl.h"
 
 
 #define MIN(a,b)    (((a)<(b))?(a):(b))
 
-//Definition de la structure de l'entete d'un message P2P
-
-struct p2p_msg_hdr_struct {
-    unsigned char version_type; /* Les champs Version et CmdType sont
-				   codes tous les deux sur 1 octet */
-    unsigned char ttl; /* Le champ  TTTL*/
-    unsigned short length; /* Le champ longueur */
-    p2p_addr src; /* Le champ adresse source */
-    p2p_addr dst; /* Le champ adresse destination */
-};
-
-//Definition du type p2p_msg_hdr qui est un pointeur sur la structure
-//p2p_msg_hdr_struct 
-typedef struct p2p_msg_hdr_struct p2p_msg_hdr;
-
-//Definition de la structure d'un message P2P
-
-struct p2p_msg_struct {
-    p2p_msg_hdr hdr; /* Un entete */
-    unsigned char *payload; /* Un payload qui un pointeur sur une
-				   zone memoire de unsigned char */
-};
 
 unsigned char* p2p_get_payload(p2p_msg msg) {
     return msg->payload;
@@ -579,4 +558,5 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     return P2P_OK;
 
 }
+// SSL Function
 

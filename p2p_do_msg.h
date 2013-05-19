@@ -14,6 +14,7 @@
 #include "p2p_addr.h"
 #include "p2p_file.h"
 #include "p2p_search.h"
+#include "p2p_common_ssl.h"
  
 /* Fonctions de traitement des differents type de messages */
 
@@ -24,7 +25,7 @@ int p2p_do_join_ack (server_params *sp, p2p_msg ack_msg);
 int p2p_send_join_req (server_params *sp, p2p_addr destinataire);
 
 //Traitement du JOIN REQ                                                                                                                                                                                                
-int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket);
+int p2p_do_join_req(server_params *sp, p2p_msg join_req, SSLconnection * socket);
 
 //Traitement du GET
 int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) ;
