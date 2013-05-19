@@ -615,7 +615,7 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     p2p_addr msg_src = p2p_addr_create();
     memcpy(msg_src, p2p_get_payload(neighbors_req_msg), P2P_ADDR_SIZE);
 
-    VERBOSE(sp, VMRECV, "Receiving NEIGHBORS REG from %s for %s \n", p2p_addr_get_str(p2p_msg_get_src(neighbors_req_msg)), p2p_addr_get_str(msg_src));
+    VERBOSE(sp, VMRECV, "Receiving NEIGHBORS REQ from %s for %s \n", p2p_addr_get_str(p2p_msg_get_src(neighbors_req_msg)), p2p_addr_get_str(msg_src));
 
     // Answer Init
     p2p_msg msg_neighbors_list = p2p_msg_create();
@@ -631,17 +631,18 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     p2p_msg_init_payload(msg_neighbors_list, 4 + 2 * P2P_ADDR_SIZE + strlen(sp->server_name) + 1, (unsigned char *) buffer);
 
 
-    p2p_msg_display(msg_neighbors_list);
+    //p2p_msg_display(msg_neighbors_list);
 
     //Sending
     if (p2p_udp_msg_send(sp, msg_neighbors_list) != P2P_OK) {
         VERBOSE(sp, VPROTO, "Error UDP MSG SEND \n");
         return (P2P_ERROR);
     }
-
+    
+    p2p_udp_msg_rebroadcast(sp,neighbors_req_msg);
     // Cleaning memory
-    p2p_msg_delete(msg_neighbors_list);
-    p2p_addr_delete(msg_src);
+    //p2p_msg_delete(msg_neighbors_list);
+    //p2p_addr_delete(msg_src);
     free(buffer);
     return P2P_OK;
 
@@ -655,8 +656,8 @@ int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
 
     VERBOSE(sp, VMRECV, "\n");
     VERBOSE(sp, VMRECV, "Receive NEIGHBORS_LIST from %s\n", p2p_addr_get_str(p2p_msg_get_src(neighbors_list_msg)));
-
-    char* buffer = (char*) malloc(p2p_msg_get_length(neighbors_list_msg));
+    int msg_length = ntohs(p2p_msg_get_length(neighbors_list_msg));
+    unsigned char* buffer = (unsigned char*) malloc(msg_length);
     memcpy(buffer, p2p_get_payload(neighbors_list_msg), p2p_msg_get_length(neighbors_list_msg));
 
     for (i = 0; i < (sp->friends.nb_node); i++) {
