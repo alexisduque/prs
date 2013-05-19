@@ -652,39 +652,9 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
 
 int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
 
-    int i, ok = P2P_OK;
-
     VERBOSE(sp, VMRECV, "\n");
     VERBOSE(sp, VMRECV, "Receive NEIGHBORS_LIST from %s\n", p2p_addr_get_str(p2p_msg_get_src(neighbors_list_msg)));
-    int msg_length = ntohs(p2p_msg_get_length(neighbors_list_msg));
-    unsigned char* buffer = (unsigned char*) malloc(msg_length);
-    memcpy(buffer, p2p_get_payload(neighbors_list_msg), p2p_msg_get_length(neighbors_list_msg));
-
-    for (i = 0; i < (sp->friends.nb_node); i++) {
-        if (p2p_addr_is_equal(sp->friends.node[i].addr_node, p2p_msg_get_src(neighbors_list_msg))) ok = P2P_ERROR;
-    }
-
-    if (ok == P2P_OK) {
-        VERBOSE(sp, VMRECV, "Updating Node Topology \n");
-        VERBOSE(sp, VMRECV, "\n");
-
-        sp->friends.node[sp->friends.nb_node].addr_node = p2p_addr_create();
-        p2p_addr_copy((sp->friends.node[sp->friends.nb_node].addr_node), p2p_msg_get_src(neighbors_list_msg));
-
-        sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();
-
-        memcpy((sp->friends.node[sp->friends.nb_node].node_neighbors.left_neighbor), buffer + 4, P2P_ADDR_SIZE);
-
-        sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor = p2p_addr_create();
-        memcpy((sp->friends.node[sp->friends.nb_node].node_neighbors.right_neighbor), buffer + 4 + P2P_ADDR_SIZE, P2P_ADDR_SIZE);
-
-        sp->friends.node[sp->friends.nb_node].node_name = (char*) malloc(p2p_msg_get_length(neighbors_list_msg) - 4 - 2 * P2P_ADDR_SIZE);
-        memcpy((sp->friends.node[sp->friends.nb_node].node_name), buffer + 4 + 2 * P2P_ADDR_SIZE, p2p_msg_get_length(neighbors_list_msg) - 4 - 2 * P2P_ADDR_SIZE);
-
-        sp->friends.nb_node++;
-    }
-
-    free(buffer);
+    VERBOSE(sp, VMRECV, "Nothing TODO\n");
     return P2P_OK;
 
 }
@@ -721,4 +691,5 @@ int p2p_send_neighbor_req(server_params *sp){
 	p2p_udp_socket_close(sp, fd);
 	
 	return P2P_OK;
+        
 }
