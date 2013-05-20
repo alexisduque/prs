@@ -30,6 +30,9 @@
 #include <sys/select.h>  /* pour fd_set      */
 #include <netinet/in.h>  /* pour sockaddr_in */
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 /****************************************************/
 /****************************************************/
 
@@ -150,6 +153,11 @@ struct server_params_t {
   /* Search */
   search_list p2pSearchList;	/* la liste des requetes envoyees */
   int search_id ; // L'id de la recherche
+  
+  /* SSL */
+  SSL_METHOD *server_meth;
+  SSL_CTX *ssl_server_ctx;
+  int verify_peer;
   
 };
 

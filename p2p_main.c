@@ -37,6 +37,17 @@
 #include "p2p_ui.h"
 #include "p2p_common_ssl.h"
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
+#define SSL_SERVER_RSA_CERT	"./ssl_server.crt"
+#define SSL_SERVER_RSA_KEY	"./ssl_server.key"
+#define SSL_SERVER_RSA_CA_CERT	"./ca.crt"
+#define SSL_SERVER_RSA_CA_PATH	"./"
+
+#define OFF	0
+#define ON	1
+
 #define DEFAULT_SERVER_NAME "alex_node"
 #define DEFAULT_DIR_NAME    "."
 
@@ -129,7 +140,8 @@ int main(int argc, char* argv[]) {
         .p2pMyId = p2p_addr_create(),
         .p2p_neighbors.right_neighbor = p2p_addr_create(),
         .p2p_neighbors.left_neighbor = p2p_addr_create(),
-        .friends.nb_node = 0
+        .friends.nb_node = 0,
+        .verify_peer = ON
     };
 
     p2p_addr dest = p2p_addr_create();
@@ -180,7 +192,6 @@ int main(int argc, char* argv[]) {
     VERBOSE(&sp, VMCTNT, "SOCKET CREATING ...\n");
 
     // Creation des variables
-    SSLconnection* sock_tcp_ssl;
     int sock_ui, sock_ui_connected = -1, sock_tcp, sock_udp, sock_tcp_rcv;
     int return_select, command_telnet, maxfd;
     fd_set fd;
@@ -213,10 +224,58 @@ int main(int argc, char* argv[]) {
         printf("Error creating UDP socket\n");
         return -1;
     }
+    
+    VERBOSE(&sp, VMCTNT, "SSL INIT ...\n");
+    //SSL PART
+    int handshakestatus;
+
+    SSL_library_init();
+    SSL_load_error_strings();
+    sp.server_meth = SSLv3_server_method();
+    sp.ssl_server_ctx = SSL_CTX_new(sp.server_meth);;
+
+    if(!sp.ssl_server_ctx)
+    {
+            ERR_print_errors_fp(stderr);
+            return -1;
+    }
+
+    if(SSL_CTX_use_certificate_file(sp.ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0)	
+    {
+            ERR_print_errors_fp(stderr);
+            return -1;		
+    }
+
+
+    if(SSL_CTX_use_PrivateKey_file(sp.ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0)	
+    {
+            ERR_print_errors_fp(stderr);
+            return -1;		
+    }
+
+    if(SSL_CTX_check_private_key(sp.ssl_server_ctx) != 1)
+    {
+            printf("Private and certificate is not matching\n");
+            return -1;
+    }	
+
+    if(sp.verify_peer)
+    {	
+            //See function man pages for instructions on generating CERT files
+            if(!SSL_CTX_load_verify_locations(sp.ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL))
+            {
+                    ERR_print_errors_fp(stderr);
+                    return -1;		
+            }
+            SSL_CTX_set_verify(sp.ssl_server_ctx, SSL_VERIFY_PEER, NULL);
+            SSL_CTX_set_verify_depth(sp.ssl_server_ctx, 1);
+    }
+
+        
+        
     VERBOSE(&sp, VMCTNT, "STARTING LISTENING LOOP\n\n");
     //Boucle principale
     while (1) {
-
         //Ajout des sockets au FD_SET
         FD_ZERO(&fd);
         FD_SET(sock_ui, &fd);
@@ -246,24 +305,25 @@ int main(int argc, char* argv[]) {
             if (FD_ISSET(sock_tcp, &fd)) {
 
             //on accepte la connexion
-            sock_tcp_ssl = accept_ssl(sock_tcp, adresse, lg);
+            sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
+                
             //preparation du message
             message = p2p_msg_create();
 
             VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
-            p2p_tcp_ssl_msg_recvfd(&sp, message, sock_tcp_ssl);
+            p2p_tcp_ssl_msg_recvfd(&sp, message, sock_tcp_rcv);
 
             //En fonction du message
             switch (p2p_msg_get_type(message)) {
 
                 case P2P_MSG_JOIN_REQ:
                     VERBOSE(&sp, VMCTNT, "RECEPTION JOIN REQ\n");
-                    p2p_do_join_req(&sp, message,  sock_tcp_ssl);
+                    p2p_do_join_req(&sp, message,  sock_tcp_rcv);
                     break;
 
                 case P2P_MSG_GET:
                     VERBOSE(&sp, VMCTNT, "RECEPTION GET       \n");
-                    //p2p_do_get(&sp, message, sock_tcp_rcv);
+                    p2p_do_get(&sp, message, sock_tcp_rcv);
                     break;
 
                 case P2P_MSG_LINK_UPDATE:
@@ -275,8 +335,7 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
             //Fermeture de la soscket de reception
-            sslDisconnect(sock_tcp_ssl);
-
+            close(sock_tcp_rcv);
         }
 
             //Si socket_udp ready
@@ -392,13 +451,13 @@ int main(int argc, char* argv[]) {
 
         }
         else break; // Timeout
-
+        
     }
 
     close(sock_tcp);
     close(sock_udp);
     close(sock_ui);
-
+    SSL_CTX_free(sp.ssl_server_ctx);
     return 0;
 
 }

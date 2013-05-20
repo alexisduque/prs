@@ -44,8 +44,8 @@ SSLconnection *accept_ssl(int socketfd, struct sockaddr_in cli_addr, unsigned in
 SSLconnection *p2p_tcp_socket_ssl_create(server_params* sp, p2p_addr dst);
 
 int p2p_tcp_ssl_socket_close(server_params* sp, SSLconnection *c) ;
-int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSLconnection *c);
-int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSLconnection *c) ;
+int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, int fd);
+int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, int fd) ;
 int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg);
 
 #endif	/* P2P_COMMON_SSL_H */

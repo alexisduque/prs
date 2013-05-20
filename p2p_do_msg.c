@@ -50,9 +50,9 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     p2p_msg_display(join_msg);
 
     // on envoi le message
-    SSLconnection *socket;
-    socket = p2p_tcp_socket_ssl_create(sp, destinataire);
-    if (socket->socket == -1) {
+    int socket;
+    socket = p2p_tcp_socket_create(sp, destinataire);
+    if (socket == -1) {
         perror("Error socket attachement \n");
     }
     printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
@@ -70,7 +70,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
         return (P2P_ERROR);
     }
     //on peut fermer la socket
-    p2p_tcp_ssl_socket_close(sp, socket);
+    p2p_tcp_socket_close(sp, socket);
 
     //on traite le message d'acquittement
     if (p2p_do_join_ack(sp, ack_msg) != P2P_OK) {
@@ -87,7 +87,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
 //Traitement du JOIN REQ = Envoi du JOIN_ACK
 
-int p2p_do_join_req(server_params *sp, p2p_msg join_req, SSLconnection * socket) {
+int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket) {
 
     printf("\n!************************************************************!\n");
     printf("              JOIN REQ TREATMENT\n");

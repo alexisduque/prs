@@ -90,9 +90,9 @@ SSLconnection *accept_ssl(int socketfd, struct sockaddr_in cli_addr, unsigned in
     c->socket = accept(socketfd, (struct sockaddr *) &cli_addr, &clilen);
     c->sslctx = SSL_CTX_new(SSLv23_server_method());
     SSL_CTX_set_options(c->sslctx, SSL_OP_SINGLE_DH_USE);
-    int use_cert = SSL_CTX_use_certificate_file(c->sslctx, "/serverCertificate.pem", SSL_FILETYPE_PEM);
+    int use_cert = SSL_CTX_use_certificate_file(c->sslctx, "serverCertificate.pem", SSL_FILETYPE_PEM);
 
-    int use_prv = SSL_CTX_use_PrivateKey_file(c->sslctx, "/serverCertificate.pem", SSL_FILETYPE_PEM);
+    int use_prv = SSL_CTX_use_PrivateKey_file(c->sslctx, "serverCertificate.pem", SSL_FILETYPE_PEM);
 
     c->cssl = SSL_new(c->sslctx);
     if ( !SSL_set_fd(c->cssl, c->socket) ){
@@ -101,7 +101,7 @@ SSLconnection *accept_ssl(int socketfd, struct sockaddr_in cli_addr, unsigned in
         perror("Error SetFD SSL\n");
     }
     
-        if ( !SSL_connect(c->cssl) ){
+      if (SSL_connect (c->cssl) != 1){
         //log and close down ssl
         sslDisconnect(c);
         perror("Error accepting SSL\n");
@@ -188,8 +188,46 @@ int p2p_tcp_ssl_socket_close(server_params* sp, SSLconnection* c) {
 
 //Envoi du message msg via la socket tcp fd
 
-int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSLconnection *c) {
+int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     VERBOSE(sp, VPROTO, "TRY TO SEND TCP msg ...\n");
+    //SSL Init
+    int ret;
+    SSL *clientssl;
+    clientssl = SSL_new(sp->ssl_server_ctx);
+    if(!clientssl)
+    {
+            printf("Error SSL_new\n");
+            return -1;
+    }
+    SSL_set_fd(clientssl, fd);
+
+    if((ret = SSL_connect(clientssl)) != 1)
+    {
+            printf("Handshake Error %d\n", SSL_get_error(clientssl, ret));
+            return -1;
+    }
+
+    if(sp->verify_peer)
+    {
+            X509 *ssl_client_cert = NULL;
+
+            ssl_client_cert = SSL_get_peer_certificate(clientssl);
+
+            if(ssl_client_cert)
+            {
+                    long verifyresult;
+
+                    verifyresult = SSL_get_verify_result(clientssl);
+                    if(verifyresult == X509_V_OK)
+                            printf("Certificate Verify Success\n"); 
+                    else
+                            printf("Certificate Verify Failed\n"); 
+                    X509_free(ssl_client_cert);				
+            }
+            else
+                    printf("There is no client certificate\n");
+    }
+    
     //On verifie que l'on essaie pas d'envoyer un message à nous même
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(msg)) != 0) {
         VERBOSE(sp, VPROTO, "ERROR : SENDING TCP msg YOURSELF\n");
@@ -215,7 +253,7 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSLconnection *c) {
 
 
     // On envoie via le socket tcp fd, le message contenu dans le buffer, sinon message d'erreur
-    if (SSL_write (c->cssl, toWrite, P2P_HDR_SIZE + message_size) != (P2P_HDR_SIZE + message_size)) {
+    if (SSL_write (clientssl, toWrite, P2P_HDR_SIZE + message_size) != (P2P_HDR_SIZE + message_size)) {
         VERBOSE(sp, VPROTO, "Unable to send msg to the socket\n\n");
         //Liberation de la memoire du buffer
         free(toWrite);
@@ -233,17 +271,60 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSLconnection *c) {
 
 // Recoie dans msg un message depuis la socket fd
 
-int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSLconnection *c) {
+int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
     int length;
-    SSL_read (c->cssl, msg, P2P_HDR_BITFIELD_SIZE);
-    SSL_read (c->cssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
-    SSL_read (c->cssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
+     //SSL check
+    SSL *serverssl;
+    int ret;
+    serverssl = SSL_new(sp->ssl_server_ctx);
+    if(!serverssl)
+    {
+            printf("Error SSL_new\n");
+            return -1;
+    }
+
+    SSL_set_fd(serverssl, fd);
+
+    if((ret = SSL_accept(serverssl))!= 1)
+    {
+            printf("Handshake Error %d\n", SSL_get_error(serverssl, ret));
+            return -1;
+    }
+
+    if(sp->verify_peer)
+    {
+            X509 *ssl_client_cert = NULL;
+
+            ssl_client_cert = SSL_get_peer_certificate(serverssl);
+
+            if(ssl_client_cert)
+            {
+                    long verifyresult;
+
+                    verifyresult = SSL_get_verify_result(serverssl);
+                    if(verifyresult == X509_V_OK)
+                            printf("Certificate Verify Success\n"); 
+                    else
+                            printf("Certificate Verify Failed\n"); 
+                    X509_free(ssl_client_cert);				
+            }
+            else
+                    printf("There is no client certificate\n");
+    }
+            
+    SSL_read (serverssl, msg, P2P_HDR_BITFIELD_SIZE);
+    SSL_read (serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+    SSL_read (serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
     unsigned char data_payload[length];
-    SSL_read (c->cssl, data_payload, length);
+    SSL_read (serverssl, data_payload, length);
     p2p_msg_init_payload(msg, length, data_payload);
     p2p_msg_display(msg);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
+    
+    SSL_shutdown(serverssl);
+    SSL_free(serverssl);
+    serverssl = NULL;
     return P2P_OK;
 }
 
@@ -251,9 +332,9 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSLconnection *c) {
 
 int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
 
-    SSLconnection *socketTMP = p2p_tcp_socket_ssl_create(sp, p2p_msg_get_dst(msg));
+    int socketTMP = p2p_tcp_socket_create(sp, p2p_msg_get_dst(msg));
     
-    if (socketTMP->socket == P2P_ERROR) {
+    if (socketTMP == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "TCP SSL socket creation impossible \n");
         //printf("Impossible de créer la socket TCP \n");
         return (P2P_ERROR);
@@ -263,7 +344,7 @@ int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
         return (P2P_ERROR);
     }
     
-    p2p_tcp_ssl_socket_close(sp, socketTMP);
+    p2p_tcp_socket_close(sp, socketTMP);
     VERBOSE(sp, VPROTO, "SEND msg DONE\n");
     return P2P_OK;
 }
