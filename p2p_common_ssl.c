@@ -193,15 +193,20 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     //SSL Init
     int ret;
     SSL *clientssl;
-    clientssl = SSL_new(sp->ssl_server_ctx);
+    clientssl = SSL_new(sp->ssl_client_ctx);
     if(!clientssl)
     {
             printf("Error SSL_new\n");
             return -1;
     }
-    SSL_set_fd(clientssl, fd);
 
-    if((ret = SSL_connect(clientssl)) != 1)
+    if((ret = SSL_set_fd(clientssl, fd)) != 1)
+    {
+            printf("SetFD Error %d\n", SSL_get_error(clientssl, ret));
+            return -1;
+    }
+
+    if((SSL_connect(clientssl)) != 1)
     {
             printf("Handshake Error %d\n", SSL_get_error(clientssl, ret));
             return -1;
@@ -262,9 +267,12 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
         VERBOSE(sp, VPROTO, "TCP MSG SUCCESFULL SEND\n\n");
         //Liberation de la memoire du buffer
         free(toWrite);
+        SSL_shutdown(clientssl);
+    	SSL_free(clientssl);
+        clientssl = NULL;
+	SSL_CTX_free(sp->ssl_client_ctx);
         return P2P_OK;
     }
-
 
 
 }
@@ -282,15 +290,19 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
             printf("Error SSL_new\n");
             return -1;
     }
-
-    SSL_set_fd(serverssl, fd);
-
-    if((ret = SSL_accept(serverssl))!= 1)
+printf("SSL_new\n");
+    if((ret = SSL_set_fd(serverssl, fd)) != 1)
+    {
+            printf("SetFD Error %d\n", SSL_get_error(serverssl, ret));
+            return -1;
+    }
+printf("SSL_fd\n");
+    if((SSL_accept(serverssl))!= 1)
     {
             printf("Handshake Error %d\n", SSL_get_error(serverssl, ret));
             return -1;
     }
-
+printf("SSL_accept\n");
     if(sp->verify_peer)
     {
             X509 *ssl_client_cert = NULL;
@@ -311,7 +323,7 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
             else
                     printf("There is no client certificate\n");
     }
-            
+   
     SSL_read (serverssl, msg, P2P_HDR_BITFIELD_SIZE);
     SSL_read (serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     SSL_read (serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);

@@ -57,7 +57,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     }
     printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
     if (p2p_tcp_ssl_msg_sendfd(sp, join_msg, socket) != P2P_OK) {
-        VERBOSE(sp, VMCTNT, "ERROR SENDING AK\n");
+        VERBOSE(sp, VMCTNT, "ERROR SENDING JOIN REQ\n");
         return (P2P_ERROR);
     }
 

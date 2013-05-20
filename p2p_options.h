@@ -157,6 +157,8 @@ struct server_params_t {
   /* SSL */
   SSL_METHOD *server_meth;
   SSL_CTX *ssl_server_ctx;
+  SSL_METHOD *client_meth;
+  SSL_CTX *ssl_client_ctx;
   int verify_peer;
   
 };

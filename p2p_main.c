@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
         .p2p_neighbors.right_neighbor = p2p_addr_create(),
         .p2p_neighbors.left_neighbor = p2p_addr_create(),
         .friends.nb_node = 0,
-        .verify_peer = ON
+        .verify_peer = OFF
     };
 
     p2p_addr dest = p2p_addr_create();
@@ -226,11 +226,53 @@ int main(int argc, char* argv[]) {
     }
     
     VERBOSE(&sp, VMCTNT, "SSL INIT ...\n");
-    //SSL PART
-    int handshakestatus;
-
+    //SSL CLIENT PART
+    
     SSL_library_init();
     SSL_load_error_strings();
+    sp.client_meth = SSLv3_client_method();
+    sp.ssl_client_ctx = SSL_CTX_new(sp.client_meth);
+
+    if(!sp.ssl_client_ctx)
+    {
+            ERR_print_errors_fp(stderr);
+            return -1;
+    }
+
+    if(sp.verify_peer)
+    {	
+
+            if(SSL_CTX_use_certificate_file(sp.ssl_client_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0)	
+            {
+                    ERR_print_errors_fp(stderr);
+                    return -1;		
+            }
+
+
+            if(SSL_CTX_use_PrivateKey_file(sp.ssl_client_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0)	
+            {
+                    ERR_print_errors_fp(stderr);
+                    return -1;		
+            }
+
+            if(SSL_CTX_check_private_key(sp.ssl_client_ctx) != 1)
+            {
+                    printf("Private and certificate is not matching\n");
+                    return -1;
+            }	
+
+            //See function man pages for instructions on generating CERT files
+            if(!SSL_CTX_load_verify_locations(sp.ssl_client_ctx, SSL_SERVER_RSA_CA_CERT, NULL))
+            {
+                    ERR_print_errors_fp(stderr);
+                    return -1;		
+            }
+            SSL_CTX_set_verify(sp.ssl_client_ctx, SSL_VERIFY_PEER, NULL);
+            SSL_CTX_set_verify_depth(sp.ssl_client_ctx, 1);
+    }
+        
+    //SSL SERVER PART
+    //int handshakestatus;
     sp.server_meth = SSLv3_server_method();
     sp.ssl_server_ctx = SSL_CTX_new(sp.server_meth);;
 
@@ -457,7 +499,6 @@ int main(int argc, char* argv[]) {
     close(sock_tcp);
     close(sock_udp);
     close(sock_ui);
-    SSL_CTX_free(sp.ssl_server_ctx);
     return 0;
 
 }
