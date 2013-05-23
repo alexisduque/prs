@@ -50,13 +50,19 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     p2p_msg_display(join_msg);
 
     // on envoi le message
+    SSL *ssl = SSL_new(sp->ssl_server_ctx);
     int socket;
     socket = p2p_tcp_socket_create(sp, destinataire);
     if (socket == -1) {
         perror("Error socket attachement \n");
     }
+    if (p2p_tcp_ssl_client_init_sock(sp, ssl, socket) != 1) {
+        printf("Error establishing SSL connection\n");
+        return P2P_ERROR;
+    }
+    
     printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
-    if (p2p_tcp_ssl_msg_sendfd(sp, join_msg, socket) != P2P_OK) {
+    if (p2p_tcp_ssl_msg_sendfd(sp, join_msg, ssl) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR SENDING JOIN REQ\n");
         return (P2P_ERROR);
     }
@@ -65,13 +71,17 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
     //réception du message d'acquittement
     VERBOSE(sp, VMCTNT, "WAITING FOR ACK MESSAGE...;\n");
-    if (p2p_tcp_ssl_msg_recvfd(sp, ack_msg, socket) != P2P_OK) {
+    if (p2p_tcp_ssl_msg_recvfd(sp, ack_msg, ssl) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR RCV ACK\n");
         return (P2P_ERROR);
     }
-    //on peut fermer la socket
+   
+   //on peut fermer la socket
+    //SSL_shutdown(ssl);
+    p2p_tcp_ssl_close(sp, ssl);
     p2p_tcp_socket_close(sp, socket);
 
+    
     //on traite le message d'acquittement
     if (p2p_do_join_ack(sp, ack_msg) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR TREAT ACK\n");
@@ -87,7 +97,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
 //Traitement du JOIN REQ = Envoi du JOIN_ACK
 
-int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket) {
+int p2p_do_join_req(server_params *sp, p2p_msg join_req, SSL* ssl) {
 
     printf("\n!************************************************************!\n");
     printf("              JOIN REQ TREATMENT\n");
@@ -128,7 +138,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket) {
     printf("Right neighbor : %s \n", p2p_addr_get_str(right_neighbor));
 
     //Envoi du message JOIN ACK
-    if (p2p_tcp_ssl_msg_sendfd(sp, join_ack, socket) == P2P_OK) {
+    if (p2p_tcp_ssl_msg_sendfd(sp,join_ack, ssl) == P2P_OK) {
         printf("Message JOIN_ACK sent ! \n\n");
     }
 

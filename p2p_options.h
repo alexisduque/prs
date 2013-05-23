@@ -155,7 +155,7 @@ struct server_params_t {
   int search_id ; // L'id de la recherche
   
   /* SSL */
-  SSL_METHOD *server_meth;
+  const SSL_METHOD *server_meth;
   SSL_CTX *ssl_server_ctx;
   SSL_METHOD *client_meth;
   SSL_CTX *ssl_client_ctx;

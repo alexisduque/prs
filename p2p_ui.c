@@ -191,7 +191,7 @@ p2pjoin(params *p) {
         printf(">> Could not send the JOIN REQ\n");
         return (P2P_UI_ERROR);
     }
-
+    
     p2p_addr_delete(dst);
     return P2P_UI_OK;
 }

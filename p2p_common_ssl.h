@@ -8,6 +8,11 @@
 #ifndef P2P_COMMON_SSL_H
 #define	P2P_COMMON_SSL_H
 
+#define SSL_SERVER_RSA_CERT	"./ssl_server.crt"
+#define SSL_SERVER_RSA_KEY	"./ssl_server.key"
+#define SSL_SERVER_RSA_CA_CERT	"./ca.crt"
+#define SSL_SERVER_RSA_CA_PATH	"./"
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -25,27 +30,12 @@
 #include <openssl/ssl.h> 
 #include <openssl/err.h> 
 
-typedef struct {
-    int socket;
-    SSL *cssl;
-    SSL_CTX *sslctx;
-} SSLconnection;
 
-void InitializeSSL();
 
-void DestroySSL();
-
-int sslDisconnect();
-
-int init_ssl(int port);
-
-SSLconnection *accept_ssl(int socketfd, struct sockaddr_in cli_addr, unsigned int clilen) ;
-
-SSLconnection *p2p_tcp_socket_ssl_create(server_params* sp, p2p_addr dst);
-
-int p2p_tcp_ssl_socket_close(server_params* sp, SSLconnection *c) ;
-int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, int fd);
-int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, int fd) ;
+int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
+int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
 int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg);
-
+void p2p_tcp_ssl_close(server_params* sp, SSL* ssl);
+int p2p_tcp_ssl_server_init_sock(server_params* sp, SSL* ssl, int fd);
+int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd);
 #endif	/* P2P_COMMON_SSL_H */

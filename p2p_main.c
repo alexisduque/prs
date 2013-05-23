@@ -40,11 +40,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define SSL_SERVER_RSA_CERT	"./ssl_server.crt"
-#define SSL_SERVER_RSA_KEY	"./ssl_server.key"
-#define SSL_SERVER_RSA_CA_CERT	"./ca.crt"
-#define SSL_SERVER_RSA_CA_PATH	"./"
-
 #define OFF	0
 #define ON	1
 
@@ -60,7 +55,7 @@
 #define DEFAULT_VERBOSITY   2
 
 
-static struct option long_options[] ={
+static struct option long_options[] = {
     {"dir", required_argument, 0, 'd'},
     {"server-name", required_argument, 0, 's'},
     {"listening-ip", required_argument, 0, 'i'},
@@ -224,97 +219,50 @@ int main(int argc, char* argv[]) {
         printf("Error creating UDP socket\n");
         return -1;
     }
-    
+
     VERBOSE(&sp, VMCTNT, "SSL INIT ...\n");
-    //SSL CLIENT PART
-    
-    SSL_library_init();
-    SSL_load_error_strings();
-    sp.client_meth = SSLv3_client_method();
-    sp.ssl_client_ctx = SSL_CTX_new(sp.client_meth);
 
-    if(!sp.ssl_client_ctx)
-    {
-            ERR_print_errors_fp(stderr);
-            return -1;
-    }
-
-    if(sp.verify_peer)
-    {	
-
-            if(SSL_CTX_use_certificate_file(sp.ssl_client_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0)	
-            {
-                    ERR_print_errors_fp(stderr);
-                    return -1;		
-            }
-
-
-            if(SSL_CTX_use_PrivateKey_file(sp.ssl_client_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0)	
-            {
-                    ERR_print_errors_fp(stderr);
-                    return -1;		
-            }
-
-            if(SSL_CTX_check_private_key(sp.ssl_client_ctx) != 1)
-            {
-                    printf("Private and certificate is not matching\n");
-                    return -1;
-            }	
-
-            //See function man pages for instructions on generating CERT files
-            if(!SSL_CTX_load_verify_locations(sp.ssl_client_ctx, SSL_SERVER_RSA_CA_CERT, NULL))
-            {
-                    ERR_print_errors_fp(stderr);
-                    return -1;		
-            }
-            SSL_CTX_set_verify(sp.ssl_client_ctx, SSL_VERIFY_PEER, NULL);
-            SSL_CTX_set_verify_depth(sp.ssl_client_ctx, 1);
-    }
-        
     //SSL SERVER PART
     //int handshakestatus;
-    sp.server_meth = SSLv3_server_method();
-    sp.ssl_server_ctx = SSL_CTX_new(sp.server_meth);;
+    SSL_library_init();
+    SSL_load_error_strings();
+    sp.server_meth = SSLv3_method();
+    sp.ssl_server_ctx = SSL_CTX_new(sp.server_meth);
+    ;
 
-    if(!sp.ssl_server_ctx)
-    {
+    if (!sp.ssl_server_ctx) {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    if (SSL_CTX_use_certificate_file(sp.ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+
+    if (SSL_CTX_use_PrivateKey_file(sp.ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    if (SSL_CTX_check_private_key(sp.ssl_server_ctx) != 1) {
+        printf("Private and certificate is not matching\n");
+        return -1;
+    }
+
+    if (sp.verify_peer) {
+        //See function man pages for instructions on generating CERT files
+        if (!SSL_CTX_load_verify_locations(sp.ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
             ERR_print_errors_fp(stderr);
             return -1;
-    }
-
-    if(SSL_CTX_use_certificate_file(sp.ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0)	
-    {
-            ERR_print_errors_fp(stderr);
-            return -1;		
+        }
+        SSL_CTX_set_verify(sp.ssl_server_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify_depth(sp.ssl_server_ctx, 1);
     }
 
 
-    if(SSL_CTX_use_PrivateKey_file(sp.ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0)	
-    {
-            ERR_print_errors_fp(stderr);
-            return -1;		
-    }
 
-    if(SSL_CTX_check_private_key(sp.ssl_server_ctx) != 1)
-    {
-            printf("Private and certificate is not matching\n");
-            return -1;
-    }	
-
-    if(sp.verify_peer)
-    {	
-            //See function man pages for instructions on generating CERT files
-            if(!SSL_CTX_load_verify_locations(sp.ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL))
-            {
-                    ERR_print_errors_fp(stderr);
-                    return -1;		
-            }
-            SSL_CTX_set_verify(sp.ssl_server_ctx, SSL_VERIFY_PEER, NULL);
-            SSL_CTX_set_verify_depth(sp.ssl_server_ctx, 1);
-    }
-
-        
-        
     VERBOSE(&sp, VMCTNT, "STARTING LISTENING LOOP\n\n");
     //Boucle principale
     while (1) {
@@ -343,24 +291,25 @@ int main(int argc, char* argv[]) {
             exit(-1);
         } else
 
-            //Si socket_tcp ready
-            if (FD_ISSET(sock_tcp, &fd)) {
-
+        //Si socket_tcp ready
+        if (FD_ISSET(sock_tcp, &fd)) {
+            SSL *serverssl = SSL_new(sp.ssl_server_ctx);
             //on accepte la connexion
             sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
-                
+            p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv);
+
             //preparation du message
             message = p2p_msg_create();
 
             VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
-            p2p_tcp_ssl_msg_recvfd(&sp, message, sock_tcp_rcv);
-
+            p2p_tcp_ssl_msg_recvfd(&sp, message, serverssl);
+            
             //En fonction du message
             switch (p2p_msg_get_type(message)) {
 
                 case P2P_MSG_JOIN_REQ:
                     VERBOSE(&sp, VMCTNT, "RECEPTION JOIN REQ\n");
-                    p2p_do_join_req(&sp, message,  sock_tcp_rcv);
+                    p2p_do_join_req(&sp, message, serverssl);
                     break;
 
                 case P2P_MSG_GET:
@@ -377,9 +326,10 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
             //Fermeture de la soscket de reception
+            p2p_tcp_ssl_close(&sp, serverssl);
+            
             close(sock_tcp_rcv);
         }
-
             //Si socket_udp ready
         else if (FD_ISSET(sock_udp, &fd)) {
 
@@ -415,8 +365,7 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
 
-        }
-            //Si socket_ui ready
+        }            //Si socket_ui ready
         else if (FD_ISSET(sock_ui, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "TELNET CLIENT TRY TO CONNECT\n");
@@ -461,8 +410,7 @@ int main(int argc, char* argv[]) {
                 sock_ui_connected = sock_ui_now;
 
             }
-        }
-            //Si socket_ui_connected ready
+        }            //Si socket_ui_connected ready
         else if (FD_ISSET(sock_ui_connected, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "UI MESSAGE RECEPTION \n");
@@ -491,10 +439,10 @@ int main(int argc, char* argv[]) {
                 exit(1);
             }
 
-        }
-        else break; // Timeout
-        
+        } else break; // Timeout
+
     }
+    SSL_CTX_free(sp.ssl_server_ctx);
 
     close(sock_tcp);
     close(sock_udp);
