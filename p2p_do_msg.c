@@ -48,7 +48,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     
     p2p_msg_set_length(join_msg, 0);
     p2p_msg_display(join_msg);
-
+    p2p_ssl_init_client(sp);
     // on envoi le message
     SSL *ssl = SSL_new(sp->ssl_server_ctx);
     int socket;
@@ -56,7 +56,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     if (socket == -1) {
         perror("Error socket attachement \n");
     }
-    if (p2p_tcp_ssl_client_init_sock(sp, ssl, socket) != 1) {
+    if (p2p_tcp_ssl_client_init_sock(sp, ssl, socket) != P2P_OK) {
         printf("Error establishing SSL connection\n");
         return P2P_ERROR;
     }
@@ -86,7 +86,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     SSL_shutdown(ssl);
     p2p_tcp_ssl_close(sp, ssl);
     p2p_tcp_socket_close(sp, socket);
-
+    SSL_CTX_free(sp->ssl_server_ctx);
     //on libère la mémoire
 
     p2p_msg_delete(ack_msg);

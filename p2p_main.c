@@ -220,49 +220,6 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    VERBOSE(&sp, VMCTNT, "SSL INIT ...\n");
-
-    //SSL SERVER PART
-    //int handshakestatus;
-    SSL_library_init();
-    SSL_load_error_strings();
-    sp.server_meth = SSLv3_method();
-    sp.ssl_server_ctx = SSL_CTX_new(sp.server_meth);
-    ;
-
-    if (!sp.ssl_server_ctx) {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-    if (SSL_CTX_use_certificate_file(sp.ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-
-    if (SSL_CTX_use_PrivateKey_file(sp.ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-    if (SSL_CTX_check_private_key(sp.ssl_server_ctx) != 1) {
-        printf("Private and certificate is not matching\n");
-        return -1;
-    }
-
-    if (sp.verify_peer) {
-        //See function man pages for instructions on generating CERT files
-        if (!SSL_CTX_load_verify_locations(sp.ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
-            ERR_print_errors_fp(stderr);
-            return -1;
-        }
-        SSL_CTX_set_verify(sp.ssl_server_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp.ssl_server_ctx, 1);
-    }
-
-
-
     VERBOSE(&sp, VMCTNT, "STARTING LISTENING LOOP\n\n");
     //Boucle principale
     while (1) {
@@ -293,10 +250,12 @@ int main(int argc, char* argv[]) {
 
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
+            p2p_ssl_init_server(&sp);
             SSL *serverssl = SSL_new(sp.ssl_server_ctx);
             //on accepte la connexion
             sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
-            if (p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv) != 1) {
+            if (p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv) != P2P_OK) {
+                VERBOSE(&sp, VMCTNT, "ERROR SSL SERVER INIT\n");
                 return P2P_ERROR;
             }
 
