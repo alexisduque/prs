@@ -84,9 +84,8 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
 
 int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
     
-     VERBOSE(sp, VPROTO, "TRY TO SEND TCP msg ...\n");
     //SSL Init
-   
+    VERBOSE(sp, VPROTO, " SSL INIT ... \n");
     int ret;
 
     if((ret = SSL_set_fd(clientssl, fd)) != 1)
@@ -121,6 +120,8 @@ int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
             else
                     printf("There is no client certificate\n");
     }
+    
+    VERBOSE(sp, VPROTO, "SSL INIT OK\n");
     return 1;
 }
 
@@ -206,7 +207,8 @@ int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
         //printf("Impossible de créer la socket TCP \n");
         return (P2P_ERROR);
     }
-    if (p2p_tcp_ssl_client_init_sock(sp, clientssl, socketTMP) != P2P_OK) {
+    if (p2p_tcp_ssl_client_init_sock(sp, clientssl, socketTMP) != 1) {
+        VERBOSE(sp, VPROTO, "TCP SSL init impossible \n");
         return (P2P_ERROR);
     }
     if (p2p_tcp_ssl_msg_sendfd(sp, msg, clientssl) != P2P_OK) {
