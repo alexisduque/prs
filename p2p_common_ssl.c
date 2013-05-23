@@ -72,7 +72,7 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
         //Liberation de la memoire du buffer
         free(toWrite);
 
-      //SSL_shutdown(clientssl);
+     SSL_shutdown(clientssl);
 
         return P2P_OK;
     }
@@ -171,6 +171,7 @@ void p2p_tcp_ssl_close(server_params* sp, SSL* ssl) {
     //SSL_shutdown(ssl);
     SSL_free(ssl);
     ssl = NULL;
+    printf("SSL Connection succesful closed\n");
 }
 // Recoie dans msg un message depuis la socket fd
 
@@ -186,7 +187,7 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
     p2p_msg_init_payload(msg, length, data_payload);
     p2p_msg_display(msg);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
-    
+    //SSL_shutdown(serverssl);
     return P2P_OK;
     
 }
@@ -197,6 +198,7 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
 
     SSL *clientssl = SSL_new(sp->ssl_server_ctx);;
+    printf("Dest :, %s\n", p2p_addr_get_str(p2p_msg_get_dst(msg)));
     int socketTMP = p2p_tcp_socket_create(sp, p2p_msg_get_dst(msg));
     
     if (socketTMP == P2P_ERROR) {

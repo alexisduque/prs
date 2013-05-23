@@ -139,6 +139,7 @@
         <in>tls1.h</in>
         <in>tls_srp.c</in>
       </df>
+      <in>debug _openssl.c</in>
       <in>p2p_addr.c</in>
       <in>p2p_addr.h</in>
       <in>p2p_common.c</in>

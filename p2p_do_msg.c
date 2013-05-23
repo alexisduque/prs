@@ -75,18 +75,17 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
         VERBOSE(sp, VMCTNT, "ERROR RCV ACK\n");
         return (P2P_ERROR);
     }
-   
-   //on peut fermer la socket
-    //SSL_shutdown(ssl);
-    p2p_tcp_ssl_close(sp, ssl);
-    p2p_tcp_socket_close(sp, socket);
-
     
     //on traite le message d'acquittement
     if (p2p_do_join_ack(sp, ack_msg) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR TREAT ACK\n");
         return P2P_ERROR;
     }
+    
+    //on peut fermer la socket
+    SSL_shutdown(ssl);
+    p2p_tcp_ssl_close(sp, ssl);
+    p2p_tcp_socket_close(sp, socket);
 
     //on libère la mémoire
 
@@ -178,7 +177,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_msg_send(sp, link_msg) != P2P_OK) {
+        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK) {
             return P2P_ERROR;
         }
     }
@@ -193,7 +192,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_msg_send(sp, link_msg) != P2P_OK)
+        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     }
 
@@ -207,7 +206,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_msg_send(sp, link_msg) != P2P_OK)
+        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     } else {
         p2p_addr_delete(sp->p2p_neighbors.right_neighbor);

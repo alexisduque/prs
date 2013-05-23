@@ -296,7 +296,9 @@ int main(int argc, char* argv[]) {
             SSL *serverssl = SSL_new(sp.ssl_server_ctx);
             //on accepte la connexion
             sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
-            p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv);
+            if (p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv) != 1) {
+                return P2P_ERROR;
+            }
 
             //preparation du message
             message = p2p_msg_create();
@@ -326,8 +328,8 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
             //Fermeture de la soscket de reception
+            SSL_shutdown(serverssl);
             p2p_tcp_ssl_close(&sp, serverssl);
-            
             close(sock_tcp_rcv);
         }
             //Si socket_udp ready
