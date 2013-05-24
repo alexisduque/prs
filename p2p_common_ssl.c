@@ -36,40 +36,41 @@ int p2p_ssl_init_server(server_params* sp) {
     VERBOSE(sp, VMCTNT, "SSL INIT ...\n");
     SSL_library_init();
     SSL_load_error_strings();
-    sp->server_meth = SSLv3_server_method();
-    sp->ssl_server_ctx = SSL_CTX_new(sp->server_meth);
+    sp->node_meth = SSLv3_node_method();
+    sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
     
 
-    if (!sp->ssl_server_ctx) {
+    if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
-    if (SSL_CTX_use_certificate_file(sp->ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_certificate_file(sp->ssl_node_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
-        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_server_ctx,KEY_PASSWD);
-    if (SSL_CTX_use_PrivateKey_file(sp->ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
+        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
+    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
-    if (SSL_CTX_check_private_key(sp->ssl_server_ctx) != 1) {
+    if (SSL_CTX_check_private_key(sp->ssl_node_ctx) != 1) {
         printf("Private and certificate is not matching\n");
         return -1;
     }
 
-    if (sp->verify_peer) { 
+    if (sp->verify_peer) {
 
         //See function man pages for instructions on generating CERT files
-        if (!SSL_CTX_load_verify_locations(sp->ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
+        if (!SSL_CTX_load_verify_locations(sp->ssl_node_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
             ERR_print_errors_fp(stderr);
             return -1;
         }
-        SSL_CTX_set_verify(sp->ssl_server_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp->ssl_server_ctx, 1);
+        
+        SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 1);
     }
     return P2P_OK;
     
@@ -80,27 +81,28 @@ int p2p_ssl_init_client(server_params* sp) {
     VERBOSE(sp, VMCTNT, "SSL CLIENT INIT ...\n");
     SSL_library_init();
     SSL_load_error_strings();
-    sp->server_meth = SSLv3_client_method();
-    sp->ssl_server_ctx = SSL_CTX_new(sp->server_meth);
+    sp->node_meth = SSLv3_client_method();
+    sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
     
 
-    if (!sp->ssl_server_ctx) {
+    if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
     if (sp->verify_peer) { 
-        if (SSL_CTX_use_certificate_file(sp->ssl_server_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
+        if (SSL_CTX_use_certificate_file(sp->ssl_node_ctx, "ssl_client.crt", SSL_FILETYPE_PEM) <= 0) {
             ERR_print_errors_fp(stderr);
             return -1;
         }
 
-        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_server_ctx,KEY_PASSWD);
-        if (SSL_CTX_use_PrivateKey_file(sp->ssl_server_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
+        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,"alexis");
+        
+        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, "ssl_client.key", SSL_FILETYPE_PEM) <= 0) {
             ERR_print_errors_fp(stderr);
             return -1;
         }
 
-        if (SSL_CTX_check_private_key(sp->ssl_server_ctx) != 1) {
+        if (SSL_CTX_check_private_key(sp->ssl_node_ctx) != 1) {
             printf("Private and certificate is not matching\n");
             return -1;
         }
@@ -108,19 +110,19 @@ int p2p_ssl_init_client(server_params* sp) {
 
 
         //See function man pages for instructions on generating CERT files
-        if (!SSL_CTX_load_verify_locations(sp->ssl_server_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
+        if (!SSL_CTX_load_verify_locations(sp->ssl_node_ctx, "ca.crt", NULL)) {
             ERR_print_errors_fp(stderr);
             return -1;
         }
-        SSL_CTX_set_verify(sp->ssl_server_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp->ssl_server_ctx, 1);
+        SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 1);
     }
     return P2P_OK;
 }
 
 //Envoi du message msg via la socket tcp fd
 
-int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
+int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
 
 
     //On verifie que l'on essaie pas d'envoyer un message à nous même
@@ -168,10 +170,10 @@ int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
 
 // Initialise la connexion SSL server avec la socket
 
-int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
+int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
 
     //SSL Init
-    VERBOSE(sp, VSYSCL, " SSL INIT ... \n");
+    VERBOSE(sp, VSYSCL, " SSL INIT CONNECTION... \n");
     int ret;
 
     if ((ret = SSL_set_fd(clientssl, fd)) != 1) {
@@ -201,14 +203,14 @@ int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
         } else
             printf("There is no client certificate\n");
     }
-    ShowCerts(clientssl);
+    p2p_ssl_showCerts(clientssl);
     VERBOSE(sp, VSYSCL, "SSL INIT OK\n");
     return P2P_OK;
 }
 
 // Initialise la connexion SSL server avec la socket
 
-int p2p_tcp_ssl_server_init_sock(server_params* sp, SSL* ssl, int fd) {
+int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
     //SSL check
     int ret;
@@ -242,11 +244,11 @@ int p2p_tcp_ssl_server_init_sock(server_params* sp, SSL* ssl, int fd) {
         } else
             printf("There is no client certificate\n");
     }
-    ShowCerts(ssl);
+    p2p_ssl_showCerts(ssl);
     return P2P_OK;
 }
 
-void p2p_tcp_ssl_close(server_params* sp, SSL* ssl) {
+void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
     //SSL_shutdown(ssl);
     SSL_free(ssl);
     ssl = NULL;
@@ -254,7 +256,7 @@ void p2p_tcp_ssl_close(server_params* sp, SSL* ssl) {
 }
 // Recoie dans msg un message depuis la socket fd
 
-int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
+int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 
     int length;
     SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE);
@@ -274,9 +276,9 @@ int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 
 // Envoi du message msg via tcp au noeud destination indiquée dans le champ dst de msg
 
-int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
+int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
 
-    SSL *clientssl = SSL_new(sp->ssl_server_ctx);
+    SSL *clientssl = SSL_new(sp->ssl_node_ctx);
     ;
     printf("Dest :, %s\n", p2p_addr_get_str(p2p_msg_get_dst(msg)));
     int socketTMP = p2p_tcp_socket_create(sp, p2p_msg_get_dst(msg));
@@ -286,21 +288,21 @@ int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg) {
         //printf("Impossible de créer la socket TCP \n");
         return (P2P_ERROR);
     }
-    if (p2p_tcp_ssl_client_init_sock(sp, clientssl, socketTMP) != P2P_OK) {
+    if (p2p_ssl_tcp_client_init_sock(sp, clientssl, socketTMP) != P2P_OK) {
         VERBOSE(sp, VSYSCL, "TCP SSL init impossible \n");
         return (P2P_ERROR);
     }
-    if (p2p_tcp_ssl_msg_sendfd(sp, msg, clientssl) != P2P_OK) {
+    if (p2p_ssl_tcp_msg_sendfd(sp, msg, clientssl) != P2P_OK) {
         return (P2P_ERROR);
     }
 
-    p2p_tcp_ssl_close(sp, clientssl);
+    p2p_ssl_tcp_close(sp, clientssl);
     p2p_tcp_socket_close(sp, socketTMP);
     VERBOSE(sp, VPROTO, "SEND msg DONE\n");
     return P2P_OK;
 }
 
-void ShowCerts(SSL* ssl)
+void p2p_ssl_showCerts(SSL* ssl)
 {   X509 *cert;
     char *line;
 

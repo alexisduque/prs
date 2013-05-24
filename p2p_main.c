@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
         .p2p_neighbors.right_neighbor = p2p_addr_create(),
         .p2p_neighbors.left_neighbor = p2p_addr_create(),
         .friends.nb_node = 0,
-        .verify_peer = OFF
+        .verify_peer = ON
     };
 
     p2p_addr dest = p2p_addr_create();
@@ -251,10 +251,10 @@ int main(int argc, char* argv[]) {
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
             p2p_ssl_init_server(&sp);
-            SSL *serverssl = SSL_new(sp.ssl_server_ctx);
+            SSL *serverssl = SSL_new(sp.ssl_node_ctx);
             //on accepte la connexion
             sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
-            if (p2p_tcp_ssl_server_init_sock(&sp, serverssl, sock_tcp_rcv) != P2P_OK) {
+            if (p2p_ssl_tcp_server_init_sock(&sp, serverssl, sock_tcp_rcv) != P2P_OK) {
                 VERBOSE(&sp, VMCTNT, "ERROR SSL SERVER INIT\n");
                 return P2P_ERROR;
             }
@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
             message = p2p_msg_create();
 
             VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
-            p2p_tcp_ssl_msg_recvfd(&sp, message, serverssl);
+            p2p_ssl_tcp_msg_recvfd(&sp, message, serverssl);
             
             //En fonction du message
             switch (p2p_msg_get_type(message)) {
@@ -288,7 +288,8 @@ int main(int argc, char* argv[]) {
             p2p_msg_delete(message);
             //Fermeture de la soscket de reception
             SSL_shutdown(serverssl);
-            p2p_tcp_ssl_close(&sp, serverssl);
+            SSL_CTX_free(sp.ssl_node_ctx);
+            p2p_ssl_tcp_close(&sp, serverssl);
             close(sock_tcp_rcv);
         }
             //Si socket_udp ready
@@ -322,7 +323,7 @@ int main(int argc, char* argv[]) {
                     ;
                     break;
             }
-
+            
             //Suppression du message temporaire
             p2p_msg_delete(message);
 
@@ -403,7 +404,7 @@ int main(int argc, char* argv[]) {
         } else break; // Timeout
 
     }
-    SSL_CTX_free(sp.ssl_server_ctx);
+    SSL_CTX_free(sp.ssl_node_ctx);
 
     close(sock_tcp);
     close(sock_udp);

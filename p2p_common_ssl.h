@@ -8,9 +8,9 @@
 #ifndef P2P_COMMON_SSL_H
 #define	P2P_COMMON_SSL_H
 
-#define SSL_SERVER_RSA_CERT	"./ssl_server.crt"
-#define SSL_SERVER_RSA_KEY	"./ssl_server.key"
-#define SSL_SERVER_RSA_CA_CERT	"./ca.crt"
+#define SSL_SERVER_RSA_CERT	"ssl_server.crt"
+#define SSL_SERVER_RSA_KEY	"ssl_server.key"
+#define SSL_SERVER_RSA_CA_CERT	"ca.crt"
 #define SSL_SERVER_RSA_CA_PATH	"./"
 #define KEY_PASSWD "alexis"
 
@@ -34,11 +34,11 @@
 
 int p2p_ssl_init_server(server_params* sp);
 int p2p_ssl_init_client(server_params* sp);
-int p2p_tcp_ssl_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
-int p2p_tcp_ssl_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
-int p2p_tcp_ssl_msg_send(server_params* sp, const p2p_msg msg);
-void p2p_tcp_ssl_close(server_params* sp, SSL* ssl);
-int p2p_tcp_ssl_server_init_sock(server_params* sp, SSL* ssl, int fd);
-int p2p_tcp_ssl_client_init_sock(server_params* sp, SSL* clientssl, int fd);
-void ShowCerts(SSL* ssl);
+int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
+int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
+int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg);
+void p2p_ssl_tcp_close(server_params* sp, SSL* ssl);
+int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd);
+int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
+void p2p_ssl_showCerts(SSL* ssl);
 #endif	/* P2P_COMMON_SSL_H */
