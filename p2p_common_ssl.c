@@ -36,86 +36,67 @@ int p2p_ssl_init_server(server_params* sp) {
     VERBOSE(sp, VMCTNT, "SSL INIT ...\n");
     SSL_library_init();
     SSL_load_error_strings();
-    sp->node_meth = SSLv3_node_method();
+    sp->node_meth = SSLv23_server_method();
     sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
-    
+
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
-    if (SSL_CTX_use_certificate_file(sp->ssl_node_ctx, SSL_SERVER_RSA_CERT, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
+    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
+            perror("Error loading CA file and/or directory\n");
+    
+    SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
+    if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
+        perror("Error loading default CA file and/or directory\n");
+    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, SERVER_CERTFILE) != 1)
+        perror("Error loading certificate from file\n");
+    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, SERVER_CERTFILE, SSL_FILETYPE_PEM) != 1)
+        perror("Error loading private key from file\n");
 
-        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
-    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, SSL_SERVER_RSA_KEY, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-    if (SSL_CTX_check_private_key(sp->ssl_node_ctx) != 1) {
-        printf("Private and certificate is not matching\n");
-        return -1;
-    }
 
     if (sp->verify_peer) {
 
-        //See function man pages for instructions on generating CERT files
-        if (!SSL_CTX_load_verify_locations(sp->ssl_node_ctx, SSL_SERVER_RSA_CA_CERT, NULL)) {
-            ERR_print_errors_fp(stderr);
-            return -1;
-        }
-        
+
+
+
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 1);
+        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
     }
+
     return P2P_OK;
-    
+
 }
 
 int p2p_ssl_init_client(server_params* sp) {
-        //SSL CLIENT
+    //SSL CLIENT
     VERBOSE(sp, VMCTNT, "SSL CLIENT INIT ...\n");
     SSL_library_init();
     SSL_load_error_strings();
-    sp->node_meth = SSLv3_client_method();
+    sp->node_meth = SSLv23_client_method();
     sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
-    
+
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
-    if (sp->verify_peer) { 
-        if (SSL_CTX_use_certificate_file(sp->ssl_node_ctx, "ssl_client.crt", SSL_FILETYPE_PEM) <= 0) {
-            ERR_print_errors_fp(stderr);
-            return -1;
-        }
-
-        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,"alexis");
-        
-        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, "ssl_client.key", SSL_FILETYPE_PEM) <= 0) {
-            ERR_print_errors_fp(stderr);
-            return -1;
-        }
-
-        if (SSL_CTX_check_private_key(sp->ssl_node_ctx) != 1) {
-            printf("Private and certificate is not matching\n");
-            return -1;
-        }
-
-
-
-        //See function man pages for instructions on generating CERT files
-        if (!SSL_CTX_load_verify_locations(sp->ssl_node_ctx, "ca.crt", NULL)) {
-            ERR_print_errors_fp(stderr);
-            return -1;
-        }
+    
+    if (sp->verify_peer) {
+        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
+        if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
+            perror("Error loading CA file and/or directory\n");
+        if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
+            perror("Error loading default CA file and/or directory\n");
+        if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, CLIENT_CERTFILE) != 1)
+            perror("Error loading certificate from file\n");
+        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, CLIENT_CERTFILE, SSL_FILETYPE_PEM) != 1)
+            perror("Error loading private key from file\n");
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 1);
+        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
+
     }
     return P2P_OK;
 }
@@ -227,7 +208,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
     printf("SSL_accept\n");
 
     if (sp->verify_peer) {
- 
+
         X509 *ssl_client_cert = NULL;
 
         ssl_client_cert = SSL_get_peer_certificate(ssl);
@@ -302,22 +283,20 @@ int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
     return P2P_OK;
 }
 
-void p2p_ssl_showCerts(SSL* ssl)
-{   X509 *cert;
+void p2p_ssl_showCerts(SSL* ssl) {
+    X509 *cert;
     char *line;
 
-    cert = SSL_get_peer_certificate(ssl);	/* get the server's certificate */
-    if ( cert != NULL )
-    {
+    cert = SSL_get_peer_certificate(ssl); /* get the server's certificate */
+    if (cert != NULL) {
         printf("Server certificates:\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         printf("Subject: %s\n", line);
-        free(line);							/* free the malloc'ed string */
+        free(line); /* free the malloc'ed string */
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         printf("Issuer: %s\n", line);
-        free(line);							/* free the malloc'ed string */
-        X509_free(cert);					/* free the malloc'ed certificate copy */
-    }
-    else
+        free(line); /* free the malloc'ed string */
+        X509_free(cert); /* free the malloc'ed certificate copy */
+    } else
         printf("No certificates.\n");
 }

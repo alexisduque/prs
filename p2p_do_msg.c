@@ -50,19 +50,19 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     p2p_msg_display(join_msg);
     p2p_ssl_init_client(sp);
     // on envoi le message
-    SSL *ssl = SSL_new(sp->ssl_server_ctx);
+    SSL *ssl = SSL_new(sp->ssl_node_ctx);
     int socket;
     socket = p2p_tcp_socket_create(sp, destinataire);
     if (socket == -1) {
         perror("Error socket attachement \n");
     }
-    if (p2p_tcp_ssl_client_init_sock(sp, ssl, socket) != P2P_OK) {
+    if (p2p_ssl_tcp_client_init_sock(sp, ssl, socket) != P2P_OK) {
         printf("Error establishing SSL connection\n");
         return P2P_ERROR;
     }
     
     printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
-    if (p2p_tcp_ssl_msg_sendfd(sp, join_msg, ssl) != P2P_OK) {
+    if (p2p_ssl_tcp_msg_sendfd(sp, join_msg, ssl) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR SENDING JOIN REQ\n");
         return (P2P_ERROR);
     }
@@ -71,7 +71,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
     //réception du message d'acquittement
     VERBOSE(sp, VMCTNT, "WAITING FOR ACK MESSAGE...;\n");
-    if (p2p_tcp_ssl_msg_recvfd(sp, ack_msg, ssl) != P2P_OK) {
+    if (p2p_ssl_tcp_msg_recvfd(sp, ack_msg, ssl) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR RCV ACK\n");
         return (P2P_ERROR);
     }
@@ -84,9 +84,9 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     
     //on peut fermer la socket
     SSL_shutdown(ssl);
-    p2p_tcp_ssl_close(sp, ssl);
+    p2p_ssl_tcp_close(sp, ssl);
     p2p_tcp_socket_close(sp, socket);
-    SSL_CTX_free(sp->ssl_server_ctx);
+    SSL_CTX_free(sp->ssl_node_ctx);
     //on libère la mémoire
 
     p2p_msg_delete(ack_msg);
@@ -137,7 +137,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, SSL* ssl) {
     printf("Right neighbor : %s \n", p2p_addr_get_str(right_neighbor));
 
     //Envoi du message JOIN ACK
-    if (p2p_tcp_ssl_msg_sendfd(sp,join_ack, ssl) == P2P_OK) {
+    if (p2p_ssl_tcp_msg_sendfd(sp,join_ack, ssl) == P2P_OK) {
         printf("Message JOIN_ACK sent ! \n\n");
     }
 
@@ -177,7 +177,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK) {
+        if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK) {
             return P2P_ERROR;
         }
     }
@@ -192,7 +192,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK)
+        if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     }
 
@@ -206,7 +206,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
-        if (p2p_tcp_ssl_msg_send(sp, link_msg) != P2P_OK)
+        if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     } else {
         p2p_addr_delete(sp->p2p_neighbors.right_neighbor);

@@ -8,11 +8,17 @@
 #ifndef P2P_COMMON_SSL_H
 #define	P2P_COMMON_SSL_H
 
+
+#define CAFILE "/tmp/cert/rootcert.pem" 
+#define CADIR "/tmp/cert/"
+#define CLIENT_CERTFILE "/tmp/cert/client.pem"
+#define SERVER_CERTFILE "/tmp/cert/server.pem"
+
 #define SSL_SERVER_RSA_CERT	"ssl_server.crt"
 #define SSL_SERVER_RSA_KEY	"ssl_server.key"
 #define SSL_SERVER_RSA_CA_CERT	"ca.crt"
 #define SSL_SERVER_RSA_CA_PATH	"./"
-#define KEY_PASSWD "alexis"
+#define KEY_PASSWD "alex"
 
 #include <stdarg.h>
 #include <stdio.h>
