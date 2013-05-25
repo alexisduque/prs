@@ -29,7 +29,7 @@
 #include "p2p_addr.h"
 #include "p2p_msg.h"
 #include "p2p_options.h"
-#include "p2p_common_ssl.h"
+#include "p2p_ssl_common.h"
 
 
 #define MIN(a,b)    (((a)<(b))?(a):(b))

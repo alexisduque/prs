@@ -22,7 +22,7 @@
 #include "p2p_msg.h"
 #include "p2p_common.h"
 #include "p2p_options.h"
-#include "p2p_common_ssl.h"
+#include "p2p_ssl_common.h"
 #include "p2p_addr.h"
 
 #include <openssl/rand.h>
@@ -31,9 +31,13 @@
 #include <openssl/err.h> 
 #include <errno.h>
 
+
+// Initialise le contexte SSL pour le serveur
+
 int p2p_ssl_init_server(server_params* sp) {
-    //SSL SERVER
-    VERBOSE(sp, VMCTNT, "SSL INIT ...\n");
+
+    //Chargement des librairies
+    VERBOSE(sp, VSYSCL, "SSL INIT server context\n");
     SSL_library_init();
     SSL_load_error_strings();
     sp->node_meth = SSLv23_server_method();
@@ -43,68 +47,79 @@ int p2p_ssl_init_server(server_params* sp) {
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
-    }
-
-    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
-            perror("Error loading CA file and/or directory\n");
+    }        
     
-    SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
+    VERBOSE(sp, VSYSCL, "SSL : Loading Certificat\n");
+    //Ajout des certificats serveur 
+    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
+        perror("Error loading CA file and/or directory");
+
+    //Ajout des certificats serveur 
+    SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx, KEY_PASSWD);
+
     if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
-        perror("Error loading default CA file and/or directory\n");
+        perror("Error loading default CA file and/or directory");
+
     if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, SERVER_CERTFILE) != 1)
-        perror("Error loading certificate from file\n");
+        perror("Error loading certificate from file");
+
     if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, SERVER_CERTFILE, SSL_FILETYPE_PEM) != 1)
-        perror("Error loading private key from file\n");
+        perror("Error loading private key from file");
 
-
+    //Demande la verification des crificats du clients si verify_peer est ON
     if (sp->verify_peer) {
-
-
-
-
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
     }
-
+    VERBOSE(sp, VSYSCL, "SSL : Certificat Loaded\n\n");
     return P2P_OK;
 
 }
 
+//Initialisation du contexte SSL client
+
 int p2p_ssl_init_client(server_params* sp) {
-    //SSL CLIENT
-    VERBOSE(sp, VMCTNT, "SSL CLIENT INIT ...\n");
+
+    //Charement des librairies
+    VERBOSE(sp, VSYSCL, "SSL INIT client context\n");
     SSL_library_init();
     SSL_load_error_strings();
     sp->node_meth = SSLv23_client_method();
     sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
 
-
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
         return -1;
     }
-    
+
+    //Si la verification des crtificats est activée, on ajoute les certificats au contexte
     if (sp->verify_peer) {
-        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx,KEY_PASSWD);
+        VERBOSE(sp, VSYSCL, "SSL : Loading Certificat\n");
+        SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx, KEY_PASSWD);
+
         if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
-            perror("Error loading CA file and/or directory\n");
+            perror("Error loading CA file and/or directory");
+        
         if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
-            perror("Error loading default CA file and/or directory\n");
+            perror("Error loading default CA file and/or directory");
+
         if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, CLIENT_CERTFILE) != 1)
-            perror("Error loading certificate from file\n");
+            perror("Error loading certificate from file");
+
         if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, CLIENT_CERTFILE, SSL_FILETYPE_PEM) != 1)
-            perror("Error loading private key from file\n");
+            perror("Error loading private key from file");
+        
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
-
+        VERBOSE(sp, VSYSCL, "SSL : Certificat Loaded\n\n");
     }
+
     return P2P_OK;
 }
 
-//Envoi du message msg via la socket tcp fd
+//Envoi du message msg via la stracture SSL clientssl
 
 int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
-
 
     //On verifie que l'on essaie pas d'envoyer un message à nous même
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(msg)) != 0) {
@@ -140,107 +155,120 @@ int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
         VERBOSE(sp, VPROTO, "TCP MSG SUCCESFULL SEND\n\n");
         //Liberation de la memoire du buffer
         free(toWrite);
-
+        //Fermeture de la connexion SSL
         SSL_shutdown(clientssl);
-
         return P2P_OK;
     }
 
 
 }
 
-// Initialise la connexion SSL server avec la socket
+// Initialise la connexion SSL coté client avec la socket fd
 
 int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
 
-    //SSL Init
-    VERBOSE(sp, VSYSCL, " SSL INIT CONNECTION... \n");
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ... \n");
     int ret;
-
     if ((ret = SSL_set_fd(clientssl, fd)) != 1) {
-        printf("SetFD Error %d\n", SSL_get_error(clientssl, ret));
-        return -1;
+        VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(clientssl, ret));
+        return P2P_ERROR;
     }
 
-    if ((ret = SSL_connect(clientssl)) <= 0) {
-        printf("Handshake Error %d\n", SSL_get_error(clientssl, ret));
-        return -1;
+    if ((ret = SSL_connect(clientssl)) != 1) {
+        VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(clientssl, ret));
+        return P2P_ERROR;
     }
 
     if (sp->verify_peer) {
+
         X509 *ssl_client_cert = NULL;
 
         ssl_client_cert = SSL_get_peer_certificate(clientssl);
 
         if (ssl_client_cert) {
             long verifyresult;
-
+            p2p_ssl_showCerts(sp, clientssl);
             verifyresult = SSL_get_verify_result(clientssl);
-            if (verifyresult == X509_V_OK)
-                printf("Certificate Verify Success\n");
-            else
-                printf("Certificate Verify Failed\n");
-            X509_free(ssl_client_cert);
-        } else
-            printf("There is no client certificate\n");
+            if (verifyresult == X509_V_OK) {
+                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+            } else {
+                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                X509_free(ssl_client_cert);
+                return (P2P_ERROR);
+            }
+        } else {
+            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+            return (P2P_ERROR);
+        }
     }
-    p2p_ssl_showCerts(clientssl);
-    VERBOSE(sp, VSYSCL, "SSL INIT OK\n");
+
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
     return P2P_OK;
 }
 
-// Initialise la connexion SSL server avec la socket
+// Initialise la connexion SSL coté server avec la socket fd
 
 int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
-
-    //SSL check
+    
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE... \n");
     int ret;
     if ((ret = SSL_set_fd(ssl, fd)) != 1) {
-        printf("SetFD Error %d\n", SSL_get_error(ssl, ret));
-        return -1;
+        VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(ssl, ret));
+        return (P2P_ERROR);
     }
-    printf("SSL_fd\n");
-    if ((ret = SSL_accept(ssl)) <= 0) {
-        printf("Handshake Error %d\n", SSL_get_error(ssl, ret));
+    
+    
+    if ((ret = SSL_accept(ssl)) != 1) {
+       VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(ssl, ret));
+        return (P2P_ERROR);
+    }
 
-        return -1;
-    }
-    printf("SSL_accept\n");
 
     if (sp->verify_peer) {
 
         X509 *ssl_client_cert = NULL;
-
         ssl_client_cert = SSL_get_peer_certificate(ssl);
 
         if (ssl_client_cert) {
+            
             long verifyresult;
-
+            p2p_ssl_showCerts(sp, ssl);
             verifyresult = SSL_get_verify_result(ssl);
-            if (verifyresult == X509_V_OK)
-                printf("Certificate Verify Success\n");
-            else
-                printf("Certificate Verify Failed\n");
-            X509_free(ssl_client_cert);
-        } else
-            printf("There is no client certificate\n");
-    }
-    p2p_ssl_showCerts(ssl);
+            
+            if (verifyresult == X509_V_OK) {
+                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+            } else {
+                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                SSL_shutdown(ssl);
+                X509_free(ssl_client_cert);
+                return (P2P_ERROR);
+            }
+        
+        } else {
+            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+            SSL_shutdown(ssl);
+            return (P2P_ERROR);
+        } 
+    }    
+    
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
     return P2P_OK;
+    
 }
 
+//Ferme la connection SSL
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
-    //SSL_shutdown(ssl);
+    SSL_shutdown(ssl);
     SSL_free(ssl);
     ssl = NULL;
-    VERBOSE(sp, VSYSCL, "SSL Connection succesful closed\n");
+    VERBOSE(sp, VSYSCL, "SSL : Connection successful closed\n");
 }
-// Recoie dans msg un message depuis la socket fd
 
+// Recois dans msg un message depuis la connection ssl serverssl
 int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 
     int length;
-    SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE);
+    if (SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE)== 0 ) return P2P_ERROR;
     SSL_read(serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     SSL_read(serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
@@ -256,21 +284,20 @@ int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 
 
 // Envoi du message msg via tcp au noeud destination indiquée dans le champ dst de msg
-
 int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
 
     SSL *clientssl = SSL_new(sp->ssl_node_ctx);
-    ;
-    printf("Dest :, %s\n", p2p_addr_get_str(p2p_msg_get_dst(msg)));
+    
+    VERBOSE(sp, VPROTO, "DEST : %s\n", p2p_addr_get_str(p2p_msg_get_dst(msg)));
     int socketTMP = p2p_tcp_socket_create(sp, p2p_msg_get_dst(msg));
 
     if (socketTMP == P2P_ERROR) {
-        VERBOSE(sp, VSYSCL, "TCP SSL socket creation impossible \n");
+        VERBOSE(sp, VSYSCL, "SSL : TCP socket creation impossible \n");
         //printf("Impossible de créer la socket TCP \n");
         return (P2P_ERROR);
     }
     if (p2p_ssl_tcp_client_init_sock(sp, clientssl, socketTMP) != P2P_OK) {
-        VERBOSE(sp, VSYSCL, "TCP SSL init impossible \n");
+        VERBOSE(sp, VSYSCL, "SSL : INIT Impossible \n");
         return (P2P_ERROR);
     }
     if (p2p_ssl_tcp_msg_sendfd(sp, msg, clientssl) != P2P_OK) {
@@ -279,24 +306,31 @@ int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
 
     p2p_ssl_tcp_close(sp, clientssl);
     p2p_tcp_socket_close(sp, socketTMP);
-    VERBOSE(sp, VPROTO, "SEND msg DONE\n");
+    VERBOSE(sp, VPROTO, "SEND msg DONE\n\n");
     return P2P_OK;
 }
 
-void p2p_ssl_showCerts(SSL* ssl) {
+//Affiche le certificat du peer
+void p2p_ssl_showCerts(server_params* sp, SSL* ssl) {
+    
     X509 *cert;
     char *line;
-
-    cert = SSL_get_peer_certificate(ssl); /* get the server's certificate */
+    //obtient le certiication du paire connecté
+    cert = SSL_get_peer_certificate(ssl);
+    
     if (cert != NULL) {
-        printf("Server certificates:\n");
+        VERBOSE(sp, VMCTNT, "------------------Peer certificates ----------------------\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line);
-        free(line); /* free the malloc'ed string */
+        VERBOSE(sp, VMCTNT, "Subject: %s\n", line);
+        //libère la mémoire allouée 
+        free(line); 
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line);
-        free(line); /* free the malloc'ed string */
-        X509_free(cert); /* free the malloc'ed certificate copy */
+        VERBOSE(sp, VMCTNT, "Issuer: %s\n", line);
+        VERBOSE(sp, VMCTNT, "-----------------------------------------------------------\n");
+        //libère la mémoire allouée
+        free(line);
+        X509_free(cert);
     } else
-        printf("No certificates.\n");
+        VERBOSE(sp, VMCTNT, "No certificates.\n");
 }
+

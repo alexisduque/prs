@@ -14,7 +14,7 @@
 #include "p2p_addr.h"
 #include "p2p_file.h"
 #include "p2p_search.h"
-#include "p2p_common_ssl.h"
+#include "p2p_ssl_common.h"
  
 /* Fonctions de traitement des differents type de messages */
 

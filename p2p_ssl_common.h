@@ -9,10 +9,10 @@
 #define	P2P_COMMON_SSL_H
 
 
-#define CAFILE "/tmp/cert/rootcert.pem" 
-#define CADIR "/tmp/cert/"
-#define CLIENT_CERTFILE "/tmp/cert/client.pem"
-#define SERVER_CERTFILE "/tmp/cert/server.pem"
+#define CAFILE "rootcert.pem" 
+#define CADIR "./"
+#define CLIENT_CERTFILE "client.pem"
+#define SERVER_CERTFILE "server.pem"
 
 #define SSL_SERVER_RSA_CERT	"ssl_server.crt"
 #define SSL_SERVER_RSA_KEY	"ssl_server.key"
@@ -46,5 +46,5 @@ int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg);
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl);
 int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd);
 int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
-void p2p_ssl_showCerts(SSL* ssl);
+void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 #endif	/* P2P_COMMON_SSL_H */

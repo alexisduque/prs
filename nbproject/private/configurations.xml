@@ -160,6 +160,8 @@
       <in>p2p_options.h</in>
       <in>p2p_search.c</in>
       <in>p2p_search.h</in>
+      <in>p2p_ssl_common.c</in>
+      <in>p2p_ssl_common.h</in>
       <in>p2p_ui.c</in>
       <in>p2p_ui.h</in>
     </df>

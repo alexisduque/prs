@@ -20,7 +20,7 @@
 
 
 #include "p2p_common.h"
-#include "p2p_common_ssl.h"
+#include "p2p_ssl_common.h"
 #include "p2p_addr.h"
 #include "p2p_msg.h"
 #include "p2p_options.h"
@@ -34,7 +34,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
     printf("\n!**************************************************************!\n");
     printf("                FUNCTION SEND JOIN REQ\n");
-    printf("!**************************************************************!\n\n");
+    printf("!**************************************************************!\n");
 
     //création des messages à envoyer
     p2p_msg join_msg = p2p_msg_create();
@@ -49,12 +49,13 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     p2p_msg_set_length(join_msg, 0);
     p2p_msg_display(join_msg);
     p2p_ssl_init_client(sp);
+    
     // on envoi le message
     SSL *ssl = SSL_new(sp->ssl_node_ctx);
     int socket;
     socket = p2p_tcp_socket_create(sp, destinataire);
     if (socket == -1) {
-        perror("Error socket attachement \n");
+        perror("Error socket attachement");
     }
     if (p2p_ssl_tcp_client_init_sock(sp, ssl, socket) != P2P_OK) {
         printf("Error establishing SSL connection\n");
@@ -68,7 +69,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     }
 
     p2p_msg_delete(join_msg);
-
+    printf("%d", ssl);
     //réception du message d'acquittement
     VERBOSE(sp, VMCTNT, "WAITING FOR ACK MESSAGE...;\n");
     if (p2p_ssl_tcp_msg_recvfd(sp, ack_msg, ssl) != P2P_OK) {
@@ -177,6 +178,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
+        VERBOSE(sp, VPROTO, "SENDING LINK UPDATE\n");
         if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK) {
             return P2P_ERROR;
         }
@@ -192,6 +194,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
+        VERBOSE(sp, VPROTO, "SENDING LINK UPDATE\n");
         if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     }
@@ -206,6 +209,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         return P2P_ERROR;
     //envoi du message
     if (p2p_addr_is_equal(sp->p2pMyId, p2p_msg_get_dst(link_msg)) == 0) {
+        VERBOSE(sp, VPROTO, "SENDING LINK UPDATE\n");
         if (p2p_ssl_tcp_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     } else {

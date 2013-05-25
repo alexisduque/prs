@@ -35,7 +35,7 @@
 #include "p2p_do_msg.h"
 #include "p2p_msg.h"
 #include "p2p_ui.h"
-#include "p2p_common_ssl.h"
+#include "p2p_ssl_common.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -250,45 +250,48 @@ int main(int argc, char* argv[]) {
 
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
+            //Initialisation du contexte SSLserver
             p2p_ssl_init_server(&sp);
             SSL *serverssl = SSL_new(sp.ssl_node_ctx);
+            
             //on accepte la connexion
             sock_tcp_rcv = accept(sock_tcp, (struct sockaddr*) &adresse, &lg);
-            if (p2p_ssl_tcp_server_init_sock(&sp, serverssl, sock_tcp_rcv) != P2P_OK) {
-                VERBOSE(&sp, VMCTNT, "ERROR SSL SERVER INIT\n");
-                return P2P_ERROR;
-            }
-
-            //preparation du message
-            message = p2p_msg_create();
-
-            VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
-            p2p_ssl_tcp_msg_recvfd(&sp, message, serverssl);
             
-            //En fonction du message
-            switch (p2p_msg_get_type(message)) {
+            //Handshake
+            if (p2p_ssl_tcp_server_init_sock(&sp, serverssl, sock_tcp_rcv) == P2P_OK) {
+    
+                //preparation du message
+                message = p2p_msg_create();
 
-                case P2P_MSG_JOIN_REQ:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION JOIN REQ\n");
-                    p2p_do_join_req(&sp, message, serverssl);
-                    break;
+                VERBOSE(&sp, VMCTNT, "RECEPTION TCP MSG\n");
+                p2p_ssl_tcp_msg_recvfd(&sp, message, serverssl);
 
-                case P2P_MSG_GET:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION GET       \n");
-                    p2p_do_get(&sp, message, sock_tcp_rcv);
-                    break;
+                //En fonction du message
+                switch (p2p_msg_get_type(message)) {
 
-                case P2P_MSG_LINK_UPDATE:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION LINK UPDATE\n");
-                    p2p_do_link_update(&sp, message);
-                    break;
+                    case P2P_MSG_JOIN_REQ:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION JOIN REQ\n");
+                        p2p_do_join_req(&sp, message, serverssl);
+                        break;
+
+                    case P2P_MSG_GET:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION GET       \n");
+                        p2p_do_get(&sp, message, sock_tcp_rcv);
+                        break;
+
+                    case P2P_MSG_LINK_UPDATE:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION LINK UPDATE\n");
+                        p2p_do_link_update(&sp, message);
+                        break;
+                }
+                
+                //Suppression du message temporaire
+                p2p_msg_delete(message);
             }
 
-            //Suppression du message temporaire
-            p2p_msg_delete(message);
-            //Fermeture de la soscket de reception
             SSL_shutdown(serverssl);
             SSL_CTX_free(sp.ssl_node_ctx);
+            //Fermeture de la soscket de reception
             p2p_ssl_tcp_close(&sp, serverssl);
             close(sock_tcp_rcv);
         }
