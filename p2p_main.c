@@ -275,8 +275,8 @@ int main(int argc, char* argv[]) {
                         break;
 
                     case P2P_MSG_GET:
-                        VERBOSE(&sp, VMCTNT, "RECEPTION GET       \n");
-                        p2p_do_get(&sp, message, sock_tcp_rcv);
+                        VERBOSE(&sp, VMCTNT, "RECEPTION GET\n");
+                        p2p_do_get(&sp, message, serverssl);
                         break;
 
                     case P2P_MSG_LINK_UPDATE:

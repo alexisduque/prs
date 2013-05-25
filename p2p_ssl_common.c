@@ -258,7 +258,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
 //Ferme la connection SSL
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
-    SSL_shutdown(ssl);
+    //SSL_shutdown(ssl);
     SSL_free(ssl);
     ssl = NULL;
     VERBOSE(sp, VSYSCL, "SSL : Connection successful closed\n");

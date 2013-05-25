@@ -55,8 +55,7 @@ typedef struct p2p_msg_struct *p2p_msg;
 //Definition de la structure de l'entete d'un message P2P
 
 struct p2p_msg_hdr_struct {
-    unsigned char version_type; /* Les champs Version et CmdType sont
-				   codes tous les deux sur 1 octet */
+    unsigned char version_type; /* Les champs Version et CmdType sont				   codes tous les deux sur 1 octet */
     unsigned char ttl; /* Le champ  TTTL*/
     unsigned short length; /* Le champ longueur */
     p2p_addr src; /* Le champ adresse source */

@@ -28,7 +28,7 @@ int p2p_send_join_req (server_params *sp, p2p_addr destinataire);
 int p2p_do_join_req(server_params *sp, p2p_msg join_req, SSL* ssl);
 
 //Traitement du GET
-int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) ;
+int p2p_do_get(server_params *sp, p2p_msg get_msg,  SSL* ssl) ;
 
 //Traitement du LINK UPDATE
 int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) ;
@@ -46,7 +46,7 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) ;
 int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) ;
 
 //Envoi du GET
-int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset, int fd);
+int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset,  SSL* ssl);
 
 //Recuperation d'un fichier
 int p2p_get_file(server_params *sp, int searchID, int replyID);

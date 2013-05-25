@@ -242,7 +242,7 @@ p2pleave(params *p) {
         p2p_msg_init_payload(link_update_msg, P2P_ADDR_SIZE + P2P_INT_SIZE, (unsigned char*) buffer);
 
         // Envoi du message
-        if (p2p_tcp_msg_send(p->sp, link_update_msg) == P2P_ERROR) {
+        if (p2p_ssl_tcp_msg_send(p->sp, link_update_msg) == P2P_ERROR) {
             perror(" Error send link update\n");
             return P2P_ERROR;
         }
