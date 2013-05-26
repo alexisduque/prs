@@ -26,7 +26,7 @@
 #include "p2p_file.h"
 #include "p2p_do_msg.h"
 
-#define MAX_DATA_SIZE 65527
+#define MAX_DATA_SIZE 64000
 #define P2P_DATA_ERROR 0
 #define P2P_DATA_OK 200
 

@@ -472,7 +472,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("--------------------------------------------------------------\n");
     int beginOffset, endOffset, filesize;
     int download_statut;
-    char * file_name = NULL;
+    char * file_name;
     p2p_addr dst = p2p_addr_create();
     filesize = p2p_get_owner_file(sp->p2pSearchList, searchID, replyID, &file_name, &dst);
     printf("Filename  = %s\n\n", file_name);
@@ -564,12 +564,11 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     unsigned long int value = 0;
 
     int data_length = p2p_msg_get_length(data);
-    unsigned char* temp = (unsigned char *) malloc(data_length);
-
+    //unsigned char* temp = (unsigned char *) malloc(data_length + P2P_HDR_SIZE );
+    //unsigned char* temp =  p2p_get_payload(data);
     //Recuperation des info contenues dans le message
-    memcpy(temp, p2p_get_payload(data), data_length);
-    memcpy(&status, temp, 1);
-    memcpy(&value, temp + P2P_INT_SIZE, P2P_INT_SIZE);
+    memcpy(&status, p2p_get_payload(data), 1);
+    memcpy(&value, p2p_get_payload(data) + P2P_INT_SIZE, P2P_INT_SIZE);
     value = ntohl(value);
 
     VERBOSE(sp, VMRECV, "	Status code = %d\n", status);
@@ -580,23 +579,23 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     if (status == P2P_DATA_OK) {
         if (value != P2P_INTERNAL_SERVER_ERROR) {
             // SI les donnees sont OK
-            unsigned char* content = (unsigned char*) malloc(sizeof(unsigned char)*(data_length));
-            memcpy(content, temp + 2 * P2P_INT_SIZE, value);
+            //unsigned char* content = (unsigned char*) malloc((endOffset - beginOffset + 1));
+            //memcpy(content, &(p2p_get_payload(data))[2 *P2P_INT_SIZE], endOffset - beginOffset + 1);
             printf("Beginoffset = %d    / 	EndOffset = %d\n\n", beginOffset, endOffset);
 
             // Creation du fichier
-            if (p2p_file_set_chunck(sp, filename, beginOffset, endOffset, content) != P2P_OK) {
+            if (p2p_file_set_chunck(sp, filename, beginOffset, endOffset, p2p_get_payload(data) + (2 *P2P_INT_SIZE)) != P2P_OK) {
                 printf("Could not set chunck\n");
             }
 
-            free(content);
+            //free(content);
 
         } else printf("Could not get content \n");
 
     } else printf("File is not available\n");
 
     //Liberation de la memoire
-    free(temp);
+    //free(temp);
 
     printf("End of function do_data()\n\n");
     return P2P_OK;
