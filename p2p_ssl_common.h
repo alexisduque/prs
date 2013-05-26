@@ -9,15 +9,10 @@
 #define	P2P_COMMON_SSL_H
 
 
-#define CAFILE "rootcert.pem" 
-#define CADIR "./"
-#define CLIENT_CERTFILE "client.pem"
-#define SERVER_CERTFILE "server.pem"
-
-#define SSL_SERVER_RSA_CERT	"ssl_server.crt"
-#define SSL_SERVER_RSA_KEY	"ssl_server.key"
-#define SSL_SERVER_RSA_CA_CERT	"ca.crt"
-#define SSL_SERVER_RSA_CA_PATH	"./"
+#define CAFILE "./keys/rootcert.pem" 
+#define CADIR "./keys/"
+#define CLIENT_CERTFILE "./keys/client.pem"
+#define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"
 
 #include <stdarg.h>

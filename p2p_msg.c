@@ -39,6 +39,7 @@ unsigned char* p2p_get_payload(p2p_msg msg) {
     return msg->payload;
 }
 
+
 p2p_msg
 p2p_msg_create() {
     p2p_msg msg;
@@ -324,7 +325,7 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
 
     //allocation de la mémoire pour le buffer
-    int message_size = ntohs(p2p_msg_get_length(msg));
+    unsigned short int message_size = ntohs(p2p_msg_get_length(msg));
     unsigned char* toWrite = (unsigned char*) malloc(P2P_HDR_SIZE + message_size);
 
     // ajout du champs "version" au buffer
@@ -359,15 +360,17 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 // Recoie dans msg un message depuis la socket fd
 
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
-    int length;
+    unsigned short int length;
     read(fd, msg, P2P_HDR_BITFIELD_SIZE);
     read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
-    unsigned char data_payload[length];
+    length = ntohs(length);
+    unsigned char* data_payload = (unsigned char *) malloc (length);
     read(fd, data_payload, length);
     p2p_msg_init_payload(msg, length, data_payload);
     p2p_msg_display(msg);
+    free(data_payload);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
     return P2P_OK;
 }
@@ -432,14 +435,15 @@ int p2p_udp_socket_close(server_params* sp, int fd) {
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
     int message_size = p2p_msg_get_length(msg);
+    message_size = ntohs(message_size);
     char toWrite [P2P_HDR_SIZE + sizeof(char)*message_size] ;
 
     memcpy(toWrite, msg, P2P_HDR_BITFIELD_SIZE);
     memcpy(&toWrite[4], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     memcpy(&toWrite[12], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-    memcpy(&toWrite[20], p2p_get_payload(msg), htons(message_size));
+    memcpy(&toWrite[20], p2p_get_payload(msg), message_size);
 
-    if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR) {
+    if (write(fd, toWrite, P2P_HDR_SIZE + message_size) == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "Unable to send msg\n");
      //   free(toWrite);
         return P2P_ERROR;

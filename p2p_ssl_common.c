@@ -130,7 +130,7 @@ int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
     //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
 
     //allocation de la mémoire pour le buffer
-    int message_size = ntohs(p2p_msg_get_length(msg));
+    unsigned short int message_size = ntohs(p2p_msg_get_length(msg));
     unsigned char* toWrite = (unsigned char*) malloc(P2P_HDR_SIZE + message_size);
 
     // ajout du champs "version" au buffer
@@ -258,24 +258,26 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
 //Ferme la connection SSL
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
-    //SSL_shutdown(ssl);
-    SSL_free(ssl);
-    ssl = NULL;
+    SSL_shutdown(ssl);
+   // SSL_free(ssl);
+    SSL_clear(ssl);
     VERBOSE(sp, VSYSCL, "SSL : Connection successful closed\n");
 }
 
 // Recois dans msg un message depuis la connection ssl serverssl
 int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
 
-    int length;
+    unsigned short int length;
     if (SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE)== 0 ) return P2P_ERROR;
     SSL_read(serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     SSL_read(serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
-    unsigned char data_payload[length];
+    length = ntohs(length);
+    unsigned char* data_payload = (unsigned char *) malloc (length);
     SSL_read(serverssl, data_payload, length);
     p2p_msg_init_payload(msg, length, data_payload);
     p2p_msg_display(msg);
+    free(data_payload);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
     //SSL_shutdown(serverssl);
     return P2P_OK;
