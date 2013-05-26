@@ -223,7 +223,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     int file_size = 0;
     unsigned char status;
 
-    unsigned char *data_payload = (unsigned char*) malloc(sizeof (unsigned char)*2 * P2P_INT_SIZE);
+    unsigned char* data_payload = (unsigned char*) malloc (sizeof (unsigned char)*2 * P2P_INT_SIZE);
 
     printf("\n!************************************************************!\n");
     printf("                   GET TREATMENT\n");
@@ -232,17 +232,18 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     //récupération des info contenues dans le message GET
     long int begin_offset;
     memcpy(&begin_offset, p2p_get_payload(get_msg), P2P_INT_SIZE);
-    begin_offset = ntohl(begin_offset);
+    //begin_offset = ntohl(begin_offset);
 
     long int end_offset;
-    memcpy(&end_offset, &(p2p_get_payload(get_msg)[P2P_INT_SIZE]), P2P_INT_SIZE);
-    end_offset = ntohl(end_offset);
+    memcpy(&end_offset, p2p_get_payload(get_msg) + P2P_INT_SIZE, P2P_INT_SIZE);
+    //end_offset = ntohl(end_offset);
 
     int file_name_size;
-    file_name_size = p2p_msg_get_length(get_msg) - 2 * P2P_INT_SIZE;
+    file_name_size = ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE;
+    printf("%d\n", file_name_size);
     char file_name[file_name_size];
-    memcpy(file_name, &(p2p_get_payload(get_msg)[2 * P2P_INT_SIZE]), file_name_size);
-
+    memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), file_name_size);
+    memset (file_name + file_name_size,0,1);
     printf("beginoffset = %d    / endOffset = %d\n\n", (int) begin_offset, (int) end_offset);
     //Creation du message DATA
     p2p_msg data_msg = p2p_msg_create();
@@ -285,7 +286,8 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     //Remplissage du payload avec le status
     data_payload[0] = status;
     //3 octets de bourrage selon le CDC
-    //for ( i = 0; i < P2P_INT_SIZE - 1; i++) data_payload[i+1] = 0x00;
+    int i;
+    for ( i = 0; i < P2P_INT_SIZE - 1; i++) data_payload[i+1] = 0x00;
     VERBOSE(sp, VMCTNT, "Value : %d\n", value);
     //value = htonl(value);
     memcpy(&data_payload[P2P_INT_SIZE], &value, P2P_INT_SIZE);
@@ -470,17 +472,17 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("\n--------------------------------------------------------------\n");
     printf("              FONCTION GET FILE									\n");
     printf("--------------------------------------------------------------\n");
-    int beginOffset, endOffset, filesize;
+    long int beginOffset, endOffset;
+    int filesize;
     int download_statut;
-    char * file_name;
+    char * file_name = malloc (30  * sizeof(char));
     p2p_addr dst = p2p_addr_create();
     filesize = p2p_get_owner_file(sp->p2pSearchList, searchID, replyID, &file_name, &dst);
     printf("Filename  = %s\n\n", file_name);
     printf("Dest GET message %s\n", p2p_addr_get_str(dst));
     printf("Filesize = %d\n\n", filesize);
     endOffset = -1;
-
-    //Tant que l'on a pas atteind la fin du fichier
+    p2p_file_create_file(sp, file_name,filesize);
     while (endOffset < filesize - 1) {
 
         //ouverture de la socket TCP avec le possesseur du fichier
@@ -493,7 +495,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
             endOffset = filesize - 1;
         }
         download_statut = (beginOffset * 100) / filesize;
-        printf("BeginOffset = %d    / 	EndOffset = %d\n\n", beginOffset, endOffset);
+        printf("BeginOffset = %d    / 	EndOffset = %d\n\n", (int)beginOffset, (int)endOffset);
         printf("Download Statut : %d %%\n\n", download_statut);
 
         //Envoi du message GET au noeud possedant le fichier
@@ -519,7 +521,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
 
 // Envoie du message GET 
 
-int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffset, int endOffset, int fds) {
+int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, long int beginOffset, long int endOffset, int fds) {
 
     printf("\n--------------------------------------------------------------\n");
     printf("              FONCTION SEND GET\n");
@@ -532,17 +534,17 @@ int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, int beginOffse
     printf("Sendor GET message %s\n", p2p_addr_get_str(sp->p2pMyId));
 
     //Remplissage du payload
-    char* payload = (char*) malloc(2 * P2P_INT_SIZE + strlen(filename) + 1);
-    beginOffset = htonl(beginOffset);
-    endOffset = htonl(endOffset);
+    unsigned char* payload = (unsigned char*) malloc(2 * P2P_INT_SIZE + strlen(filename) + 1);
+    //beginOffset = htonl(beginOffset);
+    //endOffset = htonl(endOffset);
     memcpy(payload, &beginOffset, 4);
     memcpy(payload + P2P_INT_SIZE, &endOffset, 4);
     memcpy(payload + 2 * P2P_INT_SIZE, filename, strlen(filename) + 1);
-    beginOffset = ntohl(beginOffset);
-    endOffset = ntohl(endOffset);
+    //beginOffset = ntohl(beginOffset);
+    //endOffset = ntohl(endOffset);
 
     //Creation du message et envoie
-    p2p_msg_init_payload(msg_get, 2 * 4 + strlen(filename) + 1, (unsigned char *) payload);
+    p2p_msg_init_payload(msg_get, 2 * 4 + strlen(filename) + 1, payload);
     p2p_tcp_msg_sendfd(sp, msg_get, fds);
 
     //Liberation de la memoire
@@ -569,7 +571,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     //Recuperation des info contenues dans le message
     memcpy(&status, p2p_get_payload(data), 1);
     memcpy(&value, p2p_get_payload(data) + P2P_INT_SIZE, P2P_INT_SIZE);
-    value = ntohl(value);
+    //value = ntohl(value);
 
     VERBOSE(sp, VMRECV, "	Status code = %d\n", status);
     VERBOSE(sp, VMRECV, "	Value = %d\n", value);
