@@ -566,6 +566,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     unsigned long int value = 0;
 
     int data_length = p2p_msg_get_length(data);
+    data_length = ntohs(data_length);
     //unsigned char* temp = (unsigned char *) malloc(data_length + P2P_HDR_SIZE );
     //unsigned char* temp =  p2p_get_payload(data);
     //Recuperation des info contenues dans le message
@@ -576,7 +577,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     VERBOSE(sp, VMRECV, "	Status code = %d\n", status);
     VERBOSE(sp, VMRECV, "	Value = %d\n", value);
     VERBOSE(sp, VMRECV, "	Payload length = %d\n", data_length);
-    VERBOSE(sp, VMRECV, "	MSG length = %d\n", p2p_msg_get_length(data));
+    VERBOSE(sp, VMRECV, "	MSG length = %d\n", data_length);
 
     if (status == P2P_DATA_OK) {
         if (value != P2P_INTERNAL_SERVER_ERROR) {

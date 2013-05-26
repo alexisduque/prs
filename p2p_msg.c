@@ -455,14 +455,15 @@ int p2p_udp_socket_close(server_params* sp, int fd) {
 int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
     int message_size = p2p_msg_get_length(msg);
+    message_size = ntohs(message_size);
     char toWrite [P2P_HDR_SIZE + sizeof(char)*message_size] ;
 
     memcpy(toWrite, msg, P2P_HDR_BITFIELD_SIZE);
     memcpy(&toWrite[4], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     memcpy(&toWrite[12], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-    memcpy(&toWrite[20], p2p_get_payload(msg), htons(message_size));
+    memcpy(&toWrite[20], p2p_get_payload(msg), message_size);
 
-    if (write(fd, toWrite, P2P_HDR_SIZE + p2p_msg_get_length(msg)) == P2P_ERROR) {
+    if (write(fd, toWrite, P2P_HDR_SIZE + message_size) == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "Unable to send msg\n");
      //   free(toWrite);
         return P2P_ERROR;
