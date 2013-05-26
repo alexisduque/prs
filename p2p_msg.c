@@ -345,7 +345,7 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     //On remplit le buffer toWrite, avec les infos contenues dans le msg en paramètre, selon le format du CDC
 
     //allocation de la mémoire pour le buffer
-    int message_size = ntohs(p2p_msg_get_length(msg));
+    unsigned short int message_size = ntohs(p2p_msg_get_length(msg));
     unsigned char* toWrite = (unsigned char*) malloc(P2P_HDR_SIZE + message_size);
 
     // ajout du champs "version" au buffer

@@ -287,7 +287,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     //3 octets de bourrage selon le CDC
     //for ( i = 0; i < P2P_INT_SIZE - 1; i++) data_payload[i+1] = 0x00;
     VERBOSE(sp, VMCTNT, "Value : %d\n", value);
-    value = htonl(value);
+    //value = htonl(value);
     memcpy(&data_payload[P2P_INT_SIZE], &value, P2P_INT_SIZE);
 
     p2p_msg_init_payload(data_msg, payload_length, data_payload);
