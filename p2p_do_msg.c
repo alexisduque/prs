@@ -121,7 +121,7 @@ int p2p_do_join_req(server_params *sp, p2p_msg join_req, int socket) {
 
     memcpy(MyId, p2p_get_payload(join_ack), P2P_ADDR_SIZE);
     memcpy(right_neighbor, &(p2p_get_payload(join_ack))[P2P_ADDR_SIZE], P2P_ADDR_SIZE);
-
+    
 
     printf("Left neighbor : %s \n", p2p_addr_get_str(MyId));
     printf("Right neighbor : %s \n", p2p_addr_get_str(right_neighbor));
@@ -199,17 +199,20 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
         if (p2p_tcp_msg_send(sp, link_msg) != P2P_OK)
             return P2P_ERROR;
     } else {
-        p2p_addr_delete(sp->p2p_neighbors.right_neighbor);
-        sp->p2p_neighbors.right_neighbor = right;
+        p2p_addr_copy(sp->p2p_neighbors.right_neighbor, right);
+        //p2p_addr_delete(sp->p2p_neighbors.right_neighbor);
+        //sp->p2p_neighbors.right_neighbor = right;
     }
 
-    //pour moi
-    p2p_addr_delete(sp->p2p_neighbors.left_neighbor);
-    sp->p2p_neighbors.left_neighbor = left;
+    //pour moi  
+    p2p_addr_copy(sp->p2p_neighbors.left_neighbor, left);
+
+//    printf("Left neighbor : %s \n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
+//    printf("Right neighbor : %s \n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
 
     //free
-    //p2p_addr_delete(right); 
-    //p2p_addr_delete(left);
+    p2p_addr_delete(right); 
+    p2p_addr_delete(left);
     
     p2p_msg_delete(link_msg);
 
@@ -224,7 +227,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     unsigned long int value = 0;
     int i,file_size = 0;
     unsigned char status;
-
+    p2p_msg data_msg = NULL;
     unsigned char* data_payload = (unsigned char*) malloc (sizeof (unsigned char)*2 * P2P_INT_SIZE);
 
     printf("\n!************************************************************!\n");
@@ -243,12 +246,13 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     int file_name_size;
     file_name_size = ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE;
    
-    char file_name[file_name_size];
+    char file_name[P2P_NOM_FICHIER_MAX];
+    memset (file_name, 0, P2P_NOM_FICHIER_MAX);
     memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), file_name_size);
     //memset (file_name + file_name_size,0,1);
     printf("beginoffset = %d    / endOffset = %d\n\n", (int) begin_offset, (int) end_offset);
     //Creation du message DATA
-    p2p_msg data_msg = p2p_msg_create();
+    data_msg = p2p_msg_create();
     p2p_msg_init(data_msg, P2P_MSG_DATA, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, p2p_msg_get_src(get_msg));
 
     //Determination du status
@@ -319,32 +323,26 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 
 int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
 
-    p2p_addr new_addresse = p2p_addr_create();
-    memcpy(new_addresse, p2p_get_payload(link_update_msg), 8);
-
     printf("\n!************************************************************!\n");
     printf("                   LINK UPDATE TREATMENT\n");
     printf("!**************************************************************!\n\n");
 
     //Recuperation du type du voisin
-    unsigned long int neighbor_type;
-    memcpy(&neighbor_type, &(p2p_get_payload(link_update_msg)[8]), 4);
+    unsigned int neighbor_type;
+    memcpy(&neighbor_type, p2p_get_payload(link_update_msg) + P2P_ADDR_SIZE, sizeof(neighbor_type));
     neighbor_type = ntohl(neighbor_type);
 
     if (neighbor_type == 0xFFFF0000) {
         //voisin gauche
-        p2p_addr_copy(sp->p2p_neighbors.left_neighbor, new_addresse);
-        VERBOSE(sp, VMCTNT, "LEFT NEIGHBOR UPDATE\n\n");
+        memcpy(sp->p2p_neighbors.left_neighbor,p2p_get_payload(link_update_msg),P2P_ADDR_SIZE);
+        VERBOSE(sp, VMCTNT, "LEFT NEIGHBOR UPDATE : %s\n\n",  p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
     } else if (neighbor_type == 0x0000FFFF) {
         // voisin droit	
-        p2p_addr_copy(sp->p2p_neighbors.right_neighbor, new_addresse);
-        VERBOSE(sp, VMCTNT, "RIGHT NEIGHBOR UPDATE\n\n");
+        memcpy(sp->p2p_neighbors.right_neighbor,p2p_get_payload(link_update_msg),P2P_ADDR_SIZE);
+        VERBOSE(sp, VMCTNT, "RIGHT NEIGHBOR UPDATE : %s\n\n",  p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
     } else {
         VERBOSE(sp, VMCTNT, "!! ERROR PARSING NEIGHBOR TYPE !!\n\n");
     }
-
-    //vidage de la memoire
-    p2p_addr_delete(new_addresse);
 
     return P2P_OK;
 
@@ -357,8 +355,9 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     int name_size, file_size;
     char * file_name;
     unsigned char * buffer;
-    p2p_addr src_adresse, dst_adresse;
-    p2p_msg reply_message;
+    p2p_addr src_adresse = NULL;
+    p2p_addr dst_adresse = NULL;
+    p2p_msg reply_message = NULL;
 
     printf("\n!************************************************************!\n");
     printf("              SEARCH TREATMENT\n");
@@ -403,21 +402,21 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
 
             // Ne pas oublier de liberer la mémoire !
             free(buffer);
-            /*
+            
             p2p_addr_delete(dst_adresse);
-            p2p_msg_delete(src_adresse);*/
+            p2p_msg_delete(reply_message);
 
         } else {
             printf("Unknown file!\n");
             if (file_size != 403) VERBOSE(sp, VMCTNT, "Error : %d\n", file_size);
         }
-
+        
         //On fait suivre le message aux autres node
         p2p_udp_msg_rebroadcast(sp, search_msg);
 
         // Ne pas oublier de liberer la mémoire !
         free(file_name);
-
+        
     } else {
 
         VERBOSE(sp, VMCTNT, "!! I'VE SEND THIS SEARCH_MESSAGE !!\n\n");
@@ -427,7 +426,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
     // Ne pas oublier de liberer la mémoire !
     p2p_addr_delete(src_adresse);
     //p2p_addr_delete(dst_adresse);
-    //p2p_msg_delete(reply_message);
+    
     return P2P_OK;
 
 }
@@ -441,7 +440,7 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
     printf("!**************************************************************!\n");
 
     unsigned int file_size, id;
-    p2p_addr file_owner;
+    p2p_addr file_owner = NULL;
     unsigned char* payload = p2p_get_payload(reply_msg);
 
     memcpy(&file_size, &payload[4], P2P_INT_SIZE);
@@ -478,10 +477,13 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("\n--------------------------------------------------------------\n");
     printf("              FONCTION GET FILE									\n");
     printf("--------------------------------------------------------------\n");
-    long int beginOffset, endOffset;
-    int filesize;
+    long int beginOffset = 0;
+    long int endOffset = 0;
+    int filesize = 0;
     int download_statut;
-    char * file_name;
+    char * file_name = NULL;
+    p2p_msg msg_data = NULL;
+    
     p2p_addr dst = p2p_addr_create();
     filesize = p2p_get_owner_file(sp->p2pSearchList, searchID, replyID, &file_name, &dst);
     printf("Filename  = %s\n\n", file_name);
@@ -500,6 +502,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
         } else {
             endOffset = filesize - 1;
         }
+        
         download_statut = (beginOffset * 100) / filesize;
         printf("BeginOffset = %d    / 	EndOffset = %d\n\n", (int)beginOffset, (int)endOffset);
         printf("Download Statut : %d %%\n\n", download_statut);
@@ -509,11 +512,12 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
         p2p_send_get(sp, dst, file_name, beginOffset, endOffset, fd);
 
         // Réceptionne le message DATA contenant les données ud fichier et traite
-        p2p_msg msg_data = p2p_msg_create();
+        msg_data = p2p_msg_create();
         p2p_tcp_msg_recvfd(sp, msg_data, fd);
         p2p_do_data(sp, msg_data, file_name, beginOffset, endOffset);
         p2p_tcp_socket_close(sp, fd);
         p2p_msg_delete(msg_data);
+        msg_data = NULL;
 
     }
 
@@ -665,8 +669,8 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     
     p2p_udp_msg_rebroadcast(sp,neighbors_req_msg);
     // Cleaning memory
-    //p2p_msg_delete(msg_neighbors_list);
-    //p2p_addr_delete(msg_src);
+    p2p_msg_delete(msg_neighbors_list);
+    p2p_addr_delete(msg_src);
     free(buffer);
     return P2P_OK;
 

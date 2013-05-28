@@ -176,6 +176,7 @@ p2pjoin(params *p) {
 
     if (p2p_addr_setstr(dst, p->options[0]) != P2P_OK) {
         VERBOSE(p->sp, CLIENT, ">> Could not parse p2p address\n");
+        p2p_addr_delete(dst);
         return P2P_UI_ERROR;
     }
 
@@ -184,11 +185,13 @@ p2pjoin(params *p) {
     //Verifie que l'on ne se connecte pas avec nous meme
     if (p2p_addr_is_equal(dst, p->sp->p2pMyId) != 0) {
         printf(">> Try to connet yourself ;-)\n");
+        p2p_addr_delete(dst);
         return (P2P_OK);
     }
 
     if (p2p_send_join_req(p->sp, dst) != P2P_OK) {
         printf(">> Could not send the JOIN REQ\n");
+        p2p_addr_delete(dst);
         return (P2P_UI_ERROR);
     }
 
@@ -204,8 +207,9 @@ int
 p2pleave(params *p) {
 
     int neighbor_type, i;
-    p2p_addr neighbor_addresse, new_neighbor;
-    p2p_msg link_update_msg;
+    p2p_addr neighbor_addresse = NULL;
+    p2p_addr new_neighbor = NULL;
+    p2p_msg link_update_msg = NULL;
     char * buffer;
 
     // Envoi de 2 link update pour enlever le noeud de l'anneau
@@ -250,8 +254,8 @@ p2pleave(params *p) {
     }
 
     // Réinitialisation des voisins du noeud quitté
-    p->sp->p2p_neighbors.left_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
-    p->sp->p2p_neighbors.right_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
+    p2p_addr_copy (p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId);
+    p2p_addr_copy (p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId);
 
     // Nettoyage des variables
     p2p_msg_delete(link_update_msg);

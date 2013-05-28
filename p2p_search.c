@@ -88,8 +88,8 @@ void p2p_list_search(server_params *sp) {
 
 int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** file_name, p2p_addr * owner) {
 
-    search_result *visitor;
-    search_quidonc *quidonc;
+    search_result *visitor = NULL;
+    search_quidonc *quidonc = NULL;
     visitor = liste;
 
     // On parcourt la liste
@@ -133,7 +133,7 @@ int p2p_insert_reply(search_list *pliste, int id, p2p_addr file_owner, int taill
 
     search_result *visitor;
     search_quidonc *parcouror;
-    int dejala = 0;
+    int present = 0;
 
     visitor = liste;
 
@@ -146,13 +146,13 @@ int p2p_insert_reply(search_list *pliste, int id, p2p_addr file_owner, int taill
     parcouror = visitor->list_owners;
     while (parcouror != NULL) {
         if (p2p_addr_is_equal(parcouror->file_owner, file_owner)) {
-            dejala = 1;
+            present = 1;
         }
         parcouror = parcouror->next;
     }
 
     // Si non, on l'ajoute
-    if (dejala == 0) {
+    if (present == 0) {
         newelem = (search_quidonc *) malloc(sizeof (search_quidonc));
         if (newelem == 0) perror("p2p_search_insert_reply : MEMORY FULL");
         newelem->reply_id = ++visitor->nb_reply;

@@ -60,7 +60,7 @@
 #define P2P_MAX_RESULT_NB 10
 #define P2P_MAX_SEARCH_NB 10
 /****************************************************/
-
+#define P2P_NOM_FICHIER_MAX 30
 
 #include "p2p_addr.h"
 
@@ -75,7 +75,7 @@ typedef struct search_quidonc {
 typedef struct search_result {
         int search_id;
         int nb_reply;
-        char file_name[30];
+        char file_name[P2P_NOM_FICHIER_MAX];
         struct search_quidonc* list_owners;
         struct search_result* next;
 } search_result;
