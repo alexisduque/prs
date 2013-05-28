@@ -317,6 +317,7 @@ p2psearch(params* p) {
 
     //p2p_msg_delete(search_message);
     free(buffer);
+    p2p_msg_delete(search_message);
     p2p_addr_delete(src_adresse);
     p2p_addr_delete(dst_adresse);
     return P2P_UI_OK;

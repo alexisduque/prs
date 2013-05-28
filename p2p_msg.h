@@ -43,6 +43,8 @@
 #define P2P_MSG_TTL_ONE_HOP      1
 #define P2P_MSG_TTL_MAX          16
 
+#define P2P_DATA_DISPLAY 20
+
 #define P2P_BAD_MSG_TYPE   0xFF000000
 
 #define P2P_HDR_BITFIELD_SIZE   4 /* bytes */
@@ -112,7 +114,7 @@ void           p2p_msg_set_dst     (p2p_msg msg, p2p_addr dst);
 /*** debug ***/
 //ecrit le message msg dans le fichier fd. Si print_payload != 0 �crit
 //aussi le payload du message sinon on n'�crit que l'entete.
-int p2p_msg_dumpfile       (const p2p_msg msg, const FILE* fd, int print_payload);
+void p2p_msg_dumpfile (const p2p_msg msg, const FILE* fd, int print_payload);
 
 //�crit l'entete du message msg en hexa. 
 int p2p_msg_hexdumpheader  (const p2p_msg msg, const FILE* fs);

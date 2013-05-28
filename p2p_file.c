@@ -51,7 +51,7 @@ p2p_file_is_available(server_params *sp, const char* file, int *filesize) {
 
     *filesize = 0;
     fullpath = complete_path(sp, file);
-    VERBOSE(sp, VSYSCL, "** p2p_file lookup for %s\n", fullpath);
+    VERBOSE(sp, VSYSCL, "** p2p_file lookup for %s\n\n", fullpath);
     fd = open(fullpath, O_RDONLY);
     if (fd == -1) {
         ret = P2P_ERROR;
