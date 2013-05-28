@@ -217,14 +217,14 @@ p2pleave(params *p) {
 
         // Premier envoi : le voisin de gauche a un nouveau voisin de droite
         if (i == 0) {
-            printf("UI: Sending LINK_UPDATE to left neighbor\n");
+            VERBOSE(p->sp, VMRECV, "UI: Sending LINK_UPDATE to left neighbor\n");
             neighbor_type = htonl(0x0000FFFF);
             neighbor_addresse = p->sp->p2p_neighbors.left_neighbor;
             new_neighbor = p->sp->p2p_neighbors.right_neighbor;
         }
             // Deuxieme envoi : l'inverse
         else {
-            printf("UI: Sending LINK_UPDATE to right neighbor\n");
+            VERBOSE(p->sp, VMRECV, "UI: Sending LINK_UPDATE to right neighbor\n");
             neighbor_type = htonl(0xFFFF0000);
             neighbor_addresse = p->sp->p2p_neighbors.right_neighbor;
             new_neighbor = p->sp->p2p_neighbors.left_neighbor;
