@@ -106,6 +106,8 @@ int help(params *p) {
 /****************************************************/
 
 int quit(params *p) {
+    close(p->sp->client_ui);
+    p->sp->client_ui = -1;
     return P2P_UI_QUIT;
 }
 
@@ -114,6 +116,7 @@ int quit(params *p) {
 /****************************************************/
 
 int status(params *p) {
+
     VERBOSE(p->sp, CLIENT, "\n");
     VERBOSE(p->sp, CLIENT, "  server_name = \"%s\"\n", p->sp->server_name);
     VERBOSE(p->sp, CLIENT, "  dir_name    = \"%s\"\n", p->sp->dir_name);
@@ -121,9 +124,21 @@ int status(params *p) {
     VERBOSE(p->sp, CLIENT, "  p2p tcp     = %d\n", p->sp->port_p2p_tcp);
     VERBOSE(p->sp, CLIENT, "  p2p udp     = %d\n", p->sp->port_p2p_udp);
     VERBOSE(p->sp, CLIENT, "  verbose     = %d\n", p->sp->verbosity);
+    VERBOSE(p->sp, CLIENT, "  p2p Id      = %s\n", p2p_addr_get_str(p->sp->p2pMyId));
+
+    if (p2p_addr_is_equal(p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId)
+            && p2p_addr_is_equal(p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId)) {
+        VERBOSE(p->sp, CLIENT, "  p2p status  = disconnected\n");
+    } else {
+        VERBOSE(p->sp, CLIENT, "  p2p status  = connected\n");
+    }
+
     VERBOSE(p->sp, CLIENT, "  neighbors   = [ip:tcp:udp]\n");
+    VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.right_neighbor));
+    VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.left_neighbor));
     VERBOSE(p->sp, CLIENT, "\n");
     return P2P_UI_OK;
+
 }
 
 /****************************************************/
@@ -225,8 +240,7 @@ p2pleave(params *p) {
             neighbor_type = htonl(0x0000FFFF);
             neighbor_addresse = p->sp->p2p_neighbors.left_neighbor;
             new_neighbor = p->sp->p2p_neighbors.right_neighbor;
-        }
-            // Deuxieme envoi : l'inverse
+        }// Deuxieme envoi : l'inverse
         else {
             VERBOSE(p->sp, VMRECV, "UI: Sending LINK_UPDATE to right neighbor\n");
             neighbor_type = htonl(0xFFFF0000);
@@ -254,8 +268,8 @@ p2pleave(params *p) {
     }
 
     // Réinitialisation des voisins du noeud quitté
-    p2p_addr_copy (p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId);
-    p2p_addr_copy (p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId);
+    p2p_addr_copy(p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId);
+    p2p_addr_copy(p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId);
 
     // Nettoyage des variables
     p2p_msg_delete(link_update_msg);
@@ -377,9 +391,9 @@ p2pget(params* p) {
 }
 
 int p2pdiscover(params *p) {
-    	if (p2p_send_neighbor_req(p->sp) == P2P_OK){
-		return(P2P_UI_OK);
-	} else return P2P_UI_ERROR;
+    if (p2p_send_neighbor_req(p->sp) == P2P_OK) {
+        return (P2P_UI_OK);
+    } else return P2P_UI_ERROR;
 }
 
 /****************************************************/

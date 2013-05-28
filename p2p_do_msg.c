@@ -228,7 +228,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     int i,file_size = 0;
     unsigned char status;
     p2p_msg data_msg = NULL;
-    unsigned char* data_payload = (unsigned char*) malloc (sizeof (unsigned char)*2 * P2P_INT_SIZE);
+    unsigned char* data_payload = NULL;
 
     printf("\n!************************************************************!\n");
     printf("                   GET TREATMENT\n");
@@ -267,12 +267,13 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
             //Récuperation OK       
             value = end_offset - begin_offset + 1;
             payload_length = (unsigned short int) (2 * P2P_INT_SIZE + end_offset - begin_offset + 1);
-            data_payload = (unsigned char*) realloc(data_payload, payload_length);
+            data_payload = (unsigned char*) malloc (payload_length);
             memcpy(data_payload + (2 * P2P_INT_SIZE), octets_data, value);
             free(octets_data);
 
         } else {
             //Erreur lors de la recuperation des données
+            data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
             VERBOSE(sp, VMCTNT, "Can't Get CHUNK !\n");
             status = P2P_DATA_ERROR;
             value = P2P_INTERNAL_SERVER_ERROR;
@@ -284,6 +285,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     } else {
         //fichier indisponible 
         VERBOSE(sp, VMCTNT, "File not Available !\n");
+        data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
         status = P2P_DATA_ERROR;
         value = P2P_DATA_NOT_FOUND;
         payload_length = 2 * P2P_INT_SIZE;
@@ -576,6 +578,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
     unsigned long int value = 0;
     int file_exist = P2P_ERROR;
     int file_size, i = 0;
+    unsigned char *content = NULL;
     int data_length = p2p_msg_get_length(data);
     data_length = ntohs(data_length);
 
@@ -593,7 +596,7 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
         if (value != P2P_INTERNAL_SERVER_ERROR) {
             
             // SI les donnees sont OK
-            unsigned char* content = (unsigned char*) malloc((value));
+            content = (unsigned char*) malloc((value));
             memcpy(content, p2p_get_payload(data) + (2 *P2P_INT_SIZE), value);
             printf("Beginoffset = %d    / 	EndOffset = %d\n", beginOffset, endOffset);
             printf ("DATA:");
