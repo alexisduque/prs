@@ -223,13 +223,13 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
 
 int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
 
-    unsigned short int payload_length = 2 * P2P_INT_SIZE;
+    unsigned long int payload_length = 2 * P2P_INT_SIZE;
     unsigned long int value = 0;
     int i,file_size = 0;
     unsigned char status;
     p2p_msg data_msg = NULL;
     unsigned char* data_payload = NULL;
-
+    unsigned char* octets_data = NULL;
     printf("\n!************************************************************!\n");
     printf("                   GET TREATMENT\n");
     printf("!**************************************************************!\n\n");
@@ -242,14 +242,11 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     long int end_offset;
     memcpy(&end_offset, p2p_get_payload(get_msg) + P2P_INT_SIZE, P2P_INT_SIZE);
     end_offset = ntohl(end_offset);
-
-    int file_name_size;
-    file_name_size = ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE;
    
     char file_name[P2P_NOM_FICHIER_MAX];
     memset (file_name, 0, P2P_NOM_FICHIER_MAX);
-    memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), file_name_size);
-    //memset (file_name + file_name_size,0,1);
+    memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE);
+
     printf("beginoffset = %d    / endOffset = %d\n\n", (int) begin_offset, (int) end_offset);
     //Creation du message DATA
     data_msg = p2p_msg_create();
@@ -261,12 +258,11 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
         //le fichier est disponible
         status = P2P_DATA_OK;
 
-        unsigned char* octets_data = (unsigned char*) malloc(end_offset - begin_offset + 1);
         if (p2p_file_get_chunck(sp, file_name, (int) begin_offset, (int) end_offset, &octets_data) == P2P_OK) {
             VERBOSE(sp, VMCTNT, "Get CHUNK DONE\n");
             //Récuperation OK       
             value = end_offset - begin_offset + 1;
-            payload_length = (unsigned short int) (2 * P2P_INT_SIZE + end_offset - begin_offset + 1);
+            payload_length =  2 * P2P_INT_SIZE + (end_offset - begin_offset + 1);
             data_payload = (unsigned char*) malloc (payload_length);
             memcpy(data_payload + (2 * P2P_INT_SIZE), octets_data, value);
             free(octets_data);
@@ -292,7 +288,7 @@ int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
     }
 
     //Remplissage du payload avec le status
-     memcpy (data_payload, &status, sizeof (char));
+    memcpy (data_payload, &status, sizeof (char));
     //3 octets de bourrage selon le CDC
     memset (data_payload + sizeof (char), 0, P2P_INT_SIZE - sizeof (char));
     VERBOSE(sp, VMCTNT, "Value : %d\n", value);
@@ -443,16 +439,13 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
 
     unsigned int file_size, id;
     p2p_addr file_owner = NULL;
-    unsigned char* payload = p2p_get_payload(reply_msg);
-
-    memcpy(&file_size, &payload[4], P2P_INT_SIZE);
-
-    file_size = ntohl(file_size);
-
+    
     printf("\n>> Reveiving reply from your research \n");
 
     // Recuperation du nom du fichier
-    memcpy(&id, payload, P2P_INT_SIZE);
+    memcpy(&id, p2p_get_payload(reply_msg), P2P_INT_SIZE);
+    memcpy(&file_size, p2p_get_payload(reply_msg) + P2P_INT_SIZE, P2P_INT_SIZE);
+    file_size = ntohl(file_size);
     file_owner = p2p_addr_duplicate(p2p_msg_get_src(reply_msg));
     id = ntohl(id);
     printf("   Search ID : %d\n", id);
@@ -463,7 +456,6 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
     p2p_insert_reply(&(sp->p2pSearchList), id, file_owner, file_size);
 
     p2p_addr_delete(file_owner);
-
 
     VERBOSE(sp, VPROTO, "Reply Done \n\n");
 
@@ -479,8 +471,8 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("\n--------------------------------------------------------------\n");
     printf("              FONCTION GET FILE									\n");
     printf("--------------------------------------------------------------\n");
-    long int beginOffset = 0;
-    long int endOffset = 0;
+    unsigned long int beginOffset = 0;
+    unsigned long int endOffset = 0;
     int filesize = 0;
     int download_statut;
     char * file_name = NULL;
@@ -491,19 +483,14 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("Filename  = %s\n\n", file_name);
     printf("Dest GET message %s\n", p2p_addr_get_str(dst));
     printf("Filesize = %d\n\n", filesize);
-    endOffset = -1;
+    
     
     while (endOffset < filesize - 1) {
 
         //ouverture de la socket TCP avec le possesseur du fichier
         int fd = p2p_tcp_socket_create(sp, dst);
-
-        beginOffset = endOffset + 1;
-        if (endOffset < filesize - MAX_DATA_SIZE) {
-            endOffset = endOffset + MAX_DATA_SIZE;
-        } else {
-            endOffset = filesize - 1;
-        }
+        
+        endOffset = (filesize - beginOffset) > (MAX_DATA_SIZE) ? (beginOffset + (MAX_DATA_SIZE - 1)) : (filesize - 1);
         
         download_statut = (beginOffset * 100) / filesize;
         printf("BeginOffset = %d    / 	EndOffset = %d\n\n", (int)beginOffset, (int)endOffset);
@@ -518,9 +505,10 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
         p2p_tcp_msg_recvfd(sp, msg_data, fd);
         p2p_do_data(sp, msg_data, file_name, beginOffset, endOffset);
         p2p_tcp_socket_close(sp, fd);
+        fd = -1;
         p2p_msg_delete(msg_data);
         msg_data = NULL;
-
+        beginOffset = endOffset + 1;
     }
 
     // Liberation de la memoire
@@ -533,7 +521,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
 
 // Envoie du message GET 
 
-int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, long int beginOffset, long int endOffset, int fds) {
+int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, unsigned long int beginOffset,unsigned long int endOffset, int fds) {
 
     printf("\n--------------------------------------------------------------\n");
     printf("              FONCTION SEND GET\n");
@@ -568,7 +556,7 @@ int p2p_send_get(server_params *sp, p2p_addr dst, char* filename, long int begin
 
 // Traitement du message DATA : creation et assemblage des donnees
 
-int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset, int endOffset) {
+int p2p_do_data(server_params *sp, p2p_msg data, char* filename, unsigned long int beginOffset,unsigned long int endOffset) {
 
     printf("\n--------------------------------------------------------------\n");
     printf("              FUNCTION DO DATA\n");
@@ -597,8 +585,13 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, int beginOffset
             
             // SI les donnees sont OK
             content = (unsigned char*) malloc((value));
+            if (content == NULL) {
+                 VERBOSE (sp, VPROTO, "Content Malloc Error for %d byte\n", value);
+                 return P2P_ERROR;
+            }
+            
             memcpy(content, p2p_get_payload(data) + (2 *P2P_INT_SIZE), value);
-            printf("Beginoffset = %d    / 	EndOffset = %d\n", beginOffset, endOffset);
+            printf("Beginoffset = %d    / 	EndOffset = %d\n", (int)beginOffset, (int)endOffset);
             printf ("DATA:");
             //Affichage des DATA
             for (i = 0 ; i < P2P_DATA_DISPLAY; i++)

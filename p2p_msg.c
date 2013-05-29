@@ -379,15 +379,28 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 // Recoie dans msg un message depuis la socket fd
 
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
-    unsigned short int length;
+    int tot = 0;
+    int i = 0;
+    unsigned short int length = 0;
+    unsigned char* data_payload = NULL;
     read(fd, msg, P2P_HDR_BITFIELD_SIZE);
     read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
     length = ntohs(length);
-    unsigned char* data_payload = (unsigned char *) malloc(length);
-    read(fd, data_payload, length);
-    p2p_msg_init_payload(msg, length, data_payload);
+    data_payload = (unsigned char *) malloc (sizeof(unsigned char) * P2P_MSG_MAX_SIZE);
+    memset (data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));
+    if (length > 0) {
+        while (tot < length)
+        {
+            i = read (fd, data_payload + tot, length - tot);
+            tot += i;
+        }
+        p2p_msg_init_payload(msg, length, data_payload);
+    }
+    
+    //read(fd, data_payload, length);
+
     p2p_msg_display(msg);
     free(data_payload);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");

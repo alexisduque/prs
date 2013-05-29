@@ -49,7 +49,8 @@
 
 #define P2P_HDR_BITFIELD_SIZE   4 /* bytes */
 #define P2P_HDR_SIZE            (P2P_HDR_BITFIELD_SIZE + 2 * P2P_ADDR_SIZE)
-
+#define P2P_MSG_PAYLOAD_MAX 65535
+#define P2P_MSG_MAX_SIZE (P2P_HDR_SIZE + P2P_MSG_PAYLOAD_MAX)
 
 typedef struct p2p_msg_struct *p2p_msg;
 
