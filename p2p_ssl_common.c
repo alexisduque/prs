@@ -257,7 +257,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 }
 
 //Ferme la connection SSL
-void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
+void p2p_ssl_close(server_params* sp, SSL* ssl) {
     SSL_shutdown(ssl);
    // SSL_free(ssl);
     SSL_clear(ssl);
@@ -316,7 +316,7 @@ int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
         return (P2P_ERROR);
     }
 
-    p2p_ssl_tcp_close(sp, clientssl);
+    p2p_ssl_close(sp, clientssl);
     p2p_tcp_socket_close(sp, socketTMP);
     VERBOSE(sp, VPROTO, "SEND msg DONE\n\n");
     return P2P_OK;
@@ -346,3 +346,224 @@ void p2p_ssl_showCerts(server_params* sp, SSL* ssl) {
         VERBOSE(sp, VMCTNT, "No certificates.\n");
 }
 
+int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
+    VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
+    int message_size = p2p_msg_get_length(msg);
+    message_size = ntohs(message_size);
+    char toWrite [P2P_HDR_SIZE + sizeof (char)*message_size];
+
+    memcpy(toWrite, msg, P2P_HDR_BITFIELD_SIZE);
+    memcpy(&toWrite[4], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
+    memcpy(&toWrite[12], p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
+    memcpy(&toWrite[20], p2p_get_payload(msg), message_size);
+
+    if (write(clientssl, toWrite, P2P_HDR_SIZE + message_size) == P2P_ERROR) {
+        VERBOSE(sp, VPROTO, "Unable to send msg\n");
+     //   free(toWrite);
+        return P2P_ERROR;
+    }
+    p2p_msg_display(msg);
+    //free(toWrite);
+    VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
+    return P2P_OK;
+
+}
+
+//recoie dans msg un message depuis la socket UDP fd
+
+int p2p_ssl_udp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
+    VERBOSE(sp, VMCTNT, "TRY TO RECEIVE MSG ...\n");
+
+    //Declaration du buffer
+    char data[200];
+    //free(msg->payload);
+    // Allocation de la mémoire pour le payload
+    msg->payload = (unsigned char*) malloc(sizeof (unsigned char)*200);
+
+    //Lecture de la soccket et remplissage du buffer
+    recv(clientssl, &data, sizeof (data), 0);
+
+    //Remplissage des champs du message à partir du buffert
+    memcpy(&(msg->hdr), data, P2P_HDR_BITFIELD_SIZE);
+    memcpy(msg->hdr.src, &data[4], P2P_ADDR_SIZE);
+    memcpy(msg->hdr.dst, &data[12], P2P_ADDR_SIZE);
+    memcpy(msg->payload, &data[20], sizeof (data) - 20);
+    p2p_msg_display(msg);
+    VERBOSE(sp, VMCTNT, "RECVD MSG OK\n");
+
+    return P2P_OK;
+
+}
+
+//envoie le message msg via udp au noeud destination indique dans le
+//champ dst de msg
+
+int p2p_ssl_udp_msg_send(server_params* sp, p2p_msg msg) {
+    int sock;
+    if ((sock = p2p_udp_socket_create(sp, msg->hdr.dst)) == P2P_ERROR) {
+        VERBOSE(sp, VPROTO, "Unable to send UDP_MSG\n");
+        return P2P_ERROR;
+    };
+
+    p2p_udp_msg_sendfd(sp, msg, sock);
+    p2p_udp_socket_close(sp, sock);
+    VERBOSE(sp, VSYSCL, "Send MSG done \n");
+    return P2P_OK;
+}
+
+//rebroadcast le message msg
+
+int p2p_ssl_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
+
+    printf("----------------------Rebroadcast-----------------------------\n");
+
+    int fd;
+    p2p_addr src = p2p_msg_get_src(msg);
+    printf("Message Source : %s\n", p2p_addr_get_str(src));
+    printf("Right ngb : %s\n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
+    printf("Left ngb : %s\n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
+
+    p2p_addr initiator = p2p_addr_create();
+    memcpy(initiator, p2p_get_payload(msg), P2P_ADDR_SIZE);
+
+
+    printf("initiator = %s\n\n", p2p_addr_get_str(initiator));
+    printf("equal(me, right)  = %d\n", p2p_addr_is_equal(sp->p2pMyId, sp->p2p_neighbors.right_neighbor));
+    printf("equal(src, right)  = %d\n", p2p_addr_is_equal(src, sp->p2p_neighbors.right_neighbor));
+    printf("equal(init, right)  = %d\n", p2p_addr_is_equal(initiator, sp->p2p_neighbors.right_neighbor));
+    printf("equal(me, left)  = %d\n", p2p_addr_is_equal(sp->p2pMyId, sp->p2p_neighbors.left_neighbor));
+    printf("equal(src, left)  = %d\n", p2p_addr_is_equal(src, sp->p2p_neighbors.left_neighbor));
+    printf("equal(init, left)  = %d\n\n", p2p_addr_is_equal(initiator, sp->p2p_neighbors.left_neighbor));
+
+    if ((p2p_addr_is_equal(sp->p2pMyId, sp->p2p_neighbors.right_neighbor) || p2p_addr_is_equal(src, sp->p2p_neighbors.right_neighbor) || p2p_addr_is_equal(initiator, sp->p2p_neighbors.right_neighbor)) != 1) {
+
+        p2p_msg_set_src(msg, sp->p2pMyId);
+        fd = p2p_udp_socket_create(sp, sp->p2p_neighbors.right_neighbor);
+        printf("Send to right\n");
+        printf("Equal(src, right)  = %d\n", p2p_addr_is_equal(src, sp->p2p_neighbors.right_neighbor));
+
+        if (p2p_ssl_udp_msg_sendfd(sp, msg, fd) != P2P_OK) {
+            printf("UDP_rebroadcast : sending FAILED\n\n");
+            return P2P_ERROR;
+        } else {
+            printf("Message sent to %s\n\n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
+        }
+
+        p2p_udp_socket_close(sp, fd);
+
+    }
+
+    if ((p2p_addr_is_equal(sp->p2pMyId, sp->p2p_neighbors.left_neighbor) || p2p_addr_is_equal(src, sp->p2p_neighbors.left_neighbor) || p2p_addr_is_equal(initiator, sp->p2p_neighbors.left_neighbor)) != 1) {
+
+        p2p_msg_set_src(msg, sp->p2pMyId);
+        printf("Send to left\n");
+        printf("Equal(src, left)  = %d\n", p2p_addr_is_equal(src, sp->p2p_neighbors.left_neighbor));
+        fd = p2p_udp_socket_create(sp, sp->p2p_neighbors.left_neighbor);
+
+        if (p2p_ssl_udp_msg_sendfd(sp, msg, fd) != P2P_OK) {
+            printf("UDP rebroadcast : Sending FAILED \n\n");
+            return P2P_ERROR;
+        } else {
+            printf("Message sent to %s\n\n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
+        }
+
+        p2p_udp_socket_close(sp, fd);
+
+    }
+    p2p_addr_delete(initiator);
+    //p2p_addr_delete(src);
+
+    return P2P_OK;
+
+}
+
+int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
+
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ... \n");
+    int ret;
+    if ((ret = SSL_set_fd(clientssl, fd)) != 1) {
+        VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(clientssl, ret));
+        return P2P_ERROR;
+    }
+
+    if ((ret = SSL_connect(clientssl)) != 1) {
+        VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(clientssl, ret));
+        return P2P_ERROR;
+    }
+
+    if (sp->verify_peer) {
+
+        X509 *ssl_client_cert = NULL;
+
+        ssl_client_cert = SSL_get_peer_certificate(clientssl);
+
+        if (ssl_client_cert) {
+            long verifyresult;
+            p2p_ssl_showCerts(sp, clientssl);
+            verifyresult = SSL_get_verify_result(clientssl);
+            if (verifyresult == X509_V_OK) {
+                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+            } else {
+                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                X509_free(ssl_client_cert);
+                return (P2P_ERROR);
+            }
+        } else {
+            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+            return (P2P_ERROR);
+        }
+    }
+
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
+    return P2P_OK;
+}
+
+// Initialise la connexion SSL coté server avec la socket fd
+
+int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
+    
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE... \n");
+    int ret;
+    if ((ret = SSL_set_fd(ssl, fd)) != 1) {
+        VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(ssl, ret));
+        return (P2P_ERROR);
+    }
+    
+    
+    if ((ret = SSL_accept(ssl)) != 1) {
+       VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(ssl, ret));
+        return (P2P_ERROR);
+    }
+
+
+    if (sp->verify_peer) {
+
+        X509 *ssl_client_cert = NULL;
+        ssl_client_cert = SSL_get_peer_certificate(ssl);
+
+        if (ssl_client_cert) {
+            
+            long verifyresult;
+            p2p_ssl_showCerts(sp, ssl);
+            verifyresult = SSL_get_verify_result(ssl);
+            
+            if (verifyresult == X509_V_OK) {
+                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+            } else {
+                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                SSL_shutdown(ssl);
+                X509_free(ssl_client_cert);
+                return (P2P_ERROR);
+            }
+        
+        } else {
+            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+            SSL_shutdown(ssl);
+            return (P2P_ERROR);
+        } 
+    }    
+    
+    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
+    return P2P_OK;
+    
+}

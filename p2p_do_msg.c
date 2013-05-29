@@ -85,7 +85,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     
     //on peut fermer la socket
     SSL_shutdown(ssl);
-    p2p_ssl_tcp_close(sp, ssl);
+    p2p_ssl_close(sp, ssl);
     p2p_tcp_socket_close(sp, socket);
     SSL_CTX_free(sp->ssl_node_ctx);
     //on libère la mémoire
@@ -530,7 +530,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
         p2p_ssl_tcp_msg_recvfd(sp, msg_data, ssl);
         p2p_do_data(sp, msg_data, file_name, beginOffset, endOffset);
         SSL_shutdown(ssl);
-        p2p_ssl_tcp_close(sp,ssl);
+        p2p_ssl_close(sp,ssl);
         p2p_tcp_socket_close(sp, fd);
         fd = -1;
         p2p_msg_delete(msg_data);

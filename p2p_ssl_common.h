@@ -35,11 +35,19 @@
 
 int p2p_ssl_init_server(server_params* sp);
 int p2p_ssl_init_client(server_params* sp);
+void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
+
 int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
 int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
 int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg);
-void p2p_ssl_tcp_close(server_params* sp, SSL* ssl);
+void p2p_ssl_close(server_params* sp, SSL* ssl);
 int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd);
 int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
-void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
+
+int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
+int p2p_ssl_udp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
+int p2p_ssl_udp_msg_send(server_params* sp, const p2p_msg msg);
+int p2p_ssl_udp_msg_rebroadcast(server_params* sp, p2p_msg msg);
+int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd);
+int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
 #endif	/* P2P_COMMON_SSL_H */

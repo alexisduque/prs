@@ -292,45 +292,51 @@ int main(int argc, char* argv[]) {
             SSL_shutdown(serverssl);
             SSL_CTX_free(sp.ssl_node_ctx);
             //Fermeture de la soscket de reception
-            p2p_ssl_tcp_close(&sp, serverssl);
+            p2p_ssl_close(&sp, serverssl);
             close(sock_tcp_rcv);
         }
             //Si socket_udp ready
         else if (FD_ISSET(sock_udp, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "RECEPTION UDP MSG\n");
-
-            message = p2p_msg_create();
-            p2p_udp_msg_recvfd(&sp, message, sock_udp);
-
-            //En fonction du message
-            switch (p2p_msg_get_type(message)) {
-
-                case P2P_MSG_SEARCH:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION SEARCH\n");
-                    p2p_do_search(&sp, message);
-                    break;
-                case P2P_MSG_REPLY:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION REPLY\n");
-                    p2p_do_reply(&sp, message);
-                    ;
-                    break;
-                case P2P_MSG_NEIGHBORS_REQ:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION NEIGHBORS REQ\n");
-                    p2p_do_neighbors_req(&sp, message);
-                    ;
-                    break;
-                case P2P_MSG_NEIGHBORS_LIST:
-                    VERBOSE(&sp, VMCTNT, "RECEPTION NEIGHBORS_LIST\n");
-                    p2p_do_neighbors_list(&sp, message);
-                    ;
-                    break;
-            }
             
-            //Suppression du message temporaire
-            p2p_msg_delete(message);
+            p2p_ssl_init_server(&sp);
+            SSL *serverssl = SSL_new(sp.ssl_node_ctx);
+            
+            if (p2p_ssl_udp_server_init_sock(&sp, serverssl, sock_tcp_rcv) == P2P_OK) {
+               
+                message = p2p_msg_create();
+                p2p_ssl_udp_msg_recvfd(&sp, message, serverssl);
+                //En fonction du message
+                switch (p2p_msg_get_type(message)) {
 
-        }            //Si socket_ui ready
+                    case P2P_MSG_SEARCH:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION SEARCH\n");
+                        p2p_do_search(&sp, message);
+                        break;
+                    case P2P_MSG_REPLY:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION REPLY\n");
+                        p2p_do_reply(&sp, message);
+                        ;
+                        break;
+                    case P2P_MSG_NEIGHBORS_REQ:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION NEIGHBORS REQ\n");
+                        p2p_do_neighbors_req(&sp, message);
+                        ;
+                        break;
+                    case P2P_MSG_NEIGHBORS_LIST:
+                        VERBOSE(&sp, VMCTNT, "RECEPTION NEIGHBORS_LIST\n");
+                        p2p_do_neighbors_list(&sp, message);
+                        ;
+                        break;
+                }
+
+                //Suppression du message temporaire
+                p2p_msg_delete(message);
+            }
+        }          
+        
+        //Si socket_ui ready
         else if (FD_ISSET(sock_ui, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "TELNET CLIENT TRY TO CONNECT\n");
