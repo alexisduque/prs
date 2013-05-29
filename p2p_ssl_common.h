@@ -11,7 +11,7 @@
 
 #define CAFILE "./keys/rootcert.pem" 
 #define CADIR "./keys/"
-#define CLIENT_CERTFILE "./keys/client.pem"
+#define CLIENT_CERTFILE "./keys/client1.pem"
 #define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"
 

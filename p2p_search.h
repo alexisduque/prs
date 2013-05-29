@@ -29,7 +29,7 @@
 
 #define P2P_DATA_ERROR 0
 #define P2P_DATA_OK 200
-#define MAX_DATA_SIZE 64000
+#define MAX_DATA_SIZE 65527
 
 int p2p_add_search (search_list *pliste, int id, char file_name[30]);
 

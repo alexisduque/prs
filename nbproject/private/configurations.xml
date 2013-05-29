@@ -3,83 +3,8 @@
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="src-dist">
       <df name="keys">
-      </df>
-      <df name="openssl">
-        <in>aes.h</in>
-        <in>asn1.h</in>
-        <in>asn1_mac.h</in>
-        <in>asn1t.h</in>
-        <in>bio.h</in>
-        <in>blowfish.h</in>
-        <in>bn.h</in>
-        <in>buffer.h</in>
-        <in>camellia.h</in>
-        <in>cast.h</in>
-        <in>cmac.h</in>
-        <in>cms.h</in>
-        <in>comp.h</in>
-        <in>conf.h</in>
-        <in>conf_api.h</in>
-        <in>crypto.h</in>
-        <in>des.h</in>
-        <in>des_old.h</in>
-        <in>dh.h</in>
-        <in>dsa.h</in>
-        <in>dso.h</in>
-        <in>dtls1.h</in>
-        <in>e_os2.h</in>
-        <in>ebcdic.h</in>
-        <in>ec.h</in>
-        <in>ecdh.h</in>
-        <in>ecdsa.h</in>
-        <in>engine.h</in>
-        <in>err.h</in>
-        <in>evp.h</in>
-        <in>hmac.h</in>
-        <in>krb5_asn.h</in>
-        <in>kssl.h</in>
-        <in>lhash.h</in>
-        <in>md4.h</in>
-        <in>md5.h</in>
-        <in>modes.h</in>
-        <in>obj_mac.h</in>
-        <in>objects.h</in>
-        <in>ocsp.h</in>
-        <in>opensslconf.h</in>
-        <in>opensslv.h</in>
-        <in>ossl_typ.h</in>
-        <in>pem.h</in>
-        <in>pem2.h</in>
-        <in>pkcs12.h</in>
-        <in>pkcs7.h</in>
-        <in>pqueue.h</in>
-        <in>rand.h</in>
-        <in>rc2.h</in>
-        <in>rc4.h</in>
-        <in>ripemd.h</in>
-        <in>rsa.h</in>
-        <in>safestack.h</in>
-        <in>seed.h</in>
-        <in>sha.h</in>
-        <in>srp.h</in>
-        <in>srtp.h</in>
-        <in>ssl.h</in>
-        <in>ssl2.h</in>
-        <in>ssl23.h</in>
-        <in>ssl3.h</in>
-        <in>stack.h</in>
-        <in>symhacks.h</in>
-        <in>tls1.h</in>
-        <in>ts.h</in>
-        <in>txt_db.h</in>
-        <in>ui.h</in>
-        <in>ui_compat.h</in>
-        <in>whrlpool.h</in>
-        <in>x509.h</in>
-        <in>x509_vfy.h</in>
-        <in>x509v3.h</in>
-      </df>
-      <df name="p2p">
+        <df name="false">
+        </df>
       </df>
       <df name="ssl">
         <in>bio_ssl.c</in>
@@ -143,7 +68,6 @@
         <in>tls1.h</in>
         <in>tls_srp.c</in>
       </df>
-      <in>debug _openssl.c</in>
       <in>p2p_addr.c</in>
       <in>p2p_addr.h</in>
       <in>p2p_common.c</in>

@@ -210,19 +210,18 @@ int p2p_msg_display(p2p_msg message) {
 
 // ecrit le message msg dans le fichier fd.
 
-/*
-int p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload)
-{
-    fprintf(fd,"Version: %u\n",p2p_msg_get_version(msg));
-    fprintf(fd,"Type: %u\n",p2p_msg_get_type(msg));
-    fprintf(fd,"TTL: %u\n",p2p_msg_get_ttl(msg));
-    fprintf(fd,"Length: %u\n",p2p_msg_get_length(msg));
-    fprintf(fd,"Src: %s\n",p2p_addr_get_str(p2p_msg_get_src(msg)));
-    fprintf(fd,"Dst: %s\n",p2p_addr_get_str(p2p_msg_get_dst(msg)));
-    if ((print_payload !=0) && (msg->payload!=NULL)) fprintf(fd,"payload: %s\n",msg->payload);
-    return P2P_OK;
+void p2p_msg_dumpfile(const p2p_msg msg, const FILE* fd, int print_payload) {
+    
+    fprintf((FILE*) fd, "|%7d", p2p_msg_get_version(msg));
+    fprintf((FILE*) fd, "|%8d", p2p_msg_get_type(msg));
+    fprintf((FILE*) fd, "|%18d|\n", p2p_msg_get_ttl(msg));
+    fprintf((FILE*) fd, "|%35d|\n", p2p_msg_get_length(msg));
+    p2p_addr_dumpfile(p2p_msg_get_src(msg), fd);
+    p2p_addr_dumpfile(p2p_msg_get_dst(msg), fd);
+
+    if (print_payload != 0)
+        fprintf((FILE*) fd, "|%s|\n", msg->payload);
 }
- */
 
 
 //ecrit l'entete du message msg en hexa. 
@@ -360,15 +359,28 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 // Recoie dans msg un message depuis la socket fd
 
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
-    unsigned short int length;
+    int tot = 0;
+    int i = 0;
+    unsigned short int length = 0;
+    unsigned char* data_payload = NULL;
     read(fd, msg, P2P_HDR_BITFIELD_SIZE);
     read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
     length = ntohs(length);
-    unsigned char* data_payload = (unsigned char *) malloc (length);
-    read(fd, data_payload, length);
+    data_payload = (unsigned char *) malloc (sizeof(unsigned char) * P2P_MSG_MAX_SIZE);
+    memset (data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));
+    if (length > 0) {
+        while (tot < length)
+        {
+            i = read (fd, data_payload + tot, length - tot);
+            tot += i;
+        }
     p2p_msg_init_payload(msg, length, data_payload);
+    }
+    
+    //read(fd, data_payload, length);
+
     p2p_msg_display(msg);
     free(data_payload);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
@@ -436,7 +448,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
     int message_size = p2p_msg_get_length(msg);
     message_size = ntohs(message_size);
-    char toWrite [P2P_HDR_SIZE + sizeof(char)*message_size] ;
+    char toWrite [P2P_HDR_SIZE + sizeof (char)*message_size];
 
     memcpy(toWrite, msg, P2P_HDR_BITFIELD_SIZE);
     memcpy(&toWrite[4], p2p_msg_get_src(msg), P2P_ADDR_SIZE);
@@ -449,7 +461,7 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
         return P2P_ERROR;
     }
     p2p_msg_display(msg);
-   // free(toWrite);
+    //free(toWrite);
     VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
     return P2P_OK;
 
@@ -562,5 +574,4 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
     return P2P_OK;
 
 }
-// SSL Function
 

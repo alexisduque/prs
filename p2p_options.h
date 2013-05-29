@@ -63,7 +63,7 @@
 #define P2P_MAX_RESULT_NB 10
 #define P2P_MAX_SEARCH_NB 10
 /****************************************************/
-
+#define P2P_NOM_FICHIER_MAX 30
 
 #include "p2p_addr.h"
 
