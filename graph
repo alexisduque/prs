@@ -1,6 +1,13 @@
 digraph p2p3tc {
 	0 [label = "p2p_0\n127.0.0.1:30002:30003"];
+	1 [label = "alex_node_1\n127.0.0.1:20012:20013"];
+	2 [label = "alex_node_0\n127.0.0.1:20002:20003"];
 
-	0 -> 0 [label = "0"];
+	0 -> 1 [label = "0"];
+	0 -> 2 [label = "1"];
+	1 -> 2 [label = "0"];
+	1 -> 0 [label = "1"];
+	2 -> 0 [label = "0"];
+	2 -> 1 [label = "1"];
 fontsize=20;
 }
