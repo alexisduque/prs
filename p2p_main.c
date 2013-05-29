@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
             //Initialisation du contexte SSLserver
-            p2p_ssl_init_server(&sp);
+            p2p_ssl_init_server(&sp, SSL23_METH);
             SSL *serverssl = SSL_new(sp.ssl_node_ctx);
             
             //on accepte la connexion
@@ -300,10 +300,10 @@ int main(int argc, char* argv[]) {
 
             VERBOSE(&sp, VMCTNT, "RECEPTION UDP MSG\n");
             
-            p2p_ssl_init_server(&sp);
+            p2p_ssl_init_server(&sp, DTLS_METH);
             SSL *serverssl = SSL_new(sp.ssl_node_ctx);
             
-            if (p2p_ssl_udp_server_init_sock(&sp, serverssl, sock_tcp_rcv) == P2P_OK) {
+            if (p2p_ssl_udp_server_init_sock(&sp, serverssl, sock_udp) == P2P_OK) {
                
                 message = p2p_msg_create();
                 p2p_ssl_udp_msg_recvfd(&sp, message, serverssl);
@@ -411,9 +411,9 @@ int main(int argc, char* argv[]) {
             }
 
         } else break; // Timeout
-
+        SSL_CTX_free(sp.ssl_node_ctx);
     }
-    SSL_CTX_free(sp.ssl_node_ctx);
+    
 
     close(sock_tcp);
     close(sock_udp);

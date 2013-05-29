@@ -48,7 +48,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     
     p2p_msg_set_length(join_msg, 0);
     p2p_msg_display(join_msg);
-    p2p_ssl_init_client(sp);
+    p2p_ssl_init_client(sp, SSL23_METH);
     
     // on envoi le message
     SSL *ssl = SSL_new(sp->ssl_node_ctx);
@@ -62,7 +62,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
         return P2P_ERROR;
     }
     
-    printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
+    printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str( destinataire));
     if (p2p_ssl_tcp_msg_sendfd(sp, join_msg, ssl) != P2P_OK) {
         VERBOSE(sp, VMCTNT, "ERROR SENDING JOIN REQ\n");
         return (P2P_ERROR);
@@ -409,7 +409,7 @@ int p2p_do_search(server_params *sp, p2p_msg search_msg) {
             p2p_msg_init_payload(reply_message, P2P_HDR_BITFIELD_SIZE + P2P_INT_SIZE, buffer);
 
             // Envoi du message
-            p2p_udp_msg_send(sp, reply_message);
+            p2p_ssl_udp_msg_send(sp, reply_message);
             printf("Reply message send \n");
 
             // Ne pas oublier de liberer la mémoire !
@@ -499,7 +499,7 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("Filesize = %d\n\n", filesize);
 
     //Initialisation du contexte ssl
-    p2p_ssl_init_client(sp);
+    p2p_ssl_init_client(sp, SSL23_METH);
     
    
     while (endOffset < filesize - 1) {

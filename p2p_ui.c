@@ -323,7 +323,7 @@ p2psearch(params* p) {
     //printf("DEBUG p2p_ui search envoi du msg search taille fichier %d len %d\n",sizeof(p->options[0]),sizeof(char)*strlen(p->options[0]));
 
     // Envoi du message UDP aux voisins
-    p2p_udp_msg_rebroadcast(p->sp, search_message);
+    p2p_ssl_udp_msg_rebroadcast(p->sp, search_message);
 
     // Ajout de la recherche dans la liste des recherches effectuees
     p2p_add_search(&(p->sp->p2pSearchList), p->sp->search_id, p->options[0]);
