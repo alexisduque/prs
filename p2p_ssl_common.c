@@ -266,20 +266,30 @@ void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
 
 // Recois dans msg un message depuis la connection ssl serverssl
 int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
-
-    unsigned short int length;
-    if (SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE)== 0 ) return P2P_ERROR;
+    
+    int tot = 0;
+    int i = 0;
+    unsigned short int length = 0;
+    unsigned char* data_payload = NULL;
+    if (SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE) == 0 ) return P2P_ERROR;
     SSL_read(serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     SSL_read(serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
     length = p2p_msg_get_length(msg);
     length = ntohs(length);
-    unsigned char* data_payload = (unsigned char *) malloc (length);
-    SSL_read(serverssl, data_payload, length);
+    data_payload = (unsigned char *) malloc (sizeof(unsigned char) * P2P_MSG_MAX_SIZE);
+    memset (data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));
+    if (length > 0) {
+        while (tot < length)
+        {
+            i = SSL_read(serverssl, data_payload + tot, length - tot);
+            tot += i;
+        }
     p2p_msg_init_payload(msg, length, data_payload);
+    }
+
     p2p_msg_display(msg);
     free(data_payload);
     VERBOSE(sp, VMCTNT, "RECV MSG OK\n");
-    //SSL_shutdown(serverssl);
     return P2P_OK;
 
 }

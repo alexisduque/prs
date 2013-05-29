@@ -106,6 +106,8 @@ int help(params *p) {
 /****************************************************/
 
 int quit(params *p) {
+    close(p->sp->client_ui);
+    p->sp->client_ui = -1;
     return P2P_UI_QUIT;
 }
 
@@ -114,6 +116,7 @@ int quit(params *p) {
 /****************************************************/
 
 int status(params *p) {
+
     VERBOSE(p->sp, CLIENT, "\n");
     VERBOSE(p->sp, CLIENT, "  server_name = \"%s\"\n", p->sp->server_name);
     VERBOSE(p->sp, CLIENT, "  dir_name    = \"%s\"\n", p->sp->dir_name);
@@ -121,9 +124,21 @@ int status(params *p) {
     VERBOSE(p->sp, CLIENT, "  p2p tcp     = %d\n", p->sp->port_p2p_tcp);
     VERBOSE(p->sp, CLIENT, "  p2p udp     = %d\n", p->sp->port_p2p_udp);
     VERBOSE(p->sp, CLIENT, "  verbose     = %d\n", p->sp->verbosity);
+    VERBOSE(p->sp, CLIENT, "  p2p Id      = %s\n", p2p_addr_get_str(p->sp->p2pMyId));
+
+    if (p2p_addr_is_equal(p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId)
+            && p2p_addr_is_equal(p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId)) {
+        VERBOSE(p->sp, CLIENT, "  p2p status  = disconnected\n");
+    } else {
+        VERBOSE(p->sp, CLIENT, "  p2p status  = connected\n");
+    }
+
     VERBOSE(p->sp, CLIENT, "  neighbors   = [ip:tcp:udp]\n");
+    VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.right_neighbor));
+    VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.left_neighbor));
     VERBOSE(p->sp, CLIENT, "\n");
     return P2P_UI_OK;
+
 }
 
 /****************************************************/
@@ -176,6 +191,7 @@ p2pjoin(params *p) {
 
     if (p2p_addr_setstr(dst, p->options[0]) != P2P_OK) {
         VERBOSE(p->sp, CLIENT, ">> Could not parse p2p address\n");
+        p2p_addr_delete(dst);
         return P2P_UI_ERROR;
     }
 
@@ -184,11 +200,13 @@ p2pjoin(params *p) {
     //Verifie que l'on ne se connecte pas avec nous meme
     if (p2p_addr_is_equal(dst, p->sp->p2pMyId) != 0) {
         printf(">> Try to connet yourself ;-)\n");
+        p2p_addr_delete(dst);
         return (P2P_OK);
     }
 
     if (p2p_send_join_req(p->sp, dst) != P2P_OK) {
         printf(">> Could not send the JOIN REQ\n");
+        p2p_addr_delete(dst);
         return (P2P_UI_ERROR);
     }
     
@@ -204,8 +222,9 @@ int
 p2pleave(params *p) {
 
     int neighbor_type, i;
-    p2p_addr neighbor_addresse, new_neighbor;
-    p2p_msg link_update_msg;
+    p2p_addr neighbor_addresse = NULL;
+    p2p_addr new_neighbor = NULL;
+    p2p_msg link_update_msg = NULL;
     char * buffer;
 
     // Envoi de 2 link update pour enlever le noeud de l'anneau
@@ -217,14 +236,13 @@ p2pleave(params *p) {
 
         // Premier envoi : le voisin de gauche a un nouveau voisin de droite
         if (i == 0) {
-            printf("UI: Sending LINK_UPDATE to left neighbor\n");
+            VERBOSE(p->sp, VMRECV, "UI: Sending LINK_UPDATE to left neighbor\n");
             neighbor_type = htonl(0x0000FFFF);
             neighbor_addresse = p->sp->p2p_neighbors.left_neighbor;
             new_neighbor = p->sp->p2p_neighbors.right_neighbor;
-        }
-            // Deuxieme envoi : l'inverse
+        }// Deuxieme envoi : l'inverse
         else {
-            printf("UI: Sending LINK_UPDATE to right neighbor\n");
+            VERBOSE(p->sp, VMRECV, "UI: Sending LINK_UPDATE to right neighbor\n");
             neighbor_type = htonl(0xFFFF0000);
             neighbor_addresse = p->sp->p2p_neighbors.right_neighbor;
             new_neighbor = p->sp->p2p_neighbors.left_neighbor;
@@ -250,8 +268,8 @@ p2pleave(params *p) {
     }
 
     // Réinitialisation des voisins du noeud quitté
-    p->sp->p2p_neighbors.left_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
-    p->sp->p2p_neighbors.right_neighbor = p2p_addr_duplicate(p->sp->p2pMyId);
+    p2p_addr_copy(p->sp->p2p_neighbors.left_neighbor, p->sp->p2pMyId);
+    p2p_addr_copy(p->sp->p2p_neighbors.right_neighbor, p->sp->p2pMyId);
 
     // Nettoyage des variables
     p2p_msg_delete(link_update_msg);
@@ -317,6 +335,7 @@ p2psearch(params* p) {
 
     //p2p_msg_delete(search_message);
     free(buffer);
+    p2p_msg_delete(search_message);
     p2p_addr_delete(src_adresse);
     p2p_addr_delete(dst_adresse);
     return P2P_UI_OK;
@@ -372,8 +391,8 @@ p2pget(params* p) {
 }
 
 int p2pdiscover(params *p) {
-    	if (p2p_send_neighbor_req(p->sp) == P2P_OK){
-		return(P2P_UI_OK);
+    if (p2p_send_neighbor_req(p->sp) == P2P_OK) {
+        return (P2P_UI_OK);
 	} else return P2P_UI_ERROR;
 }
 
