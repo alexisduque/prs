@@ -307,6 +307,7 @@ int main(int argc, char* argv[]) {
                
                 message = p2p_msg_create();
                 p2p_ssl_udp_msg_recvfd(&sp, message, serverssl);
+                p2p_ssl_close(&sp, serverssl);
                 //En fonction du message
                 switch (p2p_msg_get_type(message)) {
 
@@ -411,9 +412,9 @@ int main(int argc, char* argv[]) {
             }
 
         } else break; // Timeout
-        SSL_CTX_free(sp.ssl_node_ctx);
+        
     }
-    
+    SSL_CTX_free(sp.ssl_node_ctx);
 
     close(sock_tcp);
     close(sock_udp);

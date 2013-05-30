@@ -52,5 +52,5 @@ int p2p_ssl_udp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
 int p2p_ssl_udp_msg_send(server_params* sp, const p2p_msg msg);
 int p2p_ssl_udp_msg_rebroadcast(server_params* sp, p2p_msg msg);
 int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd);
-int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd, int port);
+int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd, p2p_addr dest);
 #endif	/* P2P_COMMON_SSL_H */
