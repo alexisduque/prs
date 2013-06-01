@@ -136,7 +136,8 @@ int main(int argc, char* argv[]) {
         .p2p_neighbors.right_neighbor = p2p_addr_create(),
         .p2p_neighbors.left_neighbor = p2p_addr_create(),
         .friends.nb_node = 0,
-        .verify_peer = ON
+        .verify_peer = ON,
+        .node_cert = SERVER_CERTFILE
     };
 
     p2p_addr dest = p2p_addr_create();
@@ -292,7 +293,7 @@ int main(int argc, char* argv[]) {
             SSL_shutdown(serverssl);
             SSL_CTX_free(sp.ssl_node_ctx);
             //Fermeture de la soscket de reception
-            p2p_ssl_close(&sp, serverssl);
+            p2p_ssl_tcp_close(&sp, serverssl);
             close(sock_tcp_rcv);
         }
             //Si socket_udp ready
@@ -300,14 +301,9 @@ int main(int argc, char* argv[]) {
 
             VERBOSE(&sp, VMCTNT, "RECEPTION UDP MSG\n");
             
-            p2p_ssl_init_server(&sp, DTLS_METH);
-            SSL *serverssl = SSL_new(sp.ssl_node_ctx);
+            message = p2p_msg_create();
+            p2p_udp_msg_recvfd(&sp, message, sock_udp);
             
-            if (p2p_ssl_udp_server_init_sock(&sp, serverssl, sock_udp) == P2P_OK) {
-               
-                message = p2p_msg_create();
-                p2p_ssl_udp_msg_recvfd(&sp, message, serverssl);
-                p2p_ssl_close(&sp, serverssl);
                 //En fonction du message
                 switch (p2p_msg_get_type(message)) {
 
@@ -334,10 +330,8 @@ int main(int argc, char* argv[]) {
 
                 //Suppression du message temporaire
                 p2p_msg_delete(message);
-            }
-        }          
         
-        //Si socket_ui ready
+        }            //Si socket_ui ready
         else if (FD_ISSET(sock_ui, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "TELNET CLIENT TRY TO CONNECT\n");

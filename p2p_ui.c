@@ -58,6 +58,8 @@ int p2plist_search(params*);
 int p2plist_result(params*);
 int p2pget(params*);
 int p2pshow_sslcert(params*);
+int p2pset_sslcert(params* p);
+int p2pgenerate_sslcert(params* p);
 
 
 /****************************************************/
@@ -86,6 +88,8 @@ static struct cmd_t commands[] = {
     { "list_result", 1, "list the results of search [n]", p2plist_result},
     { "get", 2, "get [result] from [search]", p2pget},
     { "show_cert", 0, "show node certificate", p2pshow_sslcert},
+    { "set_cert", 1, "show node certificate", p2pset_sslcert},
+    { "generate_cert", 1, "generate new certificate", p2pgenerate_sslcert},
     { NULL, 0, NULL, NULL}
 };
 
@@ -301,7 +305,6 @@ p2psearch(params* p) {
     p2p_msg search_message = p2p_msg_create();
     int search_id;
     p2p_addr src_adresse, dst_adresse;
-    p2p_ssl_init_client(p->sp, DTLS_METH);
     //Récuperation des adresses source et destionation
     src_adresse = p2p_addr_create();
     p2p_addr_copy(src_adresse, p->sp->p2pMyId);
@@ -325,7 +328,7 @@ p2psearch(params* p) {
     //printf("DEBUG p2p_ui search envoi du msg search taille fichier %d len %d\n",sizeof(p->options[0]),sizeof(char)*strlen(p->options[0]));
 
     // Envoi du message UDP aux voisins
-    p2p_ssl_udp_msg_rebroadcast(p->sp, search_message);
+    p2p_udp_msg_rebroadcast(p->sp, search_message);
 
     // Ajout de la recherche dans la liste des recherches effectuees
     p2p_add_search(&(p->sp->p2pSearchList), p->sp->search_id, p->options[0]);
@@ -401,21 +404,12 @@ int p2pdiscover(params *p) {
 int
 p2pshow_sslcert(params* p) {
 
-    printf("\nUI: Show %s SSL Certificate\n\n", p->sp->server_name);
-    FILE *fpem;
+    VERBOSE(p->sp, VSYSCL, "\nUI: Show %s SSL Certificate\n\n", p->sp->server_name);
+    VERBOSE(p->sp, CLIENT, "\nShow %s SSL Certificate\n\n", p->sp->server_name);
     X509 *cert;
     char *line;
     
-    if( !( fpem = fopen( CLIENT_CERTFILE, "r" ))) {
-        printf("Couldn't open the PEM file: %s\n", CLIENT_CERTFILE  );
-        return P2P_UI_ERROR;
-    }
- 
-    if( !( cert = PEM_read_X509( fpem, NULL, NULL, NULL ))) {
-        fclose( fpem );
-        printf("Couldn't read the PEM file: %s\n", CLIENT_CERTFILE  );
-        return P2P_UI_ERROR;
-    }
+    cert = p2p_ssl_load_cert(p->sp, p->sp->node_cert);
     
     if (cert != NULL) {
         VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
@@ -431,10 +425,47 @@ p2pshow_sslcert(params* p) {
         X509_free(cert);
     } else
         VERBOSE(p->sp, CLIENT, "No certificates.\n");
- 
-    fclose( fpem );
-    return( EXIT_SUCCESS );
+    VERBOSE(p->sp, CLIENT, "Certicates Loaded.\n");
+    return P2P_UI_OK;
+}
 
+int
+p2pset_sslcert(params* p) {
+    
+    
+    VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+    VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+
+    X509 *cert;
+    char *line;
+    
+    cert = p2p_ssl_load_cert(p->sp, p->options[0]);
+    
+    if (cert != NULL) {
+        VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        VERBOSE(p->sp, CLIENT, "Subject: %s\n", line);
+        //libère la mémoire allouée 
+        free(line); 
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        VERBOSE(p->sp, CLIENT, "Issuer: %s\n", line);
+        VERBOSE(p->sp, CLIENT, "----------------------------------------------------------\n\n");
+        
+        free(line);
+        X509_free(cert);
+    } else
+        VERBOSE(p->sp, CLIENT, "No certificates.\n");
+
+    return P2P_UI_OK;
+}
+
+int
+p2pgenerate_sslcert(params* p) {
+
+    VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+    
+    if (p2p_ssl_gen_privatekey(p->sp) != P2P_OK) return P2P_UI_ERROR;
+    
     return P2P_UI_OK;
 }
 

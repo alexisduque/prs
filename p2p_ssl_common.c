@@ -28,8 +28,189 @@
 #include <openssl/rand.h>
 #include <openssl/bio.h> 
 #include <openssl/ssl.h> 
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/x509v3.h>
 #include <openssl/err.h> 
 #include <errno.h>
+
+struct entry {
+    char *key;
+    char *value;
+};
+
+struct entry entries[ENTRY_COUNT] = {
+
+    { "countryName", "FR"},
+    { "stateOrProvinceName", "69"},
+    { "localityName", "Villeurbanne"},
+    { "organizationName", "Insa de Lyon"},
+    { "organizationalUnitName", "TC"},
+    { "commonName", "name"},
+};
+
+int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u) {
+    int len;
+    char *tmp;
+    printf("Enter pass phrase for \"%s\"\n", u);
+
+    /* get pass phrase, length 'len' into 'tmp' */
+    tmp = "alex";
+    len = strlen(tmp);
+
+    if (len <= 0) return 0;
+
+    /* if too long, truncate */
+    if (len > size) len = size;
+    memcpy(buf, tmp, len);
+    return len;
+}
+
+
+// Change le certificate utiliser par default
+
+X509* p2p_ssl_load_cert(server_params* sp, char* file) {
+
+    VERBOSE(sp, VSYSCL, "Load SSL Certificate from file : %s\n\n", file);
+    FILE *fpem;
+    X509 *cert;
+
+    if (!(fpem = fopen(file, "r"))) {
+        VERBOSE(sp, VSYSCL, "Couldn't open the PEM file: %s\n", file);
+        return NULL;
+    }
+
+    if (!(cert = PEM_read_X509(fpem, NULL, NULL, NULL))) {
+        fclose(fpem);
+        VERBOSE(sp, VSYSCL, "Couldn't read the PEM file: %s\n", file);
+        return NULL;
+    }
+
+    return cert;
+}
+
+//Genère une clé privée, et demande la certification à l'AC Root
+
+int p2p_ssl_gen_privatekey(server_params* sp) {
+
+    VERBOSE(sp, VSYSCL, "Generating RSA Private Key ....\n");
+
+    FILE *fp;
+    //X509 *cert;
+    int i;
+
+    X509_REQ *req;
+    X509_NAME *subj;
+    EVP_PKEY *pkey;
+    const EVP_MD *digest;
+
+    int keylen;
+    char *pem_key;
+
+    RSA *rsa = RSA_generate_key(1024, 65537, 0, 0);
+
+    BIO *bio = BIO_new(BIO_s_mem());
+
+    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
+
+    keylen = BIO_pending(bio);
+    pem_key = calloc(keylen + 1, 1);
+    BIO_read(bio, pem_key, keylen);
+
+    VERBOSE(sp, CLIENT, "%s", pem_key);
+
+    BIO_free(bio);
+
+    free(pem_key);
+
+    VERBOSE(sp, VSYSCL, "New RSA Key create\n");
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+    bio = BIO_new(BIO_s_mem());
+    //lecture de la clef privee
+    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
+    if (!(pkey = PEM_read_bio_PrivateKey(bio, NULL, 0, NULL)))
+        printf("Error reading private key in bio\n");
+
+    //creation de la requete
+    if (!(req = X509_REQ_new()))
+        printf("Failed to create X509_REQ object\n");
+
+    X509_REQ_set_pubkey(req, pkey);
+
+
+    if (!(subj = X509_NAME_new()))
+        printf("Failed to create X509_NAME object\n");
+
+    for (i = 0; i < ENTRY_COUNT; i++) {
+
+        int nid;
+        X509_NAME_ENTRY *ent;
+
+        if ((nid = OBJ_txt2nid(entries[i].key)) == NID_undef) {
+            fprintf(stderr, "Error finding NID for %s\n", entries[i].key);
+            printf("Error on lookup\n");
+        }
+        if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC, (unsigned char*) entries[i].value, -1)))
+            printf("Error creating Name entry from NID\n");
+
+        if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
+            printf("Error adding entry to Name\n");
+    }
+
+    if (X509_REQ_set_subject_name(req, subj) != 1)
+        printf("Error adding subject to request\n");
+
+    /* add an extension for the FQDN we wish to have */
+    /*
+    
+            X509_EXTENSION *ext;
+            STACK_OF(X509_EXTENSION) *extlist;
+            char *name = "subjectAltName\n";
+            char *value = "DNS:splat.zork.org\n";
+            printf("%s", value);
+            printf("%s", name);
+        
+            extlist = sk_X509_EXTENSION_new_null();
+            if (!(ext = X509V3_EXT_conf(NULL, NULL, name, value)))
+                printf("Error creating subjectAltName extension\n");
+
+            sk_X509_EXTENSION_push(extlist, ext);
+
+            if (!X509_REQ_add_extensions(req, extlist))
+                printf("Error adding subjectAltName to the request\n");
+
+            sk_X509_EXTENSION_pop_free(extlist, X509_EXTENSION_free);
+     */
+
+
+    /* pick the correct digest and sign the request */
+    if (EVP_PKEY_type(pkey->type) == EVP_PKEY_DSA)
+        digest = EVP_dss1();
+
+    else if (EVP_PKEY_type(pkey->type) == EVP_PKEY_RSA)
+        digest = EVP_sha1();
+
+    else
+        printf("Error checking public key for a valid digest\n");
+
+    //Creation du ficher
+    if (!(fp = fopen(REQ_FILE, "w")))
+        printf("Error writing to request file");
+    if (PEM_write_X509_REQ(fp, req) != 1)
+        printf("Error while writing request");
+    fclose(fp);
+
+    EVP_PKEY_free(pkey);
+    X509_REQ_free(req);
+    RSA_free(rsa);
+    BIO_free_all(bio);
+
+    return P2P_OK;
+}
 
 
 // Initialise le contexte SSL pour le serveur
@@ -69,10 +250,10 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
     if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
         perror("Error loading default CA file and/or directory");
 
-    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, SERVER_CERTFILE) != 1)
+    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1)
         perror("Error loading certificate from file");
 
-    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, SERVER_CERTFILE, SSL_FILETYPE_PEM) != 1)
+    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1)
         perror("Error loading private key from file");
 
     //Demande la verification des crificats du clients si verify_peer est ON
@@ -276,7 +457,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
 //Ferme la connection SSL
 
-void p2p_ssl_close(server_params* sp, SSL* ssl) {
+void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
     SSL_shutdown(ssl);
     // SSL_free(ssl);
     SSL_clear(ssl);
@@ -336,7 +517,7 @@ int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg) {
         return (P2P_ERROR);
     }
 
-    p2p_ssl_close(sp, clientssl);
+    p2p_ssl_tcp_close(sp, clientssl);
     p2p_tcp_socket_close(sp, socketTMP);
     VERBOSE(sp, VPROTO, "SEND msg DONE\n\n");
     return P2P_OK;
@@ -368,12 +549,15 @@ void p2p_ssl_showCerts(server_params* sp, SSL* ssl) {
 }
 
 /* 
- 
- ****************  UDP Functions  ***************************
- 
+ * 
+ ****************  UDP Functions  *******************************************
+ * 
+ *   TODO
+ * 
+ * 
  */
 
-
+/****************************************************************************
 int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
 
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");
@@ -568,19 +752,11 @@ int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd, p2p_
 
         int ret;
 
-/*
-        if ((ret = SSL_set_fd(clientssl, sock_udp)) != 1) {
-            VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(clientssl, ret));
-            return P2P_ERROR;
-        }
-*/
-
-
         if ((ret = SSL_connect(clientssl)) != 1) {
             VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(clientssl, ret));
             return P2P_ERROR;
         }
-    /*
+    
 
         if (sp->verify_peer) {
 
@@ -604,7 +780,7 @@ int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd, p2p_
                 return (P2P_ERROR);
             }
         }
-     */
+    
 
     VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
     return P2P_OK;
@@ -628,29 +804,16 @@ int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
     SSL_set_accept_state(ssl);
 
     VERBOSE(sp, VSYSCL, "DTLS LISTEN... \n");
-    //while (!DTLSv1_listen(ssl, &client_addr));
-
+    while (!DTLSv1_listen(ssl, &client_addr));
     
         int ret;
 
-/*
-        if ((ret = SSL_set_fd(ssl, fd)) != 1) {
-            VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(ssl, ret));
-            return (P2P_ERROR);
-        }
-*/
-    
-     
-
-    
         if ((ret = SSL_accept(ssl)) != 1) {
            VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(ssl, ret));
             return (P2P_ERROR);
         }
-     
 
-
-    /*
+    
         if (sp->verify_peer) {
 
             X509 *ssl_client_cert = NULL;
@@ -677,9 +840,11 @@ int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
                 return (P2P_ERROR);
             } 
         }    
-     */
+     
 
     VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
     return P2P_OK;
 
 }
+
+ *******************************************************************************/

@@ -157,6 +157,7 @@ struct server_params_t {
   /* SSL */
   const SSL_METHOD *node_meth;
   SSL_CTX *ssl_node_ctx;
+  char *node_cert;
   int verify_peer;
   
 };

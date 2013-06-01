@@ -14,6 +14,7 @@
 #define CLIENT_CERTFILE "./keys/client1.pem"
 #define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"
+#define REQ_FILE "newreq.pem"
 
 #define SSL23_METH 1
 #define DTLS_METH 2
@@ -35,22 +36,37 @@
 #include <openssl/ssl.h> 
 #include <openssl/err.h> 
 
+#define ENTRY_COUNT 6
+
+int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u);
+X509* p2p_ssl_load_cert(server_params* sp, char* file);
+int p2p_ssl_gen_privatekey(server_params* sp);
+void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_init_server(server_params* sp, int meth);
 int p2p_ssl_init_client(server_params* sp, int meth);
 void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
-int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
+int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl);
 int p2p_ssl_tcp_msg_send(server_params* sp, const p2p_msg msg);
-void p2p_ssl_close(server_params* sp, SSL* ssl);
+void p2p_ssl_tcp_close(server_params* sp, SSL* ssl);
 int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd);
 int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
 
+/* 
+ * 
+ * DTLS function are not use
+ * 
+ * 
 int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
 int p2p_ssl_udp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) ;
 int p2p_ssl_udp_msg_send(server_params* sp, const p2p_msg msg);
 int p2p_ssl_udp_msg_rebroadcast(server_params* sp, p2p_msg msg);
 int p2p_ssl_udp_server_init_sock(server_params* sp, SSL* ssl, int fd);
 int p2p_ssl_udp_client_init_sock(server_params* sp, SSL* clientssl, int fd, p2p_addr dest);
+ * 
+ * 
+ * 
+ */
 #endif	/* P2P_COMMON_SSL_H */
