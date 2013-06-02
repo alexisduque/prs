@@ -2,6 +2,8 @@
 <configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="src-dist">
+      <df name="gencert_files">
+      </df>
       <df name="keys">
         <df name="false">
         </df>
@@ -68,6 +70,8 @@
         <in>tls1.h</in>
         <in>tls_srp.c</in>
       </df>
+      <in>gencert.c</in>
+      <in>genreq.c</in>
       <in>p2p_addr.c</in>
       <in>p2p_addr.h</in>
       <in>p2p_common.c</in>

@@ -8,13 +8,17 @@
 #ifndef P2P_COMMON_SSL_H
 #define	P2P_COMMON_SSL_H
 
-
 #define CAFILE "./keys/rootcert.pem" 
+#define CAKEY "./keys/rootkey.pem"
 #define CADIR "./keys/"
 #define CLIENT_CERTFILE "./keys/client1.pem"
 #define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"
-#define REQ_FILE "newreq.pem"
+
+#define DAYS_TILL_EXPIRE 365
+#define EXPIRE_SECS (60*60*24*DAYS_TILL_EXPIRE)
+#define EXT_COUNT 5
+#define ENTRY_COUNT 6
 
 #define SSL23_METH 1
 #define DTLS_METH 2
@@ -36,7 +40,7 @@
 #include <openssl/ssl.h> 
 #include <openssl/err.h> 
 
-#define ENTRY_COUNT 6
+
 
 int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u);
 X509* p2p_ssl_load_cert(server_params* sp, char* file);

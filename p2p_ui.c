@@ -89,7 +89,7 @@ static struct cmd_t commands[] = {
     { "get", 2, "get [result] from [search]", p2pget},
     { "show_cert", 0, "show node certificate", p2pshow_sslcert},
     { "set_cert", 1, "show node certificate", p2pset_sslcert},
-    { "generate_cert", 1, "generate new certificate", p2pgenerate_sslcert},
+    { "generate_cert", 0, "generate new certificate", p2pgenerate_sslcert},
     { NULL, 0, NULL, NULL}
 };
 
@@ -215,7 +215,7 @@ p2pjoin(params *p) {
         p2p_addr_delete(dst);
         return (P2P_UI_ERROR);
     }
-    
+
     p2p_addr_delete(dst);
     return P2P_UI_OK;
 }
@@ -398,7 +398,7 @@ p2pget(params* p) {
 int p2pdiscover(params *p) {
     if (p2p_send_neighbor_req(p->sp) == P2P_OK) {
         return (P2P_UI_OK);
-	} else return P2P_UI_ERROR;
+    } else return P2P_UI_ERROR;
 }
 
 int
@@ -406,55 +406,93 @@ p2pshow_sslcert(params* p) {
 
     VERBOSE(p->sp, VSYSCL, "\nUI: Show %s SSL Certificate\n\n", p->sp->server_name);
     VERBOSE(p->sp, CLIENT, "\nShow %s SSL Certificate\n\n", p->sp->server_name);
+    int keylen;
+    char *pem_key;
     X509 *cert;
     char *line;
-    
+    EVP_PKEY *pkey = NULL;
+    BIO *bio;
     cert = p2p_ssl_load_cert(p->sp, p->sp->node_cert);
-    
+
     if (cert != NULL) {
         VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Subject: %s\n", line);
         //libère la mémoire allouée 
-        free(line); 
+        free(line);
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Issuer: %s\n", line);
         VERBOSE(p->sp, CLIENT, "----------------------------------------------------------\n");
-        //libère la mémoire allouée
+
+        //Affichagede la clé public
+        pkey = X509_get_pubkey(cert);
+        bio = BIO_new(BIO_s_mem());
+        PEM_write_bio_PUBKEY(bio, pkey);
+        keylen = BIO_pending(bio);
+        pem_key = calloc(keylen + 1, 1);
+        BIO_read(bio, pem_key, keylen);
+        VERBOSE(p->sp, CLIENT, "%s", pem_key);
+        
+        BIO_free(bio);
+        free(pem_key);
         free(line);
         X509_free(cert);
+        EVP_PKEY_free(pkey);
+        
     } else
         VERBOSE(p->sp, CLIENT, "No certificates.\n");
-    VERBOSE(p->sp, CLIENT, "Certicates Loaded.\n");
+
     return P2P_UI_OK;
 }
 
 int
 p2pset_sslcert(params* p) {
-    
-    
+
+
     VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
     VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
-
+    int keylen;
+    char *pem_key;
     X509 *cert;
     char *line;
+    EVP_PKEY *pkey = NULL;
+    BIO *bio;
     
     cert = p2p_ssl_load_cert(p->sp, p->options[0]);
-    
+
     if (cert != NULL) {
         VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Subject: %s\n", line);
         //libère la mémoire allouée 
-        free(line); 
+        free(line);
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Issuer: %s\n", line);
         VERBOSE(p->sp, CLIENT, "----------------------------------------------------------\n\n");
         
+        //Affichagede la clé public
+        pkey = X509_get_pubkey(cert);
+        bio = BIO_new(BIO_s_mem());
+        PEM_write_bio_PUBKEY(bio, pkey);
+        keylen = BIO_pending(bio);
+        pem_key = calloc(keylen + 1, 1);
+        BIO_read(bio, pem_key, keylen);
+        VERBOSE(p->sp, CLIENT, "%s", pem_key);
+        printf("%s\n",p->sp->node_cert );
+        p->sp->node_cert = (char *)malloc(sizeof(char)*strlen(p->options[0]));
+        memset((p->sp->node_cert),0,strlen(p->options[0]));
+        memcpy((p->sp->node_cert), p->options[0], strlen(p->options[0]));
+        //&(p->sp->node_cert) + strlen(p->options[0]) = "\0";
+        printf("%s\n",p->sp->node_cert );
+        BIO_free(bio);
+        free(pem_key);
         free(line);
         X509_free(cert);
+        EVP_PKEY_free(pkey);
+        
     } else
         VERBOSE(p->sp, CLIENT, "No certificates.\n");
+    
 
     return P2P_UI_OK;
 }
@@ -463,9 +501,9 @@ int
 p2pgenerate_sslcert(params* p) {
 
     VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
-    
+
     if (p2p_ssl_gen_privatekey(p->sp) != P2P_OK) return P2P_UI_ERROR;
-    
+
     return P2P_UI_OK;
 }
 

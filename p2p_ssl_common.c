@@ -24,6 +24,7 @@
 #include "p2p_options.h"
 #include "p2p_ssl_common.h"
 #include "p2p_addr.h"
+#include "p2p_file.h"
 
 #include <openssl/rand.h>
 #include <openssl/bio.h> 
@@ -36,9 +37,30 @@
 #include <openssl/err.h> 
 #include <errno.h>
 
+void
+p2p_ssl_handle_error(const char *file, int lineno, const char *msg) {
+    fprintf(stderr, "** %s:%i %s\n", file, lineno, msg);
+    ERR_print_errors_fp(stderr);
+    return P2P_ERROR;
+}
+
+#define int_error(msg) p2p_ssl_handle_error(__FILE__, __LINE__, msg)
+
+#define PKEY_FILE "./keys/newPrivKey.pem"
+#define REQ_FILE "./keys/newCSR.pem"
+#define CERT_FILE "./keys/newCert.pem"
+
 struct entry {
     char *key;
     char *value;
+};
+
+struct entry ext_ent[EXT_COUNT] = {
+    { "basicConstraints", "CA:FALSE"},
+    { "nsComment", "\"OpenSSL Generated Certificate\""},
+    { "subjectKeyIdentifier", "hash"},
+    { "authorityKeyIdentifier", "keyid,issuer:always"},
+    { "keyUsage", "nonRepudiation, digitalSignature, keyEncipherment"}
 };
 
 struct entry entries[ENTRY_COUNT] = {
@@ -51,7 +73,9 @@ struct entry entries[ENTRY_COUNT] = {
     { "commonName", "name"},
 };
 
+// password callback pour les clee privee
 int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u) {
+    
     int len;
     char *tmp;
     printf("Enter pass phrase for \"%s\"\n", u);
@@ -97,118 +121,252 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
 
     VERBOSE(sp, VSYSCL, "Generating RSA Private Key ....\n");
 
-    FILE *fp;
-    //X509 *cert;
-    int i;
-
-    X509_REQ *req;
-    X509_NAME *subj;
-    EVP_PKEY *pkey;
-    const EVP_MD *digest;
-
-    int keylen;
+    int i, keylen,subjAltName_pos;
+    long serial = 1;
     char *pem_key;
-
-    RSA *rsa = RSA_generate_key(1024, 65537, 0, 0);
-
-    BIO *bio = BIO_new(BIO_s_mem());
-
-    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
-
-    keylen = BIO_pending(bio);
-    pem_key = calloc(keylen + 1, 1);
-    BIO_read(bio, pem_key, keylen);
-
-    VERBOSE(sp, CLIENT, "%s", pem_key);
-
-    BIO_free(bio);
-
-    free(pem_key);
-
-    VERBOSE(sp, VSYSCL, "New RSA Key create\n");
+    FILE *fp, *fs;
+    RSA *rsa;
+    BIO *bio, *bio2, *out;
+    X509_REQ *req = NULL;
+    X509_NAME *subj, *name;
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY *CApkey = NULL;
+    EVP_PKEY *pubkey = NULL;
+    const EVP_MD *digest;
+    X509 *cert, *CAcert;
+    X509V3_CTX ctx;
+    X509_EXTENSION *subjAltName;
+    STACK_OF (X509_EXTENSION) * req_exts;
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
+    ERR_load_BIO_strings();
+
+    //creation de la clef privee sur 1024 bits
+    rsa = RSA_generate_key(1024, 65537, 0, 0);
     bio = BIO_new(BIO_s_mem());
-    //lecture de la clef privee
-    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
-    if (!(pkey = PEM_read_bio_PrivateKey(bio, NULL, 0, NULL)))
+
+    //conversion de la clee RSA en chaine de caracteres et affichage
+    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, "alex");
+    keylen = BIO_pending(bio);
+    pem_key = calloc(keylen + 1, 1);
+    BIO_read(bio, pem_key, keylen);
+    VERBOSE(sp, CLIENT, "%s", pem_key);
+    BIO_free(bio);
+    free(pem_key);
+    VERBOSE(sp, VSYSCL, "New RSA Key create\n");
+
+    //conversion de la clee privee au format EVP
+    bio2 = BIO_new(BIO_s_mem());
+    PEM_write_bio_RSAPrivateKey(bio2, rsa, NULL, NULL, 0, NULL, "alex");
+    if (!(pkey = PEM_read_bio_PrivateKey(bio2, NULL, 0, 0)))
         printf("Error reading private key in bio\n");
-
-    //creation de la requete
+    
+    //ecriture de la clee privee dans le fichier PEM
+    if (!(fp = fopen(PKEY_FILE, "w")))
+        int_error("Error writing to PEM file");
+    if (PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "alex") != 1)
+        int_error("Error while writing PrivateKey");
+    fclose(fp);
+    
+    
+    //lecture de la clee privee depuis le fichier creer
+    if (!(fp = fopen(PKEY_FILE, "r")))
+        int_error("Error reading private key file");
+    if (!(pkey = PEM_read_PrivateKey(fp, NULL, NULL, "alex")))
+        int_error("Error reading private key in file");
+    fclose(fp);
+    
+    //creation de du CSR et ajout de la cle public, extraite de la cle privee
     if (!(req = X509_REQ_new()))
-        printf("Failed to create X509_REQ object\n");
-
+        int_error("Failed to create X509_REQ object");
     X509_REQ_set_pubkey(req, pkey);
 
-
+    //ajout du champs subject_name
     if (!(subj = X509_NAME_new()))
-        printf("Failed to create X509_NAME object\n");
+        int_error("Failed to create X509_NAME object");
 
     for (i = 0; i < ENTRY_COUNT; i++) {
-
         int nid;
         X509_NAME_ENTRY *ent;
 
         if ((nid = OBJ_txt2nid(entries[i].key)) == NID_undef) {
             fprintf(stderr, "Error finding NID for %s\n", entries[i].key);
-            printf("Error on lookup\n");
+            int_error("Error on lookup");
         }
-        if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC, (unsigned char*) entries[i].value, -1)))
-            printf("Error creating Name entry from NID\n");
-
+        if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC,
+                entries[i].value, -1)))
+            int_error("Error creating Name entry from NID");
         if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
-            printf("Error adding entry to Name\n");
+            int_error("Error adding entry to Name");
+    }
+    if (X509_REQ_set_subject_name(req, subj) != 1)
+        int_error("Error adding subject to request");
+
+    // ajout de l'extension (pour X509 v3)
+    {
+        X509_EXTENSION *ext;
+        STACK_OF(X509_EXTENSION) * extlist;
+        char *name = "subjectAltName";
+        char *value = "DNS:splat.zork.org";
+
+        extlist = sk_X509_EXTENSION_new_null();
+
+        if (!(ext = X509V3_EXT_conf(NULL, NULL, name, value)))
+            int_error("Error creating subjectAltName extension");
+
+        sk_X509_EXTENSION_push(extlist, ext);
+
+        if (!X509_REQ_add_extensions(req, extlist))
+            int_error("Error adding subjectAltName to the request");
+        sk_X509_EXTENSION_pop_free(extlist, X509_EXTENSION_free);
     }
 
-    if (X509_REQ_set_subject_name(req, subj) != 1)
-        printf("Error adding subject to request\n");
-
-    /* add an extension for the FQDN we wish to have */
-    /*
-    
-            X509_EXTENSION *ext;
-            STACK_OF(X509_EXTENSION) *extlist;
-            char *name = "subjectAltName\n";
-            char *value = "DNS:splat.zork.org\n";
-            printf("%s", value);
-            printf("%s", name);
-        
-            extlist = sk_X509_EXTENSION_new_null();
-            if (!(ext = X509V3_EXT_conf(NULL, NULL, name, value)))
-                printf("Error creating subjectAltName extension\n");
-
-            sk_X509_EXTENSION_push(extlist, ext);
-
-            if (!X509_REQ_add_extensions(req, extlist))
-                printf("Error adding subjectAltName to the request\n");
-
-            sk_X509_EXTENSION_pop_free(extlist, X509_EXTENSION_free);
-     */
-
-
-    /* pick the correct digest and sign the request */
+    //Ajout du type de chiffrement utilise
     if (EVP_PKEY_type(pkey->type) == EVP_PKEY_DSA)
         digest = EVP_dss1();
-
     else if (EVP_PKEY_type(pkey->type) == EVP_PKEY_RSA)
         digest = EVP_sha1();
-
     else
-        printf("Error checking public key for a valid digest\n");
+        int_error("Error checking public key for a valid digest");
+    if (!(X509_REQ_sign(req, pkey, digest)))
+        int_error("Error signing request");
 
-    //Creation du ficher
+    //creation du fichier
     if (!(fp = fopen(REQ_FILE, "w")))
-        printf("Error writing to request file");
+        int_error("Error writing to request file");
     if (PEM_write_X509_REQ(fp, req) != 1)
-        printf("Error while writing request");
+        int_error("Error while writing request");
     fclose(fp);
 
-    EVP_PKEY_free(pkey);
-    X509_REQ_free(req);
     RSA_free(rsa);
-    BIO_free_all(bio);
+    BIO_free_all(bio2);
+    EVP_PKEY_free(pkey);
 
+    out = BIO_new_fp(stdout, BIO_NOCLOSE);
+
+    // creation du BIO en output
+    if (!(out = BIO_new_fp(stdout, BIO_NOCLOSE)))
+        int_error("Error creating stdout BIO");
+
+    // lecture du fichier de demande de signature
+    if (!(fp = fopen(REQ_FILE, "r")))
+        int_error("Error reading request file");
+    if (!(req = PEM_read_X509_REQ(fp, NULL, NULL, "alex")))
+        int_error("Error reading request in file");
+    fclose(fp);
+
+    //verification de la signature et cle public
+    if (!(pkey = X509_REQ_get_pubkey(req)))
+        int_error("Error getting public key from request");
+    if (X509_REQ_verify(req, pkey) != 1)
+        int_error("Error verifying signature on certificate");
+
+    // ouverture et lecture du certficat de l'AC
+    if (!(fp = fopen(CAFILE, "r")))
+        int_error("Error reading CA certificate file");
+    if (!(CAcert = PEM_read_X509(fp, NULL, NULL, "alex")))
+        int_error("Error reading CA certificate in file");
+    fclose(fp);
+
+    //lecture de sa clee privee
+    if (!(fp = fopen(CAKEY, "r")))
+        int_error("Error reading CA private key file");
+    if (!(CApkey = PEM_read_PrivateKey(fp, NULL, NULL, "alex")))
+        int_error("Error reading CA private key in file");
+    fclose(fp);
+
+    //affche des subject_name
+    if (!(name = X509_REQ_get_subject_name(req)))
+        int_error("Error getting subject name from request");
+    X509_NAME_print(out, name, 0);
+    fputc('\n', stdout);
+    if (!(req_exts = X509_REQ_get_extensions(req)))
+        int_error("Error getting the request's extensions");
+    subjAltName_pos = X509v3_get_ext_by_NID(req_exts,
+            OBJ_sn2nid("subjectAltName"), -1);
+    subjAltName = X509v3_get_ext(req_exts, subjAltName_pos);
+    X509V3_EXT_print(out, subjAltName, 0, 0);
+    fputc('\n', stdout);
+
+    //creation du certifixazt X509
+    if (!(cert = X509_new()))
+        int_error("Error creating X509 object");
+
+   //ajout des info necessaire au certificat
+    if (X509_set_version(cert, 2L) != 1)
+        int_error("Error settin certificate version");
+    ASN1_INTEGER_set(X509_get_serialNumber(cert), serial++);
+
+    if (!(name = X509_REQ_get_subject_name(req)))
+        int_error("Error getting subject name from request");
+    if (X509_set_subject_name(cert, name) != 1)
+        int_error("Error setting subject name of certificate");
+    if (!(name = X509_get_subject_name(CAcert)))
+        int_error("Error getting subject name from CA certificate");
+    if (X509_set_issuer_name(cert, name) != 1)
+        int_error("Error setting issuer name of certificate");
+
+    // ajout de la cle public
+    if (X509_set_pubkey(cert, pkey) != 1)
+        int_error("Error setting public key of the certificate");
+
+    //ajout de la duree de validite du cert
+    if (!(X509_gmtime_adj(X509_get_notBefore(cert), 0)))
+        int_error("Error setting beginning time of the certificate");
+    if (!(X509_gmtime_adj(X509_get_notAfter(cert), EXPIRE_SECS)))
+        int_error("Error setting ending time of the certificate");
+
+    //jout des extensions pour la v3
+    X509V3_set_ctx(&ctx, CAcert, cert, NULL, NULL, 0);
+    for (i = 0; i < EXT_COUNT; i++) {
+        X509_EXTENSION *ext;
+        if (!(ext = X509V3_EXT_conf(NULL, &ctx,
+                ext_ent[i].key, ext_ent[i].value))) {
+            fprintf(stderr, "Error on \"%s = %s\"\n",
+                    ext_ent[i].key, ext_ent[i].value);
+            int_error("Error creating X509 extension object");
+        }
+        if (!X509_add_ext(cert, ext, -1)) {
+            fprintf(stderr, "Error on \"%s = %s\"\n",
+                    ext_ent[i].key, ext_ent[i].value);
+            int_error("Error adding X509 extension to certificate");
+        }
+        X509_EXTENSION_free(ext);
+    }
+
+
+    if (!X509_add_ext(cert, subjAltName, -1))
+        int_error("Error adding subjectAltName to certificate");
+
+    //signature avec la cle prive de l'AC
+    if (EVP_PKEY_type(CApkey->type) == EVP_PKEY_DSA)
+        digest = EVP_dss1();
+    else if (EVP_PKEY_type(CApkey->type) == EVP_PKEY_RSA)
+        digest = EVP_sha1();
+    else
+        int_error("Error checking CA private key for a valid digest");
+    if (!(X509_sign(cert, CApkey, digest)))
+        int_error("Error signing certificate");
+
+    //creation du fichier
+    if (!(fp = fopen(CERT_FILE, "w")))
+        int_error("Error writing to certificate file");
+    if (PEM_write_X509(fp, cert) != 1)
+        int_error("Error while writing certificate");
+    //lecture de la clee privee depuis le fichier creer
+    if (!(fs = fopen(PKEY_FILE, "r")))
+        int_error("Error reading private key file");
+    //chainage du certificat avec la cle privee
+    p2p_file_cat(fs, fp);
+    
+    fclose(fs);
+    fclose(fp);
+
+    EVP_PKEY_free(pubkey);
+    EVP_PKEY_free(CApkey);
+    X509_REQ_free(req);
+    BIO_free_all(out);
     return P2P_OK;
 }
 
@@ -302,11 +460,11 @@ int p2p_ssl_init_client(server_params* sp, int meth) {
         if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
             perror("Error loading default CA file and/or directory");
 
-        if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, CLIENT_CERTFILE) != 1)
-            perror("Error loading certificate from file");
+        if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1)
+            printf("Error loading certificate from file : %s\n", sp->node_cert);
 
-        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, CLIENT_CERTFILE, SSL_FILETYPE_PEM) != 1)
-            perror("Error loading private key from file");
+        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1)
+            printf("Error loading private key from file : %s\n", sp->node_cert);
 
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);

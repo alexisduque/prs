@@ -137,9 +137,10 @@ int main(int argc, char* argv[]) {
         .p2p_neighbors.left_neighbor = p2p_addr_create(),
         .friends.nb_node = 0,
         .verify_peer = ON,
-        .node_cert = SERVER_CERTFILE
+        .node_cert =  NULL,
     };
-
+    sp.node_cert = (char *)malloc(sizeof(char) * strlen(SERVER_CERTFILE));
+    sp.node_cert = SERVER_CERTFILE;
     p2p_addr dest = p2p_addr_create();
 
     /* parsing command line args */

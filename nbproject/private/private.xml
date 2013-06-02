@@ -4,7 +4,7 @@
         <activeConfTypeElem>0</activeConfTypeElem>
         <activeConfIndexElem>0</activeConfIndexElem>
     </data>
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="2">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="3">
         <file>
             <url>p2p_options.h</url>
             <bookmark id="1">
@@ -14,10 +14,18 @@
             </bookmark>
         </file>
         <file>
+            <url>p2p_ssl_common.c</url>
+            <bookmark id="3">
+                <name/>
+                <line>73</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
             <url>p2p_ui.c</url>
             <bookmark id="2">
                 <name/>
-                <line>408</line>
+                <line>414</line>
                 <key/>
             </bookmark>
         </file>

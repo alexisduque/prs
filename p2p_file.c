@@ -155,6 +155,15 @@ p2p_file_set_chunck(server_params* sp, const char* file, int boffset, int eoffse
     return P2P_OK;
 }
 
+int
+p2p_file_cat(FILE *fpe, FILE *fps) {
+    int c;
+    while ((c = fgetc(fpe)) != EOF)
+        fputc(c, fps);
+    return P2P_OK;
+}
+
+
 /***************************************************************************/
 /***************************************************************************/
 
