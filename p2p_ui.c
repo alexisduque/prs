@@ -142,6 +142,7 @@ int status(params *p) {
     VERBOSE(p->sp, CLIENT, "  neighbors   = [ip:tcp:udp]\n");
     VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.right_neighbor));
     VERBOSE(p->sp, CLIENT, "  %s\n", p2p_addr_get_str(p->sp->p2p_neighbors.left_neighbor));
+    VERBOSE(p->sp, CLIENT, "  ssl certificate     = %s\n", p->sp->node_cert);
     VERBOSE(p->sp, CLIENT, "\n");
     return P2P_UI_OK;
 
@@ -205,17 +206,17 @@ p2pjoin(params *p) {
 
     //Verifie que l'on ne se connecte pas avec nous meme
     if (p2p_addr_is_equal(dst, p->sp->p2pMyId) != 0) {
-        printf(">> Try to connet yourself ;-)\n");
+        VERBOSE(p->sp, CLIENT, ">> Try to connet yourself ;-)\n");
         p2p_addr_delete(dst);
         return (P2P_OK);
     }
 
     if (p2p_send_join_req(p->sp, dst) != P2P_OK) {
-        printf(">> Could not send the JOIN REQ\n");
+        VERBOSE(p->sp, CLIENT, ">> Could not send the JOIN REQ\n");
         p2p_addr_delete(dst);
         return (P2P_UI_ERROR);
     }
-
+    VERBOSE(p->sp, CLIENT, ">> Node connected ;-)\n");
     p2p_addr_delete(dst);
     return P2P_UI_OK;
 }
@@ -415,7 +416,7 @@ p2pshow_sslcert(params* p) {
     cert = p2p_ssl_load_cert(p->sp, p->sp->node_cert);
 
     if (cert != NULL) {
-        VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
+        VERBOSE(p->sp, CLIENT, "------------------Node certificates ----------------------\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Subject: %s\n", line);
         //libère la mémoire allouée 
@@ -449,7 +450,7 @@ int
 p2pset_sslcert(params* p) {
 
 
-    VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+    VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n", p->sp->server_name, p->options[0]);
     VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
     int keylen;
     char *pem_key;
@@ -461,7 +462,7 @@ p2pset_sslcert(params* p) {
     cert = p2p_ssl_load_cert(p->sp, p->options[0]);
 
     if (cert != NULL) {
-        VERBOSE(p->sp, CLIENT, "\n------------------Node certificates ----------------------\n");
+        VERBOSE(p->sp, CLIENT, "------------------Node certificates ----------------------\n");
         line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
         VERBOSE(p->sp, CLIENT, "Subject: %s\n", line);
         //libère la mémoire allouée 
@@ -500,10 +501,11 @@ p2pset_sslcert(params* p) {
 int
 p2pgenerate_sslcert(params* p) {
 
-    VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+    VERBOSE(p->sp, CLIENT, ">> Generate new SSL Certificate : ");
 
     if (p2p_ssl_gen_privatekey(p->sp) != P2P_OK) return P2P_UI_ERROR;
 
+    VERBOSE(p->sp, CLIENT, "\n>> New Certificate created : keys/%s_newCert.pem\n\n", p->sp->server_name);
     return P2P_UI_OK;
 }
 

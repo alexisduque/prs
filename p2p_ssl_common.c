@@ -41,7 +41,6 @@ void
 p2p_ssl_handle_error(const char *file, int lineno, const char *msg) {
     fprintf(stderr, "** %s:%i %s\n", file, lineno, msg);
     ERR_print_errors_fp(stderr);
-    return P2P_ERROR;
 }
 
 #define int_error(msg) p2p_ssl_handle_error(__FILE__, __LINE__, msg)
@@ -120,10 +119,12 @@ X509* p2p_ssl_load_cert(server_params* sp, char* file) {
 int p2p_ssl_gen_privatekey(server_params* sp) {
 
     VERBOSE(sp, VSYSCL, "Generating RSA Private Key ....\n");
-
+    
     int i, keylen,subjAltName_pos;
     long serial = 1;
     char *pem_key;
+    char new_pkey[200] = CADIR; 
+    char new_cert[200] = CADIR;
     FILE *fp, *fs;
     RSA *rsa;
     BIO *bio, *bio2, *out;
@@ -137,11 +138,18 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
     X509V3_CTX ctx;
     X509_EXTENSION *subjAltName;
     STACK_OF (X509_EXTENSION) * req_exts;
-
+    
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
     ERR_load_BIO_strings();
-
+    
+    
+    strcat(new_pkey, sp->server_name);
+    strcat(new_pkey, "_newPrivateKey.pem\0");
+    strcat(new_cert, sp->server_name);
+    strcat(new_cert,  "_newCert.pem\0");
+    VERBOSE(sp, CLIENT, "%s\n\n", new_cert);
+    
     //creation de la clef privee sur 1024 bits
     rsa = RSA_generate_key(1024, 65537, 0, 0);
     bio = BIO_new(BIO_s_mem());
@@ -151,10 +159,10 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
     keylen = BIO_pending(bio);
     pem_key = calloc(keylen + 1, 1);
     BIO_read(bio, pem_key, keylen);
-    VERBOSE(sp, CLIENT, "%s", pem_key);
     BIO_free(bio);
+    VERBOSE(sp, CLIENT, "%s\n\n", pem_key);
     free(pem_key);
-    VERBOSE(sp, VSYSCL, "New RSA Key create\n");
+    VERBOSE(sp, VSYSCL, "New RSA Key create %s\n", new_pkey);
 
     //conversion de la clee privee au format EVP
     bio2 = BIO_new(BIO_s_mem());
@@ -163,23 +171,31 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
         printf("Error reading private key in bio\n");
     
     //ecriture de la clee privee dans le fichier PEM
-    if (!(fp = fopen(PKEY_FILE, "w")))
+    if (!(fp = fopen(new_pkey, "w"))) {
         int_error("Error writing to PEM file");
-    if (PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "alex") != 1)
+        return P2P_ERROR;
+    }
+    if (PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "alex") != 1) {
         int_error("Error while writing PrivateKey");
+        return P2P_ERROR;
+    }
     fclose(fp);
     
-    
+    VERBOSE(sp, VSYSCL, "Creating CSR to obtain yoour Certificate\n");
     //lecture de la clee privee depuis le fichier creer
-    if (!(fp = fopen(PKEY_FILE, "r")))
+    if (!(fp = fopen(new_pkey, "r"))) {
         int_error("Error reading private key file");
+        return P2P_ERROR;
+    }
     if (!(pkey = PEM_read_PrivateKey(fp, NULL, NULL, "alex")))
         int_error("Error reading private key in file");
     fclose(fp);
     
     //creation de du CSR et ajout de la cle public, extraite de la cle privee
-    if (!(req = X509_REQ_new()))
+    if (!(req = X509_REQ_new())){
         int_error("Failed to create X509_REQ object");
+        return P2P_ERROR;
+    }
     X509_REQ_set_pubkey(req, pkey);
 
     //ajout du champs subject_name
@@ -212,13 +228,18 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
 
         extlist = sk_X509_EXTENSION_new_null();
 
-        if (!(ext = X509V3_EXT_conf(NULL, NULL, name, value)))
+        if (!(ext = X509V3_EXT_conf(NULL, NULL, name, value))) {
             int_error("Error creating subjectAltName extension");
+            return P2P_ERROR;
+        }
 
         sk_X509_EXTENSION_push(extlist, ext);
 
-        if (!X509_REQ_add_extensions(req, extlist))
+        if (!X509_REQ_add_extensions(req, extlist)) {
             int_error("Error adding subjectAltName to the request");
+            return P2P_ERROR;
+        }
+        
         sk_X509_EXTENSION_pop_free(extlist, X509_EXTENSION_free);
     }
 
@@ -229,16 +250,23 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
         digest = EVP_sha1();
     else
         int_error("Error checking public key for a valid digest");
-    if (!(X509_REQ_sign(req, pkey, digest)))
-        int_error("Error signing request");
-
+    if (!(X509_REQ_sign(req, pkey, digest))) {
+        int_error("Error signing request"); 
+        return P2P_ERROR;
+    }
+        
     //creation du fichier
-    if (!(fp = fopen(REQ_FILE, "w")))
+    if (!(fp = fopen(REQ_FILE, "w"))) {
         int_error("Error writing to request file");
-    if (PEM_write_X509_REQ(fp, req) != 1)
+        return P2P_ERROR;
+    }
+    
+    if (PEM_write_X509_REQ(fp, req) != 1) {
         int_error("Error while writing request");
+        return P2P_ERROR;
+    }
     fclose(fp);
-
+    VERBOSE(sp, VSYSCL, "CSR Created\n");
     RSA_free(rsa);
     BIO_free_all(bio2);
     EVP_PKEY_free(pkey);
@@ -246,49 +274,71 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
     out = BIO_new_fp(stdout, BIO_NOCLOSE);
 
     // creation du BIO en output
-    if (!(out = BIO_new_fp(stdout, BIO_NOCLOSE)))
+    if (!(out = BIO_new_fp(stdout, BIO_NOCLOSE))) {
         int_error("Error creating stdout BIO");
-
+        return P2P_ERROR;
+    }
     // lecture du fichier de demande de signature
-    if (!(fp = fopen(REQ_FILE, "r")))
+    if (!(fp = fopen(REQ_FILE, "r"))) {
         int_error("Error reading request file");
-    if (!(req = PEM_read_X509_REQ(fp, NULL, NULL, "alex")))
+        return P2P_ERROR;
+    }
+    if (!(req = PEM_read_X509_REQ(fp, NULL, NULL, "alex"))) {
         int_error("Error reading request in file");
+        return P2P_ERROR;
+    }
     fclose(fp);
 
     //verification de la signature et cle public
-    if (!(pkey = X509_REQ_get_pubkey(req)))
+    if (!(pkey = X509_REQ_get_pubkey(req))) {
         int_error("Error getting public key from request");
-    if (X509_REQ_verify(req, pkey) != 1)
+        return P2P_ERROR;
+    }
+    if (X509_REQ_verify(req, pkey) != 1) {
         int_error("Error verifying signature on certificate");
+        return P2P_ERROR;
+    }
 
     // ouverture et lecture du certficat de l'AC
-    if (!(fp = fopen(CAFILE, "r")))
+    if (!(fp = fopen(CAFILE, "r"))) {
         int_error("Error reading CA certificate file");
-    if (!(CAcert = PEM_read_X509(fp, NULL, NULL, "alex")))
+        return P2P_ERROR;
+    }
+    if (!(CAcert = PEM_read_X509(fp, NULL, NULL, "alex"))) {
         int_error("Error reading CA certificate in file");
+        return P2P_ERROR;
+    }
     fclose(fp);
 
     //lecture de sa clee privee
-    if (!(fp = fopen(CAKEY, "r")))
+    if (!(fp = fopen(CAKEY, "r"))) {
         int_error("Error reading CA private key file");
-    if (!(CApkey = PEM_read_PrivateKey(fp, NULL, NULL, "alex")))
+        return P2P_ERROR;
+    }
+    if (!(CApkey = PEM_read_PrivateKey(fp, NULL, NULL, "alex"))) {
         int_error("Error reading CA private key in file");
+                return P2P_ERROR;
+    }
     fclose(fp);
 
-    //affche des subject_name
-    if (!(name = X509_REQ_get_subject_name(req)))
+    //lit les subject_name
+
+    if (!(name = X509_REQ_get_subject_name(req))) {
         int_error("Error getting subject name from request");
-    X509_NAME_print(out, name, 0);
-    fputc('\n', stdout);
+                return P2P_ERROR;
+    }
+    
+   
+    //X509_NAME_print(out, name, 0);
+    //fputc('\n', stdout);
     if (!(req_exts = X509_REQ_get_extensions(req)))
         int_error("Error getting the request's extensions");
     subjAltName_pos = X509v3_get_ext_by_NID(req_exts,
             OBJ_sn2nid("subjectAltName"), -1);
     subjAltName = X509v3_get_ext(req_exts, subjAltName_pos);
-    X509V3_EXT_print(out, subjAltName, 0, 0);
-    fputc('\n', stdout);
-
+    //X509V3_EXT_print(out, subjAltName, 0, 0);
+    //fputc('\n', stdout);
+    
     //creation du certifixazt X509
     if (!(cert = X509_new()))
         int_error("Error creating X509 object");
@@ -350,13 +400,20 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
         int_error("Error signing certificate");
 
     //creation du fichier
-    if (!(fp = fopen(CERT_FILE, "w")))
+    if (!(fp = fopen(new_cert, "w"))) {
         int_error("Error writing to certificate file");
-    if (PEM_write_X509(fp, cert) != 1)
+            return P2P_ERROR;
+    }
+    if (PEM_write_X509(fp, cert) != 1) {
         int_error("Error while writing certificate");
+        return P2P_ERROR;
+    }
     //lecture de la clee privee depuis le fichier creer
-    if (!(fs = fopen(PKEY_FILE, "r")))
+    if (!(fs = fopen(new_pkey, "r"))) {
         int_error("Error reading private key file");
+        return P2P_ERROR;
+    }
+    
     //chainage du certificat avec la cle privee
     p2p_file_cat(fs, fp);
     
@@ -367,6 +424,7 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
     EVP_PKEY_free(CApkey);
     X509_REQ_free(req);
     BIO_free_all(out);
+    VERBOSE(sp, VSYSCL, "Certificate created: %s\n\n", new_cert);
     return P2P_OK;
 }
 
@@ -394,26 +452,33 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
-        return -1;
+        return P2P_ERROR;;
     }
 
     VERBOSE(sp, VSYSCL, "SSL : Loading Certificat\n");
     //Ajout des certificats serveur 
-    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
-        perror("Error loading CA file and/or directory");
+    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1) {
+        perror("Error loading CA file and/or directory\n");
+        return P2P_ERROR;
+    }
 
     //Ajout des certificats serveur 
     SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx, KEY_PASSWD);
 
-    if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
-        perror("Error loading default CA file and/or directory");
+    if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1) {
+        perror("Error loading default CA file and/or directory\n");
+        return P2P_ERROR;
+    }
 
-    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1)
-        perror("Error loading certificate from file");
+    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1) {
+        perror("Error loading certificate from file\n");
+        return P2P_ERROR;
+    }
 
-    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1)
-        perror("Error loading private key from file");
-
+    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1) {
+        perror("Error loading private key from file\n");
+        return P2P_ERROR;
+    }
     //Demande la verification des crificats du clients si verify_peer est ON
     if (sp->verify_peer) {
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
@@ -446,7 +511,7 @@ int p2p_ssl_init_client(server_params* sp, int meth) {
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
-        return -1;
+        return P2P_ERROR;
     }
 
     //Si la verification des crtificats est activée, on ajoute les certificats au contexte
@@ -454,18 +519,25 @@ int p2p_ssl_init_client(server_params* sp, int meth) {
         VERBOSE(sp, VSYSCL, "SSL : Loading Certificat\n");
         SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx, KEY_PASSWD);
 
-        if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1)
+        if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1) {
             perror("Error loading CA file and/or directory");
+            return P2P_ERROR;
+        }
 
-        if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1)
+        if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1) {
             perror("Error loading default CA file and/or directory");
+            return P2P_ERROR;
+        }
 
-        if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1)
+        if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1) {
             printf("Error loading certificate from file : %s\n", sp->node_cert);
+            return P2P_ERROR;
+        }
 
-        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1)
+        if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1) {
             printf("Error loading private key from file : %s\n", sp->node_cert);
-
+            return P2P_ERROR;
+        }
         SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
         VERBOSE(sp, VSYSCL, "SSL : Certificat Loaded\n\n");
@@ -619,7 +691,7 @@ void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
     SSL_shutdown(ssl);
     // SSL_free(ssl);
     SSL_clear(ssl);
-    VERBOSE(sp, VSYSCL, "SSL : Connection successful closed\n");
+    VERBOSE(sp, VSYSCL, "SSL : Connection closed\n");
 }
 
 // Recois dans msg un message depuis la connection ssl serverssl
