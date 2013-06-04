@@ -159,6 +159,7 @@ struct server_params_t {
   SSL_CTX *ssl_node_ctx;
   char *node_cert;
   int verify_peer;
+  SSL_SESSION *session;
   
 };
 

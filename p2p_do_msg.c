@@ -48,7 +48,6 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     
     p2p_msg_set_length(join_msg, 0);
     p2p_msg_display(join_msg);
-    p2p_ssl_init_client(sp, SSL23_METH);
     
     // on envoi le message
     SSL *ssl = SSL_new(sp->ssl_node_ctx);
@@ -87,7 +86,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     SSL_shutdown(ssl);
     p2p_ssl_tcp_close(sp, ssl);
     p2p_tcp_socket_close(sp, socket);
-    SSL_CTX_free(sp->ssl_node_ctx);
+    //(sp->ssl_node_ctx);
     //on libère la mémoire
 
     p2p_msg_delete(ack_msg);
@@ -497,10 +496,6 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     printf("Filename  = %s\n\n", file_name);
     printf("Dest GET message %s\n", p2p_addr_get_str(dst));
     printf("Filesize = %d\n\n", filesize);
-
-    //Initialisation du contexte ssl
-    p2p_ssl_init_client(sp, SSL23_METH);
-    
    
     while (endOffset < filesize - 1) {
         SSL *ssl = SSL_new(sp->ssl_node_ctx);
@@ -529,7 +524,6 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
         msg_data = p2p_msg_create();
         p2p_ssl_tcp_msg_recvfd(sp, msg_data, ssl);
         p2p_do_data(sp, msg_data, file_name, beginOffset, endOffset);
-        SSL_shutdown(ssl);
         p2p_ssl_tcp_close(sp,ssl);
         p2p_tcp_socket_close(sp, fd);
         fd = -1;

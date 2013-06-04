@@ -138,6 +138,7 @@ int main(int argc, char* argv[]) {
         .friends.nb_node = 0,
         .verify_peer = ON,
         .node_cert =  NULL,
+        .session = NULL,
     };
     sp.node_cert = (char *)malloc(sizeof(char) * strlen(SERVER_CERTFILE));
     sp.node_cert = SERVER_CERTFILE;
@@ -253,7 +254,10 @@ int main(int argc, char* argv[]) {
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
             //Initialisation du contexte SSLserver
-            p2p_ssl_init_server(&sp, SSL23_METH);
+            if (sp.node_meth != SSLv23_server_method()) {
+                SSL_CTX_free(sp.ssl_node_ctx);
+                p2p_ssl_init_server(&sp, SSL23_METH);
+            }
             SSL *serverssl = SSL_new(sp.ssl_node_ctx);
             
             //on accepte la connexion
@@ -292,7 +296,6 @@ int main(int argc, char* argv[]) {
             }
 
             SSL_shutdown(serverssl);
-            SSL_CTX_free(sp.ssl_node_ctx);
             //Fermeture de la soscket de reception
             p2p_ssl_tcp_close(&sp, serverssl);
             close(sock_tcp_rcv);
@@ -381,6 +384,11 @@ int main(int argc, char* argv[]) {
         else if (FD_ISSET(sock_ui_connected, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "UI MESSAGE RECEPTION \n");
+            if (sp.node_meth != SSLv23_client_method()) {
+                SSL_CTX_free(sp.ssl_node_ctx);
+                p2p_ssl_init_client(&sp, SSL23_METH);
+            }
+            
             command_telnet = ui_command(&sp);
             VERBOSE(&sp, CLIENT, "\n");
             VERBOSE(&sp, CLIENT, "%s: ", sp.server_name);

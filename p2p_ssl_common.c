@@ -433,6 +433,8 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
 
 int p2p_ssl_init_server(server_params* sp, int meth) {
 
+    static int s_server_session_id_context = 1;
+    static int s_server_auth_session_id_context = 2;
     //Chargement des librairies
     VERBOSE(sp, VSYSCL, "SSL Loading Library...\n");
     SSL_library_init();
@@ -446,9 +448,9 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
             break;
     }
 
-
     sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
 
+    SSL_CTX_set_session_id_context(sp->ssl_node_ctx, (void*)&s_server_session_id_context, sizeof s_server_session_id_context); 
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
@@ -584,6 +586,8 @@ int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
         VERBOSE(sp, VPROTO, "TCP MSG SUCCESFULL SEND\n\n");
         //Liberation de la memoire du buffer
         free(toWrite);
+        //Sauvegarde de la session
+        sp->session = SSL_get1_session(clientssl);
         //Fermeture de la connexion SSL
         SSL_shutdown(clientssl);
         return P2P_OK;
@@ -602,7 +606,13 @@ int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
         VERBOSE(sp, VSYSCL, "SSL: SetFD ERROR %d\n", SSL_get_error(clientssl, ret));
         return P2P_ERROR;
     }
-
+    
+    if (sp->session != NULL) {
+        VERBOSE(sp, VSYSCL, "RESTORE SESSION\n");
+        ret = SSL_set_session(clientssl,sp->session) ;
+        VERBOSE(sp, VSYSCL, "SESSION : %d\n", ret);
+    } else VERBOSE(sp, VSYSCL, "NO SESSION SAVED\n");
+    
     if ((ret = SSL_connect(clientssl)) != 1) {
         VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(clientssl, ret));
         return P2P_ERROR;
@@ -646,7 +656,12 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
         return (P2P_ERROR);
     }
 
-
+    if (sp->session != NULL) {
+        VERBOSE(sp, VSYSCL, "RESTORE SESSION\n");
+        ret = SSL_set_session(ssl,sp->session) ;
+        VERBOSE(sp, VSYSCL, "SESSION : %d\n", ret);
+    } else VERBOSE(sp, VSYSCL, "NO SESSION SAVED\n");
+    
     if ((ret = SSL_accept(ssl)) != 1) {
         VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(ssl, ret));
         return (P2P_ERROR);
@@ -688,6 +703,8 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 //Ferme la connection SSL
 
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
+
+    if ( (sp->session = SSL_get_session(ssl)) != NULL) VERBOSE(sp, VSYSCL, "SESSION SAVED\n");
     SSL_shutdown(ssl);
     // SSL_free(ssl);
     SSL_clear(ssl);
