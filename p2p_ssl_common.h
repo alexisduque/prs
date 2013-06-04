@@ -44,7 +44,7 @@
 
 int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u);
 X509* p2p_ssl_load_cert(server_params* sp, char* file);
-int p2p_ssl_gen_privatekey(server_params* sp);
+int p2p_ssl_gen_cert(server_params* sp);
 void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_init_server(server_params* sp, int meth);

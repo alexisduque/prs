@@ -116,7 +116,7 @@ X509* p2p_ssl_load_cert(server_params* sp, char* file) {
 
 //Genère une clé privée, et demande la certification à l'AC Root
 
-int p2p_ssl_gen_privatekey(server_params* sp) {
+int p2p_ssl_gen_cert(server_params* sp) {
 
     VERBOSE(sp, VSYSCL, "Generating RSA Private Key ....\n");
     
@@ -433,8 +433,7 @@ int p2p_ssl_gen_privatekey(server_params* sp) {
 
 int p2p_ssl_init_server(server_params* sp, int meth) {
 
-    static int s_server_session_id_context = 1;
-    static int s_server_auth_session_id_context = 2;
+    
     //Chargement des librairies
     VERBOSE(sp, VSYSCL, "SSL Loading Library...\n");
     SSL_library_init();
@@ -449,8 +448,6 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
     }
 
     sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
-
-    SSL_CTX_set_session_id_context(sp->ssl_node_ctx, (void*)&s_server_session_id_context, sizeof s_server_session_id_context); 
 
     if (!sp->ssl_node_ctx) {
         ERR_print_errors_fp(stderr);
@@ -608,47 +605,57 @@ int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
     }
     
     if (sp->session != NULL) {
-        VERBOSE(sp, VSYSCL, "RESTORE SESSION\n");
-        ret = SSL_set_session(clientssl,sp->session) ;
-        VERBOSE(sp, VSYSCL, "SESSION : %d\n", ret);
+        SSL_set_session(clientssl,sp->session) ;
     } else VERBOSE(sp, VSYSCL, "NO SESSION SAVED\n");
     
     if ((ret = SSL_connect(clientssl)) != 1) {
         VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(clientssl, ret));
         return P2P_ERROR;
     }
+    
+        if (SSL_session_reused(clientssl)) VERBOSE(sp, VSYSCL, "SESSION RESTORED - SHORT HANDSHAKE DONE\n\n", ret);
+        else {
+            
+            if (sp->verify_peer) {
 
-    if (sp->verify_peer) {
+                X509 *ssl_client_cert = NULL;
+                ssl_client_cert = SSL_get_peer_certificate(clientssl);
 
-        X509 *ssl_client_cert = NULL;
+                if (ssl_client_cert) {
 
-        ssl_client_cert = SSL_get_peer_certificate(clientssl);
+                    long verifyresult;
+                    p2p_ssl_showCerts(sp, clientssl);
+                    verifyresult = SSL_get_verify_result(clientssl);
 
-        if (ssl_client_cert) {
-            long verifyresult;
-            p2p_ssl_showCerts(sp, clientssl);
-            verifyresult = SSL_get_verify_result(clientssl);
-            if (verifyresult == X509_V_OK) {
-                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
-            } else {
-                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
-                X509_free(ssl_client_cert);
-                return (P2P_ERROR);
+                    if (verifyresult == X509_V_OK) {
+                        VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+                        VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
+                    } else {
+                        VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                        SSL_shutdown(clientssl);
+                        X509_free(ssl_client_cert);
+                        return (P2P_ERROR);
+                    }
+
+                } else {
+                    VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+                    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
+                    SSL_shutdown(clientssl);
+                    return (P2P_ERROR);
+                }
             }
-        } else {
-            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
-            return (P2P_ERROR);
         }
-    }
 
-    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
     return P2P_OK;
 }
 
 // Initialise la connexion SSL coté server avec la socket fd
 
 int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
-
+     
+    static int s_server_session_id_context = 1;
+    SSL_CTX_set_session_id_context(sp->ssl_node_ctx, (void*)&s_server_session_id_context, sizeof s_server_session_id_context); 
+    
     VERBOSE(sp, VSYSCL, "SSL HANDSHAKE... \n");
     int ret;
     if ((ret = SSL_set_fd(ssl, fd)) != 1) {
@@ -657,45 +664,45 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
     }
 
     if (sp->session != NULL) {
-        VERBOSE(sp, VSYSCL, "RESTORE SESSION\n");
-        ret = SSL_set_session(ssl,sp->session) ;
-        VERBOSE(sp, VSYSCL, "SESSION : %d\n", ret);
+        SSL_set_session(ssl,sp->session) ;
     } else VERBOSE(sp, VSYSCL, "NO SESSION SAVED\n");
     
     if ((ret = SSL_accept(ssl)) != 1) {
         VERBOSE(sp, VSYSCL, "SSL : HANDSHAKE ERROR %d\n", SSL_get_error(ssl, ret));
         return (P2P_ERROR);
     }
+    if (SSL_session_reused(ssl)) VERBOSE(sp, VSYSCL, "SESSION RESTORED - SHORT HANDSHAKE DONE\n\n", ret);
+    else {
+        if (sp->verify_peer) {
 
+            X509 *ssl_client_cert = NULL;
+            ssl_client_cert = SSL_get_peer_certificate(ssl);
 
-    if (sp->verify_peer) {
+            if (ssl_client_cert) {
 
-        X509 *ssl_client_cert = NULL;
-        ssl_client_cert = SSL_get_peer_certificate(ssl);
+                long verifyresult;
+                p2p_ssl_showCerts(sp, ssl);
+                verifyresult = SSL_get_verify_result(ssl);
 
-        if (ssl_client_cert) {
+                if (verifyresult == X509_V_OK) {
+                    VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
+                    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
+                } else {
+                    VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                    SSL_shutdown(ssl);
+                    X509_free(ssl_client_cert);
+                    return (P2P_ERROR);
+                }
 
-            long verifyresult;
-            p2p_ssl_showCerts(sp, ssl);
-            verifyresult = SSL_get_verify_result(ssl);
-
-            if (verifyresult == X509_V_OK) {
-                VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
             } else {
-                VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
+                VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
+                VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
                 SSL_shutdown(ssl);
-                X509_free(ssl_client_cert);
                 return (P2P_ERROR);
             }
-
-        } else {
-            VERBOSE(sp, VSYSCL, "SSL : NO client certificate\n");
-            SSL_shutdown(ssl);
-            return (P2P_ERROR);
         }
     }
-
-    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
+    
     return P2P_OK;
 
 }
@@ -704,7 +711,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
 void p2p_ssl_tcp_close(server_params* sp, SSL* ssl) {
 
-    if ( (sp->session = SSL_get_session(ssl)) != NULL) VERBOSE(sp, VSYSCL, "SESSION SAVED\n");
+    if ( (sp->session = SSL_get1_session(ssl)) != NULL) VERBOSE(sp, VSYSCL, "SESSION SAVED\n");
     SSL_shutdown(ssl);
     // SSL_free(ssl);
     SSL_clear(ssl);

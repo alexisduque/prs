@@ -503,7 +503,7 @@ p2pgenerate_sslcert(params* p) {
 
     VERBOSE(p->sp, CLIENT, ">> Generate new SSL Certificate : ");
 
-    if (p2p_ssl_gen_privatekey(p->sp) != P2P_OK) return P2P_UI_ERROR;
+    if (p2p_ssl_gen_cert(p->sp) != P2P_OK) return P2P_UI_ERROR;
 
     VERBOSE(p->sp, CLIENT, "\n>> New Certificate created : keys/%s_newCert.pem\n\n", p->sp->server_name);
     return P2P_UI_OK;

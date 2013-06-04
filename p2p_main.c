@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
                 p2p_msg_delete(message);
             }
 
-            SSL_shutdown(serverssl);
+            //SSL_shutdown(serverssl);
             //Fermeture de la soscket de reception
             p2p_ssl_tcp_close(&sp, serverssl);
             close(sock_tcp_rcv);
