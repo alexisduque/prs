@@ -448,18 +448,24 @@ p2pshow_sslcert(params* p) {
 
 int
 p2pset_sslcert(params* p) {
-
-
-    VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n", p->sp->server_name, p->options[0]);
-    VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, p->options[0]);
+ 
     int keylen;
     char *pem_key;
     X509 *cert;
     char *line;
     EVP_PKEY *pkey = NULL;
     BIO *bio;
+    char new_cert[200] = CADIR; 
+    strcat(new_cert, p->sp->server_name);
+    strcat(new_cert,  "_newCert.pem\0");
+    char *newCert = NULL;
+    if ((strcmp((p->options[0]),"0") != 0)) newCert = p->options[0];
+    else newCert = new_cert;
+            
+    VERBOSE(p->sp, VSYSCL, "Set %s SSL Certificate from file : %s\n", p->sp->server_name, newCert);
+    VERBOSE(p->sp, CLIENT, "Set %s SSL Certificate from file : %s\n\n", p->sp->server_name, newCert);
     
-    cert = p2p_ssl_load_cert(p->sp, p->options[0]);
+    cert = p2p_ssl_load_cert(p->sp, newCert);
 
     if (cert != NULL) {
         VERBOSE(p->sp, CLIENT, "------------------Node certificates ----------------------\n");
@@ -479,12 +485,17 @@ p2pset_sslcert(params* p) {
         pem_key = calloc(keylen + 1, 1);
         BIO_read(bio, pem_key, keylen);
         VERBOSE(p->sp, CLIENT, "%s", pem_key);
-        printf("%s\n",p->sp->node_cert );
-        p->sp->node_cert = (char *)malloc(sizeof(char)*strlen(p->options[0]));
-        memset((p->sp->node_cert),0,strlen(p->options[0]));
-        memcpy((p->sp->node_cert), p->options[0], strlen(p->options[0]));
+        //printf("%s\n",p->sp->node_cert );
+        p->sp->node_cert = (char *)malloc(sizeof(char)*strlen(newCert));
+        memset((p->sp->node_cert),0,strlen(newCert));
+        memcpy((p->sp->node_cert),newCert, strlen(newCert));
         //&(p->sp->node_cert) + strlen(p->options[0]) = "\0";
-        printf("%s\n",p->sp->node_cert );
+        //printf("%s\n",p->sp->node_cert );
+        
+        //mise a jour du contexte
+        SSL_CTX_free(p->sp->ssl_node_ctx);
+        p2p_ssl_init(p->sp, SSL23_METH);
+        
         BIO_free(bio);
         free(pem_key);
         free(line);

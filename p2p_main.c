@@ -254,9 +254,9 @@ int main(int argc, char* argv[]) {
         //Si socket_tcp ready
         if (FD_ISSET(sock_tcp, &fd)) {
             //Initialisation du contexte SSLserver
-            if (sp.node_meth != SSLv23_server_method()) {
+            if (sp.node_meth != SSLv23_method()) {
                 SSL_CTX_free(sp.ssl_node_ctx);
-                p2p_ssl_init_server(&sp, SSL23_METH);
+                p2p_ssl_init(&sp, SSL23_METH);
             }
             SSL *serverssl = SSL_new(sp.ssl_node_ctx);
             
@@ -384,9 +384,9 @@ int main(int argc, char* argv[]) {
         else if (FD_ISSET(sock_ui_connected, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "UI MESSAGE RECEPTION \n");
-            if (sp.node_meth != SSLv23_client_method()) {
+            if (sp.node_meth != SSLv23_method()) {
                 SSL_CTX_free(sp.ssl_node_ctx);
-                p2p_ssl_init_client(&sp, SSL23_METH);
+                p2p_ssl_init(&sp, SSL23_METH);
             }
             
             command_telnet = ui_command(&sp);

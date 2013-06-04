@@ -202,7 +202,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
     if (!(subj = X509_NAME_new()))
         int_error("Failed to create X509_NAME object");
 
-    for (i = 0; i < ENTRY_COUNT; i++) {
+    for (i = 0; i < ENTRY_COUNT - 1; i++) {
         int nid;
         X509_NAME_ENTRY *ent;
 
@@ -216,6 +216,23 @@ int p2p_ssl_gen_cert(server_params* sp) {
         if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
             int_error("Error adding entry to Name");
     }
+    
+    //ajout du champ commonName = nodename
+    
+    int nid;
+    X509_NAME_ENTRY *ent;
+
+        if ((nid = OBJ_txt2nid(entries[5].key)) == NID_undef) {
+            fprintf(stderr, "Error finding NID for %s\n", entries[5].key);
+            int_error("Error on lookup");
+        }
+        if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC,
+                sp->server_name, -1)))
+            int_error("Error creating Name entry from NID");
+        if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
+            int_error("Error adding entry to Name");
+        
+    //    
     if (X509_REQ_set_subject_name(req, subj) != 1)
         int_error("Error adding subject to request");
 
@@ -440,7 +457,7 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
     SSL_load_error_strings();
     switch (meth) {
             VERBOSE(sp, VSYSCL, "SSL INIT server SSLv3 methods\n");
-        case SSL23_METH: sp->node_meth = SSLv23_server_method();
+        case SSL23_METH: sp->node_meth = SSLv23_method();
             break;
         case DTLS_METH: sp->node_meth = DTLSv1_server_method();
             VERBOSE(sp, VSYSCL, "SSL INIT server DTLSv1 methods\n");
@@ -491,7 +508,7 @@ int p2p_ssl_init_server(server_params* sp, int meth) {
 
 //Initialisation du contexte SSL client
 
-int p2p_ssl_init_client(server_params* sp, int meth) {
+int p2p_ssl_init(server_params* sp, int meth) {
 
     //Charement des librairies
     VERBOSE(sp, VSYSCL, "SSL Loading library\n");
@@ -499,9 +516,9 @@ int p2p_ssl_init_client(server_params* sp, int meth) {
     SSL_load_error_strings();
     switch (meth) {
             VERBOSE(sp, VSYSCL, "SSL INIT client SSLv3 methods\n");
-        case SSL23_METH: sp->node_meth = SSLv23_client_method();
+        case SSL23_METH: sp->node_meth = SSLv23_method();
             break;
-        case DTLS_METH: sp->node_meth = DTLSv1_client_method();
+        case DTLS_METH: sp->node_meth = DTLSv1_method();
             VERBOSE(sp, VSYSCL, "SSL INIT client DTLSv1 methods\n");
             break;
     }
@@ -629,7 +646,7 @@ int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd) {
 
                     if (verifyresult == X509_V_OK) {
                         VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
-                        VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
+                        VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
                     } else {
                         VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
                         SSL_shutdown(clientssl);
@@ -686,7 +703,7 @@ int p2p_ssl_tcp_server_init_sock(server_params* sp, SSL* ssl, int fd) {
 
                 if (verifyresult == X509_V_OK) {
                     VERBOSE(sp, VSYSCL, "SSL : Certificate Verify SUCCESS\n");
-                    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE ERROR\n\n");
+                    VERBOSE(sp, VSYSCL, "SSL HANDSHAKE DONE\n\n");
                 } else {
                     VERBOSE(sp, VSYSCL, "SSL: Certificate Verify FAILED\n");
                     SSL_shutdown(ssl);

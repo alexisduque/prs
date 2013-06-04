@@ -48,7 +48,7 @@ int p2p_ssl_gen_cert(server_params* sp);
 void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_init_server(server_params* sp, int meth);
-int p2p_ssl_init_client(server_params* sp, int meth);
+int p2p_ssl_init(server_params* sp, int meth);
 void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
