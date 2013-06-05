@@ -382,18 +382,14 @@ p2pget(params* p) {
     resultID = atoi(p->options[0]);
     searchID = atoi(p->options[1]);
     VERBOSE(p->sp, VSYSCL, "SearchID = %d   / ReplyID = %d\n\n", searchID, resultID);
-    VERBOSE(p->sp, VSYSCL, "UI: Starting get result [%d] from search [%d]\n", resultID, searchID);
+    VERBOSE(p->sp, CLIENT, ">> UI: Starting get result [%d] from search [%d]\n", resultID, searchID);
 
     if (p2p_get_file(p->sp, searchID, resultID) != P2P_OK) {
-        printf("*** GET ERROR****");
+        VERBOSE(p->sp, CLIENT, ">> Error downloading file\n");
         return P2P_UI_ERROR;
     }
-
+    VERBOSE(p->sp, CLIENT, ">> File downloaded\n");
     return (P2P_OK);
-    /*
-        p2p_addr_delete(dst);
-        free(file_name);
-     */
 }
 
 int p2pdiscover(params *p) {

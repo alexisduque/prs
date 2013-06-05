@@ -34,7 +34,7 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
 
     printf("\n!**************************************************************!\n");
     printf("                FUNCTION SEND JOIN REQ\n");
-    printf("!**************************************************************!\n");
+    printf("!**************************************************************!\n\n");
 
     //création des messages à envoyer
     p2p_msg join_msg = p2p_msg_create();
@@ -53,9 +53,11 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     SSL *ssl = SSL_new(sp->ssl_node_ctx);
     int socket;
     socket = p2p_tcp_socket_create(sp, destinataire);
-    if (socket == -1) {
-        perror("Error socket attachement");
+    if (socket == P2P_ERROR) {
+        VERBOSE(sp, VMCTNT, "ERROR CREATING SOCKET \n");
+        return (P2P_ERROR);
     }
+    
     if (p2p_ssl_tcp_client_init_sock(sp, ssl, socket) != P2P_OK) {
         printf("Error establishing SSL connection\n");
         return P2P_ERROR;

@@ -306,7 +306,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
     }
     fclose(fp);
 
-    //verification de la signature et cle public
+    //verification de la signature et la cle public
     if (!(pkey = X509_REQ_get_pubkey(req))) {
         int_error("Error getting public key from request");
         return P2P_ERROR;
@@ -746,7 +746,7 @@ int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl) {
     if (SSL_read(serverssl, msg, P2P_HDR_BITFIELD_SIZE) == 0) return P2P_ERROR;
     SSL_read(serverssl, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     SSL_read(serverssl, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-    length = p2p_msg_get_length(msg);
+    if (p2p_msg_get_length(msg) > 0) length = p2p_msg_get_length(msg);
     length = ntohs(length);
     data_payload = (unsigned char *) malloc(sizeof (unsigned char) * P2P_MSG_MAX_SIZE);
     memset(data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));

@@ -30,4 +30,13 @@
             </bookmark>
         </file>
     </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_ssl_common.c</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_ssl_common.h</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_main.c</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_options.h</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_msg.c</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_ui.c</file>
+        <file>file:/home/alex/Documents/PRS/src-dist-ssl/p2p_common.c</file>
+    </open-files>
 </project-private>
