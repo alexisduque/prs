@@ -5,4 +5,8 @@ dist/
 nbdist/
 nbactions.xml
 nb-configuration.xml
-.DStore
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
