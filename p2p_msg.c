@@ -60,8 +60,7 @@ unsigned char* p2p_get_payload(p2p_msg msg) {
     return msg->payload;
 }
 
-p2p_msg
-p2p_msg_create() {
+p2p_msg p2p_msg_create() {
     p2p_msg msg;
 
     if ((msg = (p2p_msg) malloc(sizeof (struct p2p_msg_struct))) == NULL)

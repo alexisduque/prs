@@ -162,6 +162,7 @@ int main(int argc, char* argv[]) {
                     perror("Erreur dans la maj de l'ip serveur");
                     //sp_quit(&sp);
                 }
+                break;
             case 'U': sp.port_ui = atoi(optarg);
                 break;
             case 'u': sp.port_p2p_udp = atoi(optarg);
