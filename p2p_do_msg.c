@@ -51,8 +51,9 @@ int p2p_send_join_req(server_params *sp, p2p_addr destinataire) {
     // on envoi le message
     int socket;
     socket = p2p_tcp_socket_create(sp, destinataire);
-    if (socket == -1) {
-        perror("Error socket attachement \n");
+    if (socket == P2P_ERROR) {
+        VERBOSE(sp, VMCTNT, "ERROR CREATING SOCKET \n");
+        return (P2P_ERROR);
     }
     printf("Send the JOIN REQ to: %s \n", p2p_addr_get_str(destinataire));
     if (p2p_tcp_msg_sendfd(sp, join_msg, socket) != P2P_OK) {
@@ -477,9 +478,14 @@ int p2p_get_file(server_params *sp, int searchID, int replyID) {
     int download_statut;
     char * file_name = NULL;
     p2p_msg msg_data = NULL;
-    
     p2p_addr dst = p2p_addr_create();
+    
     filesize = p2p_get_owner_file(sp->p2pSearchList, searchID, replyID, &file_name, &dst);
+    if (filesize < 0) {
+        printf("Search or Reply ID not found !\n\n");
+        return P2P_ERROR;
+    }
+    
     printf("Filename  = %s\n\n", file_name);
     printf("Dest GET message %s\n", p2p_addr_get_str(dst));
     printf("Filesize = %d\n\n", filesize);

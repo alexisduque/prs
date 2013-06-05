@@ -287,7 +287,7 @@ int p2p_tcp_socket_create(server_params* sp, p2p_addr dst) {
 
     // Creation et attachement de la socket sur un port quelconque 
     port = 0;
-    if ((desc = creer_socket(SOCK_STREAM, port)) == P2P_ERROR) {
+    if ((desc = creer_socket(SOCK_STREAM, port)) == -1) {
         perror("tcp_socket_create : Error creating the socket\n");
         return P2P_ERROR;
     }
@@ -310,6 +310,7 @@ int p2p_tcp_socket_create(server_params* sp, p2p_addr dst) {
         perror("tcp_socket_create : Error connecting to server\n");
         return P2P_ERROR;
     }
+    
     VERBOSE(sp, VPROTO, "SOCKET CREATED\n");
     // On renvoie le descripteur de socket
     return desc;
@@ -386,7 +387,7 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
     read(fd, msg, P2P_HDR_BITFIELD_SIZE);
     read(fd, p2p_msg_get_src(msg), P2P_ADDR_SIZE);
     read(fd, p2p_msg_get_dst(msg), P2P_ADDR_SIZE);
-    length = p2p_msg_get_length(msg);
+    if (p2p_msg_get_length(msg) > 0) length = p2p_msg_get_length(msg);
     length = ntohs(length);
     data_payload = (unsigned char *) malloc (sizeof(unsigned char) * P2P_MSG_MAX_SIZE);
     memset (data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));
@@ -436,7 +437,7 @@ int p2p_udp_socket_create(server_params* sp, p2p_addr dst) {
     socklen_t longueur = sizeof (struct sockaddr_in);
     int port = 0;
 
-    if ((sock_udp = creer_socket(SOCK_DGRAM, port)) == P2P_ERROR) {
+    if ((sock_udp = creer_socket(SOCK_DGRAM, port)) == -1) {
         VERBOSE(sp, VPROTO, "UDP socket creation impossible \n");
         return P2P_ERROR;
     }
@@ -445,7 +446,7 @@ int p2p_udp_socket_create(server_params* sp, p2p_addr dst) {
     inet_aton(p2p_addr_get_ip_str(dst), &adresse.sin_addr);
     adresse.sin_port = htons(p2p_addr_get_udp_port(dst));
 
-    if (connect(sock_udp, (struct sockaddr*) &adresse, longueur) == P2P_ERROR) {
+    if (connect(sock_udp, (struct sockaddr*) &adresse, longueur) == -1) {
         VERBOSE(sp, VPROTO, "Unable to connect the socket \n");
         close(sock_udp);
         return P2P_ERROR;

@@ -130,7 +130,9 @@ struct server_params_t {
   char *server_name;		/* son nom */
   char *dir_name;		/* le directory ou l'on copie les fichiers */
   int verbosity;		/* le niveau de verbosite */
-
+  
+  char *listening_ip;           /* l'ip d'ecoute */
+  
   int port_ui;			/* le numero de port pour l'interface
 				   utilisateur */
   int port_p2p_tcp;		/* le numero de port TCP du noeud */

@@ -48,7 +48,7 @@
 #define DEFAULT_VERBOSITY   2
 
 
-static struct option long_options[] ={
+static struct option long_options[] = {
     {"dir", required_argument, 0, 'd'},
     {"server-name", required_argument, 0, 's'},
     {"listening-ip", required_argument, 0, 'i'},
@@ -131,9 +131,15 @@ int main(int argc, char* argv[]) {
         .friends.nb_node = 0
     };
 
+    if (p2p_addr_set(sp.p2pMyId, DEFAULT_IP, DEFAULT_P2P_TCP, DEFAULT_P2P_UDP)
+            == P2P_ERROR) {
+        VERBOSE(&sp, VSYSCL, "Erreur creation de l'adresse du noeud\n");
+        //sp_quit(&sp);
+    }
+
     p2p_addr dest = p2p_addr_create();
-	char *addr = NULL;
-	
+
+
     /* parsing command line args */
     while (1) {
         int c;
@@ -149,13 +155,30 @@ int main(int argc, char* argv[]) {
                 break;
             case 's': sp.server_name = optarg;
                 break;
-            case 'i': addr = optarg;
-				break;
+            case 'i': sp.listening_ip = optarg;
+                if (p2p_addr_set(sp.p2pMyId, sp.listening_ip,
+                        p2p_addr_get_tcp_port(sp.p2pMyId),
+                        p2p_addr_get_udp_port(sp.p2pMyId)) == P2P_ERROR) {
+                    perror("Erreur dans la maj de l'ip serveur");
+                    //sp_quit(&sp);
+                }
             case 'U': sp.port_ui = atoi(optarg);
                 break;
             case 'u': sp.port_p2p_udp = atoi(optarg);
+                if (p2p_addr_set(sp.p2pMyId, p2p_addr_get_ip_str(sp.p2pMyId),
+                        p2p_addr_get_tcp_port(sp.p2pMyId),
+                        sp.port_p2p_udp) == P2P_ERROR) {
+                    perror("Erreur dans la maj du port udp");
+                }
                 break;
             case 't': sp.port_p2p_tcp = atoi(optarg);
+                if (p2p_addr_set(sp.p2pMyId, p2p_addr_get_ip_str(sp.p2pMyId),
+                        sp.port_p2p_tcp,
+                        p2p_addr_get_udp_port(sp.p2pMyId)) == P2P_ERROR) {
+                    perror("Erreur dans la maj du port tcp");
+
+                    ;
+                }
                 break;
             case 'v':
                 if (optarg)
@@ -172,7 +195,7 @@ int main(int argc, char* argv[]) {
     }
 
     //Initialisation de l'adresse IP su noeud
-    p2p_addr_set(sp.p2pMyId, addr, sp.port_p2p_tcp, sp.port_p2p_udp);
+    //p2p_addr_set(sp.p2pMyId, addr, sp.port_p2p_tcp, sp.port_p2p_udp);
     p2p_addr_copy(sp.p2p_neighbors.right_neighbor, sp.p2pMyId);
     p2p_addr_copy(sp.p2p_neighbors.left_neighbor, sp.p2pMyId);
 
@@ -276,9 +299,7 @@ int main(int argc, char* argv[]) {
             //Fermeture de la soscket de reception
             close(sock_tcp_rcv);
 
-        }
-
-            //Si socket_udp ready
+        }//Si socket_udp ready
         else if (FD_ISSET(sock_udp, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "RECEPTION UDP MSG\n");
@@ -313,8 +334,7 @@ int main(int argc, char* argv[]) {
             //Suppression du message temporaire
             p2p_msg_delete(message);
 
-        }
-            //Si socket_ui ready
+        }//Si socket_ui ready
         else if (FD_ISSET(sock_ui, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "TELNET CLIENT TRY TO CONNECT\n");
@@ -359,8 +379,7 @@ int main(int argc, char* argv[]) {
                 sock_ui_connected = sock_ui_now;
 
             }
-        }
-            //Si socket_ui_connected ready
+        }//Si socket_ui_connected ready
         else if (FD_ISSET(sock_ui_connected, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "UI MESSAGE RECEPTION \n");
@@ -389,8 +408,7 @@ int main(int argc, char* argv[]) {
                 exit(1);
             }
 
-        }
-        else break; // Timeout
+        } else break; // Timeout
 
     }
 
