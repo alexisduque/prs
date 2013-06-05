@@ -132,12 +132,12 @@ int main(int argc, char* argv[]) {
     };
 
     p2p_addr dest = p2p_addr_create();
-
+	char *addr = NULL;
+	
     /* parsing command line args */
     while (1) {
         int c;
         int option_index = 0;
-
         if ((c = getopt_long(argc, argv, str_options, long_options,
                 &option_index)) == -1)
             break;
@@ -149,7 +149,8 @@ int main(int argc, char* argv[]) {
                 break;
             case 's': sp.server_name = optarg;
                 break;
-            case 'i': /* listening ip: TODO */ break;
+            case 'i': addr = optarg;
+				break;
             case 'U': sp.port_ui = atoi(optarg);
                 break;
             case 'u': sp.port_p2p_udp = atoi(optarg);
@@ -171,7 +172,7 @@ int main(int argc, char* argv[]) {
     }
 
     //Initialisation de l'adresse IP su noeud
-    p2p_addr_set(sp.p2pMyId, DEFAULT_IP, sp.port_p2p_tcp, sp.port_p2p_udp);
+    p2p_addr_set(sp.p2pMyId, addr, sp.port_p2p_tcp, sp.port_p2p_udp);
     p2p_addr_copy(sp.p2p_neighbors.right_neighbor, sp.p2pMyId);
     p2p_addr_copy(sp.p2p_neighbors.left_neighbor, sp.p2pMyId);
 
