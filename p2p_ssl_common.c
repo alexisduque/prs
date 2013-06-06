@@ -45,10 +45,6 @@ p2p_ssl_handle_error(const char *file, int lineno, const char *msg) {
 
 #define int_error(msg) p2p_ssl_handle_error(__FILE__, __LINE__, msg)
 
-#define PKEY_FILE "./keys/newPrivKey.pem"
-#define REQ_FILE "./keys/newCSR.pem"
-#define CERT_FILE "./keys/newCert.pem"
-
 struct entry {
     char *key;
     char *value;
@@ -71,26 +67,6 @@ struct entry entries[ENTRY_COUNT] = {
     { "organizationalUnitName", "TC"},
     { "commonName", "name"},
 };
-
-// password callback pour les clee privee
-int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u) {
-    
-    int len;
-    char *tmp;
-    printf("Enter pass phrase for \"%s\"\n", u);
-
-    /* get pass phrase, length 'len' into 'tmp' */
-    tmp = "alex";
-    len = strlen(tmp);
-
-    if (len <= 0) return 0;
-
-    /* if too long, truncate */
-    if (len > size) len = size;
-    memcpy(buf, tmp, len);
-    return len;
-}
-
 
 // Change le certificate utiliser par default
 
@@ -124,6 +100,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
     long serial = 1;
     char *pem_key;
     char new_pkey[200] = CADIR; 
+    char new_csr[200] = CADIR; 
     char new_cert[200] = CADIR;
     FILE *fp, *fs;
     RSA *rsa;
@@ -146,6 +123,8 @@ int p2p_ssl_gen_cert(server_params* sp) {
     
     strcat(new_pkey, sp->server_name);
     strcat(new_pkey, "_newPrivateKey.pem\0");
+    strcat(new_csr, sp->server_name);
+    strcat(new_csr, "_newCSR.pem\0");
     strcat(new_cert, sp->server_name);
     strcat(new_cert,  "_newCert.pem\0");
     VERBOSE(sp, CLIENT, "%s\n\n", new_cert);
@@ -211,7 +190,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
             int_error("Error on lookup");
         }
         if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC,
-                entries[i].value, -1)))
+                (unsigned char *)entries[i].value, -1)))
             int_error("Error creating Name entry from NID");
         if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
             int_error("Error adding entry to Name");
@@ -227,7 +206,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
             int_error("Error on lookup");
         }
         if (!(ent = X509_NAME_ENTRY_create_by_NID(NULL, nid, MBSTRING_ASC,
-                sp->server_name, -1)))
+                (unsigned char *)sp->server_name, -1)))
             int_error("Error creating Name entry from NID");
         if (X509_NAME_add_entry(subj, ent, -1, 0) != 1)
             int_error("Error adding entry to Name");
@@ -273,7 +252,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
     }
         
     //creation du fichier
-    if (!(fp = fopen(REQ_FILE, "w"))) {
+    if (!(fp = fopen(new_csr, "w"))) {
         int_error("Error writing to request file");
         return P2P_ERROR;
     }
@@ -296,7 +275,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
         return P2P_ERROR;
     }
     // lecture du fichier de demande de signature
-    if (!(fp = fopen(REQ_FILE, "r"))) {
+    if (!(fp = fopen(new_csr, "r"))) {
         int_error("Error reading request file");
         return P2P_ERROR;
     }
@@ -446,67 +425,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
 }
 
 
-// Initialise le contexte SSL pour le serveur
-
-int p2p_ssl_init_server(server_params* sp, int meth) {
-
-    
-    //Chargement des librairies
-    VERBOSE(sp, VSYSCL, "SSL Loading Library...\n");
-    SSL_library_init();
-    SSL_load_error_strings();
-    switch (meth) {
-            VERBOSE(sp, VSYSCL, "SSL INIT server SSLv3 methods\n");
-        case SSL23_METH: sp->node_meth = SSLv23_method();
-            break;
-        case DTLS_METH: sp->node_meth = DTLSv1_server_method();
-            VERBOSE(sp, VSYSCL, "SSL INIT server DTLSv1 methods\n");
-            break;
-    }
-
-    sp->ssl_node_ctx = SSL_CTX_new(sp->node_meth);
-
-    if (!sp->ssl_node_ctx) {
-        ERR_print_errors_fp(stderr);
-        return P2P_ERROR;;
-    }
-
-    VERBOSE(sp, VSYSCL, "SSL : Loading Certificat\n");
-    //Ajout des certificats serveur 
-    if (SSL_CTX_load_verify_locations(sp->ssl_node_ctx, CAFILE, CADIR) != 1) {
-        perror("Error loading CA file and/or directory\n");
-        return P2P_ERROR;
-    }
-
-    //Ajout des certificats serveur 
-    SSL_CTX_set_default_passwd_cb_userdata(sp->ssl_node_ctx, KEY_PASSWD);
-
-    if (SSL_CTX_set_default_verify_paths(sp->ssl_node_ctx) != 1) {
-        perror("Error loading default CA file and/or directory\n");
-        return P2P_ERROR;
-    }
-
-    if (SSL_CTX_use_certificate_chain_file(sp->ssl_node_ctx, sp->node_cert) != 1) {
-        perror("Error loading certificate from file\n");
-        return P2P_ERROR;
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(sp->ssl_node_ctx, sp->node_cert, SSL_FILETYPE_PEM) != 1) {
-        perror("Error loading private key from file\n");
-        return P2P_ERROR;
-    }
-    //Demande la verification des crificats du clients si verify_peer est ON
-    if (sp->verify_peer) {
-        SSL_CTX_set_verify(sp->ssl_node_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_verify_depth(sp->ssl_node_ctx, 4);
-    }
-
-    VERBOSE(sp, VSYSCL, "SSL : Certificat Loaded\n\n");
-    return P2P_OK;
-
-}
-
-//Initialisation du contexte SSL client
+//Initialisation du contexte SSL
 
 int p2p_ssl_init(server_params* sp, int meth) {
 
@@ -819,16 +738,16 @@ void p2p_ssl_showCerts(server_params* sp, SSL* ssl) {
         VERBOSE(sp, VMCTNT, "No certificates.\n");
 }
 
-/* 
+ /****************  UDP Functions  *******************************************
  * 
- ****************  UDP Functions  *******************************************
+ *   TODO - Fonctions implementer pour l'envoi de message par UDP en
+ *          utilisant DTLS
+ *          Ne fonctionne pas et n'est pas utilise dans la version
+ *          actuelle
  * 
- *   TODO
- * 
- * 
- */
+***************************************************************************
 
-/****************************************************************************
+
 int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* clientssl) {
 
     VERBOSE(sp, VPROTO, "TRY TO SEND UDP MSG ...\n");

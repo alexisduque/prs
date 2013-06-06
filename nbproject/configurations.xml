@@ -68,8 +68,6 @@
       <in>p2p_addr.h</in>
       <in>p2p_common.c</in>
       <in>p2p_common.h</in>
-      <in>p2p_common_ssl.c</in>
-      <in>p2p_common_ssl.h</in>
       <in>p2p_do_msg.c</in>
       <in>p2p_do_msg.h</in>
       <in>p2p_file.c</in>
@@ -120,10 +118,6 @@
       <item path="p2p_common.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="p2p_common.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="p2p_common_ssl.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="p2p_common_ssl.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="p2p_do_msg.c" ex="false" tool="0" flavor2="0">
       </item>

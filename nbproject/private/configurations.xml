@@ -2,11 +2,7 @@
 <configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="src-dist">
-      <df name="gencert_files">
-      </df>
       <df name="keys">
-        <df name="false">
-        </df>
       </df>
       <df name="ssl">
         <in>bio_ssl.c</in>
@@ -70,14 +66,10 @@
         <in>tls1.h</in>
         <in>tls_srp.c</in>
       </df>
-      <in>gencert.c</in>
-      <in>genreq.c</in>
       <in>p2p_addr.c</in>
       <in>p2p_addr.h</in>
       <in>p2p_common.c</in>
       <in>p2p_common.h</in>
-      <in>p2p_common_ssl.c</in>
-      <in>p2p_common_ssl.h</in>
       <in>p2p_do_msg.c</in>
       <in>p2p_do_msg.h</in>
       <in>p2p_file.c</in>

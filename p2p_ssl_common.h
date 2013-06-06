@@ -11,7 +11,6 @@
 #define CAFILE "./keys/rootcert.pem" 
 #define CAKEY "./keys/rootkey.pem"
 #define CADIR "./keys/"
-#define CLIENT_CERTFILE "./keys/client1.pem"
 #define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"
 
@@ -41,15 +40,11 @@
 #include <openssl/err.h> 
 
 
-
-int p2p_ssl_pass_cb(char *buf, int size, int rwflag, char *u);
 X509* p2p_ssl_load_cert(server_params* sp, char* file);
 int p2p_ssl_gen_cert(server_params* sp);
 void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
-int p2p_ssl_init_server(server_params* sp, int meth);
 int p2p_ssl_init(server_params* sp, int meth);
-void p2p_ssl_showCerts(server_params* sp, SSL* ssl);
 
 int p2p_ssl_tcp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);
 int p2p_ssl_tcp_msg_recvfd(server_params* sp, p2p_msg msg, SSL* serverssl);
@@ -60,7 +55,7 @@ int p2p_ssl_tcp_client_init_sock(server_params* sp, SSL* clientssl, int fd);
 
 /* 
  * 
- * DTLS function are not use
+ * DTLS function are not used
  * 
  * 
 int p2p_ssl_udp_msg_sendfd(server_params* sp, p2p_msg msg, SSL* ssl);

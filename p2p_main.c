@@ -114,6 +114,7 @@ print_options(server_params *sp) {
         fprintf(stderr, "  p2p tcp      = %d\n", (unsigned) sp->port_p2p_tcp);
         fprintf(stderr, "  p2p udp      = %d\n", (unsigned) sp->port_p2p_udp);
         fprintf(stderr, "  verbose      = %d\n", sp->verbosity);
+        fprintf(stderr, "  certificat  = %s\n", sp->node_cert);
         fprintf(stderr, "\n");
     }
 }
@@ -141,6 +142,7 @@ int main(int argc, char* argv[]) {
         .node_cert =  NULL,
         .session = NULL,
     };
+    
     sp.node_cert = (char *)malloc(sizeof(char) * strlen(SERVER_CERTFILE));
     sp.node_cert = SERVER_CERTFILE;
     
