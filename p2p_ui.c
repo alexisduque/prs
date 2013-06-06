@@ -13,6 +13,8 @@
    ajout des sources qui seront distribuees aux etudiants
 
    Revision 1.11  2004/12/26 16:15:15  afraboul
+ 
+   Version  1.2   2013/06/06 aduque/tfordeveaux
  ***/
 
 #include <sys/types.h>
@@ -321,8 +323,6 @@ p2psearch(params* p) {
     // Creation du payload depuis le buffer
     p2p_msg_init_payload(search_message, P2P_ADDR_SIZE + P2P_HDR_BITFIELD_SIZE + sizeof (char)*strlen(p->options[0]), (unsigned char*) buffer);
 
-    //printf("DEBUG p2p_ui search envoi du msg search taille fichier %d len %d\n",sizeof(p->options[0]),sizeof(char)*strlen(p->options[0]));
-
     // Envoi du message UDP aux voisins
     p2p_udp_msg_rebroadcast(p->sp, search_message);
 
@@ -334,7 +334,7 @@ p2psearch(params* p) {
 
     // Nettoyage des variables
 
-    //p2p_msg_delete(search_message);
+
     free(buffer);
     p2p_msg_delete(search_message);
     p2p_addr_delete(src_adresse);
@@ -388,9 +388,11 @@ p2pget(params* p) {
 }
 
 int p2pdiscover(params *p) {
+    
     if (p2p_send_neighbor_req(p->sp) == P2P_OK) {
         return (P2P_UI_OK);
-    } else return P2P_UI_ERROR;
+    } 
+    else return P2P_UI_ERROR;
 }
 
 /****************************************************/

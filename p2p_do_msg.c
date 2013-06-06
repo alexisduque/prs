@@ -3,6 +3,10 @@
  * Author: alexis
  *
  * Created on 27 mars 2013, 08:48
+ * 
+ * Version  1.2   2013/06/06 aduque/tfordeveaux
+ * 
+ * Fonction de gestions des differents messages (envoi et reception)
  */
 
 
@@ -26,6 +30,16 @@
 #include "p2p_do_msg.h"
 #include "p2p_file.h"
 #include "search.h"
+
+
+
+/****************************************************************************
+ * 
+ * Fonctions utiles pour ala phase de connexion : envoi du JOIN REQ et
+ * traitement du JOIN ACK,  traitement du LINK UPDATE
+ * 
+ * **************************************************************************/
+
 
 //Envoi du JOIN REQ
 
@@ -162,7 +176,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
     if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP,
             sp->p2pMyId, left) != P2P_OK) return P2P_ERROR;
     memcpy(link_payload, sp->p2pMyId, 8);
-    unsigned long int type = htonl(0x0000FFFF); // adresse du lien droit 
+    unsigned long int type = htonl(P2P_MSG_NEIGHBOR_RIGHT); // adresse du lien droit 
     memcpy(&link_payload[8], &type, 4);
     if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK)
         return P2P_ERROR;
@@ -177,7 +191,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
     if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP,
             sp->p2pMyId, right) != P2P_OK) return P2P_ERROR;
     memcpy(link_payload, sp->p2p_neighbors.right_neighbor, 8);
-    type = htonl(0xFFFF0000); //adresse du lien gauche
+    type = htonl(P2P_MSG_NEIGHBOR_LEFT); //adresse du lien gauche
     memcpy(&link_payload[8], &type, 4);
     if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK)
         return P2P_ERROR;
@@ -191,7 +205,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
     if (p2p_msg_init(link_msg, P2P_MSG_LINK_UPDATE, P2P_MSG_TTL_ONE_HOP,
             sp->p2pMyId, sp->p2p_neighbors.left_neighbor) != P2P_OK) return P2P_ERROR;
     memcpy(link_payload, right, 8);
-    type = htonl(0x0000FFFF); // adresse du lien droit 
+    type = htonl(P2P_MSG_NEIGHBOR_RIGHT); // adresse du lien droit 
     memcpy(&link_payload[8], &type, 4);
     if (p2p_msg_init_payload(link_msg, 12, link_payload) != P2P_OK)
         return P2P_ERROR;
@@ -220,104 +234,6 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
     return (P2P_OK);
 }
 
-//Traitement du GET => Lecture Envoi du DATA
-
-int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
-
-    unsigned long int payload_length = 2 * P2P_INT_SIZE;
-    unsigned long int value = 0;
-    int i,file_size = 0;
-    unsigned char status;
-    p2p_msg data_msg = NULL;
-    unsigned char* data_payload = NULL;
-    unsigned char* octets_data = NULL;
-    printf("\n!************************************************************!\n");
-    printf("                   GET TREATMENT\n");
-    printf("!**************************************************************!\n\n");
-
-    //récupération des info contenues dans le message GET
-    long int begin_offset;
-    memcpy(&begin_offset, p2p_get_payload(get_msg), P2P_INT_SIZE);
-    begin_offset = ntohl(begin_offset);
-
-    long int end_offset;
-    memcpy(&end_offset, p2p_get_payload(get_msg) + P2P_INT_SIZE, P2P_INT_SIZE);
-    end_offset = ntohl(end_offset);
-   
-    char file_name[P2P_NOM_FICHIER_MAX];
-    memset (file_name, 0, P2P_NOM_FICHIER_MAX);
-    memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE);
-
-    printf("beginoffset = %d    / endOffset = %d\n\n", (int) begin_offset, (int) end_offset);
-    //Creation du message DATA
-    data_msg = p2p_msg_create();
-    p2p_msg_init(data_msg, P2P_MSG_DATA, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, p2p_msg_get_src(get_msg));
-
-    //Determination du status
-    if (p2p_file_is_available(sp, file_name, &file_size) == P2P_OK) {
-
-        //le fichier est disponible
-        status = P2P_DATA_OK;
-
-        if (p2p_file_get_chunck(sp, file_name, (int) begin_offset, (int) end_offset, &octets_data) == P2P_OK) {
-            VERBOSE(sp, VMCTNT, "Get CHUNK DONE\n");
-            //Récuperation OK       
-            value = end_offset - begin_offset + 1;
-            payload_length =  2 * P2P_INT_SIZE + (end_offset - begin_offset + 1);
-            data_payload = (unsigned char*) malloc (payload_length);
-            memcpy(data_payload + (2 * P2P_INT_SIZE), octets_data, value);
-            free(octets_data);
-
-        } else {
-            //Erreur lors de la recuperation des données
-            data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
-            VERBOSE(sp, VMCTNT, "Can't Get CHUNK !\n");
-            status = P2P_DATA_ERROR;
-            value = P2P_INTERNAL_SERVER_ERROR;
-            payload_length = 2 * P2P_INT_SIZE;
-
-
-        }
-
-    } else {
-        //fichier indisponible 
-        VERBOSE(sp, VMCTNT, "File not Available !\n");
-        data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
-        status = P2P_DATA_ERROR;
-        value = P2P_DATA_NOT_FOUND;
-        payload_length = 2 * P2P_INT_SIZE;
-    }
-
-    //Remplissage du payload avec le status
-    memcpy (data_payload, &status, sizeof (char));
-    //3 octets de bourrage selon le CDC
-    memset (data_payload + sizeof (char), 0, P2P_INT_SIZE - sizeof (char));
-    VERBOSE(sp, VMCTNT, "Value : %d\n", value);
-    value = htonl(value);
-    memcpy(data_payload + P2P_INT_SIZE, &value, P2P_INT_SIZE);
-
-    p2p_msg_init_payload(data_msg, payload_length, data_payload);
-    p2p_msg_display(data_msg);
-    //envoi du message
-    p2p_tcp_msg_sendfd(sp, data_msg, socket);
-
-    VERBOSE(sp, VMCTNT, "\n");
-    VERBOSE(sp, VMCTNT, "MSG DATA SEND :\n");
-    VERBOSE(sp, VMCTNT, "FILE::%s::%ld::%ld::%ld::%s\n", file_name, file_size, begin_offset, end_offset, p2p_addr_get_str(p2p_msg_get_dst(data_msg)));
-    VERBOSE(sp, VMCTNT, "DATA::");
-    for (i = 2 * sizeof (int); i < 2 * sizeof (int) + P2P_DATA_DISPLAY; i++)
-    {
-      printf (":%02X", data_payload [i]);
-    }
-    printf(":\n");
-    //Nettoyage
-    free(data_payload);
-    p2p_msg_delete(data_msg);
-    return P2P_OK;
-
-}
-
-
 //Traitement du LINK UPDATE
 
 int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
@@ -331,11 +247,11 @@ int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
     memcpy(&neighbor_type, p2p_get_payload(link_update_msg) + P2P_ADDR_SIZE, sizeof(neighbor_type));
     neighbor_type = ntohl(neighbor_type);
 
-    if (neighbor_type == 0xFFFF0000) {
+    if (neighbor_type == P2P_MSG_NEIGHBOR_LEFT) {
         //voisin gauche
         memcpy(sp->p2p_neighbors.left_neighbor,p2p_get_payload(link_update_msg),P2P_ADDR_SIZE);
         VERBOSE(sp, VMCTNT, "LEFT NEIGHBOR UPDATE : %s\n\n",  p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
-    } else if (neighbor_type == 0x0000FFFF) {
+    } else if (neighbor_type == P2P_MSG_NEIGHBOR_RIGHT) {
         // voisin droit	
         memcpy(sp->p2p_neighbors.right_neighbor,p2p_get_payload(link_update_msg),P2P_ADDR_SIZE);
         VERBOSE(sp, VMCTNT, "RIGHT NEIGHBOR UPDATE : %s\n\n",  p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
@@ -347,6 +263,12 @@ int p2p_do_link_update(server_params *sp, p2p_msg link_update_msg) {
 
 }
 
+/****************************************************************************
+ * 
+ * Fonctions utiles pour la phase de recherche : traitement du SEARCH et
+ * traitement du REPLY
+ * 
+ * **************************************************************************/
 //Traitement du SEARCH
 
 int p2p_do_search(server_params *sp, p2p_msg search_msg) {
@@ -463,9 +385,110 @@ int p2p_do_reply(server_params *sp, p2p_msg reply_msg) {
     return P2P_OK;
 }
 
+/****************************************************************************
+ * 
+ * Fonctions utiles pour le transfert de fichier : envoi du GET, traitement
+ * du GET, envoi du DATA, traitement du DATA 
+ * 
+ * **************************************************************************/
 
 
-// Fonction appeler pour recuperer un fichier. Prends en paramètre les params du serveur, l'ID Search et l'ID Reply
+//Traitement du GET => Lecture Envoi du DATA
+
+int p2p_do_get(server_params *sp, p2p_msg get_msg, int socket) {
+
+    unsigned long int payload_length = 2 * P2P_INT_SIZE;
+    unsigned long int value = 0;
+    int i,file_size = 0;
+    unsigned char status;
+    p2p_msg data_msg = NULL;
+    unsigned char* data_payload = NULL;
+    unsigned char* octets_data = NULL;
+    printf("\n!************************************************************!\n");
+    printf("                   GET TREATMENT\n");
+    printf("!**************************************************************!\n\n");
+
+    //récupération des info contenues dans le message GET
+    long int begin_offset;
+    memcpy(&begin_offset, p2p_get_payload(get_msg), P2P_INT_SIZE);
+    begin_offset = ntohl(begin_offset);
+
+    long int end_offset;
+    memcpy(&end_offset, p2p_get_payload(get_msg) + P2P_INT_SIZE, P2P_INT_SIZE);
+    end_offset = ntohl(end_offset);
+   
+    char file_name[P2P_NOM_FICHIER_MAX];
+    memset (file_name, 0, P2P_NOM_FICHIER_MAX);
+    memcpy(file_name, p2p_get_payload(get_msg)+(2 * P2P_INT_SIZE), ntohs(p2p_msg_get_length(get_msg)) - 2 * P2P_INT_SIZE);
+
+    printf("beginoffset = %d    / endOffset = %d\n\n", (int) begin_offset, (int) end_offset);
+    //Creation du message DATA
+    data_msg = p2p_msg_create();
+    p2p_msg_init(data_msg, P2P_MSG_DATA, P2P_MSG_TTL_ONE_HOP, sp->p2pMyId, p2p_msg_get_src(get_msg));
+
+    //Determination du status
+    if (p2p_file_is_available(sp, file_name, &file_size) == P2P_OK) {
+
+        //le fichier est disponible
+        status = P2P_DATA_OK;
+
+        if (p2p_file_get_chunck(sp, file_name, (int) begin_offset, (int) end_offset, &octets_data) == P2P_OK) {
+            VERBOSE(sp, VMCTNT, "Get CHUNK DONE\n");
+            //Récuperation OK       
+            value = end_offset - begin_offset + 1;
+            payload_length =  2 * P2P_INT_SIZE + (end_offset - begin_offset + 1);
+            data_payload = (unsigned char*) malloc (payload_length);
+            memcpy(data_payload + (2 * P2P_INT_SIZE), octets_data, value);
+            free(octets_data);
+
+        } else {
+            //Erreur lors de la recuperation des données
+            data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
+            VERBOSE(sp, VMCTNT, "Can't Get CHUNK !\n");
+            status = P2P_DATA_ERROR;
+            value = P2P_INTERNAL_SERVER_ERROR;
+            payload_length = 2 * P2P_INT_SIZE;
+        }
+
+    } else {
+        //fichier indisponible 
+        VERBOSE(sp, VMCTNT, "File not Available !\n");
+        data_payload = (unsigned char*) malloc (2 * P2P_INT_SIZE);
+        status = P2P_DATA_ERROR;
+        value = P2P_DATA_NOT_FOUND;
+        payload_length = 2 * P2P_INT_SIZE;
+    }
+
+    //Remplissage du payload avec le status
+    memcpy (data_payload, &status, sizeof (char));
+    //3 octets de bourrage selon le CDC
+    memset (data_payload + sizeof (char), 0, P2P_INT_SIZE - sizeof (char));
+    VERBOSE(sp, VMCTNT, "Value : %d\n", value);
+    value = htonl(value);
+    memcpy(data_payload + P2P_INT_SIZE, &value, P2P_INT_SIZE);
+
+    p2p_msg_init_payload(data_msg, payload_length, data_payload);
+    p2p_msg_display(data_msg);
+    //envoi du message
+    p2p_tcp_msg_sendfd(sp, data_msg, socket);
+
+    VERBOSE(sp, VMCTNT, "\n");
+    VERBOSE(sp, VMCTNT, "MSG DATA SEND :\n");
+    VERBOSE(sp, VMCTNT, "FILE::%s::%ld::%ld::%ld::%s\n", file_name, file_size, begin_offset, end_offset, p2p_addr_get_str(p2p_msg_get_dst(data_msg)));
+    VERBOSE(sp, VMCTNT, "DATA::");
+    for (i = 2 * sizeof (int); i < 2 * sizeof (int) + P2P_DATA_DISPLAY; i++)
+    {
+      printf (":%02X", data_payload [i]);
+    }
+    printf(":\n");
+    //Nettoyage
+    free(data_payload);
+    p2p_msg_delete(data_msg);
+    return P2P_OK;
+
+}
+
+// Fonction appelee pour recuperer un fichier. Prends en paramètre les params du serveur, l'ID Search et l'ID Reply
 
 int p2p_get_file(server_params *sp, int searchID, int replyID) {
 
@@ -632,6 +655,13 @@ int p2p_do_data(server_params *sp, p2p_msg data, char* filename, unsigned long i
     return P2P_OK;
 }
 
+/****************************************************************************
+ * 
+ * Fonctions utiles pour la découvert de TOPOLOGIE : traitement du NEIGHBORS_REQ
+ * et envoi du message. 
+ * 
+ * **************************************************************************/
+
 //TRAITEMENT DU NEIGHBORS_REQ
 
 int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
@@ -660,9 +690,6 @@ int p2p_do_neighbors_req(server_params *sp, p2p_msg neighbors_req_msg) {
     memcpy(buffer + P2P_INT_SIZE + 2 * P2P_ADDR_SIZE, sp->server_name, strlen(sp->server_name) + 1);
     p2p_msg_init_payload(msg_neighbors_list, 4 + 2 * P2P_ADDR_SIZE + strlen(sp->server_name) + 1, (unsigned char *) buffer);
 
-
-    //p2p_msg_display(msg_neighbors_list);
-
     //Sending
     if (p2p_udp_msg_send(sp, msg_neighbors_list) != P2P_OK) {
         VERBOSE(sp, VPROTO, "Error UDP MSG SEND \n");
@@ -688,6 +715,8 @@ int p2p_do_neighbors_list(server_params *sp, p2p_msg neighbors_list_msg) {
     return P2P_OK;
 
 }
+
+//ENVOI DU NEIGBHBOR_REQ
 
 int p2p_send_neighbor_req(server_params *sp){
     

@@ -17,6 +17,8 @@
    ajout des sources qui seront distribuees aux etudiants
 
    Revision 1.11  2004/12/26 16:15:15  afraboul
+  
+   Version  1.2   2013/06/06 aduque/tfordeveaux
  ***/
 
 #include <stdio.h>
@@ -134,7 +136,6 @@ int main(int argc, char* argv[]) {
     if (p2p_addr_set(sp.p2pMyId, DEFAULT_IP, DEFAULT_P2P_TCP, DEFAULT_P2P_UDP)
             == P2P_ERROR) {
         VERBOSE(&sp, VSYSCL, "Erreur creation de l'adresse du noeud\n");
-        //sp_quit(&sp);
     }
 
     p2p_addr dest = p2p_addr_create();
@@ -160,7 +161,6 @@ int main(int argc, char* argv[]) {
                         p2p_addr_get_tcp_port(sp.p2pMyId),
                         p2p_addr_get_udp_port(sp.p2pMyId)) == P2P_ERROR) {
                     perror("Erreur dans la maj de l'ip serveur");
-                    //sp_quit(&sp);
                 }
                 break;
             case 'U': sp.port_ui = atoi(optarg);
@@ -196,7 +196,6 @@ int main(int argc, char* argv[]) {
     }
 
     //Initialisation de l'adresse IP su noeud
-    //p2p_addr_set(sp.p2pMyId, addr, sp.port_p2p_tcp, sp.port_p2p_udp);
     p2p_addr_copy(sp.p2p_neighbors.right_neighbor, sp.p2pMyId);
     p2p_addr_copy(sp.p2p_neighbors.left_neighbor, sp.p2pMyId);
 
@@ -378,9 +377,9 @@ int main(int argc, char* argv[]) {
                 //On rétabli la bonne socket
                 VERBOSE(&sp, VMCTNT, "UI SOCKET RESTABLISHED \n");
                 sock_ui_connected = sock_ui_now;
-
             }
-        }//Si socket_ui_connected ready
+        }
+        //Si socket_ui_connected ready
         else if (FD_ISSET(sock_ui_connected, &fd)) {
 
             VERBOSE(&sp, VMCTNT, "UI MESSAGE RECEPTION \n");
@@ -394,7 +393,6 @@ int main(int argc, char* argv[]) {
                 close(sock_ui_connected);
                 sock_ui_connected = -1;
                 sp.client_ui = -1;
-                //close(sock_ui);
             }
 
             if (command_telnet == P2P_UI_KILL) {

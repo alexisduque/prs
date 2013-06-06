@@ -12,6 +12,8 @@
      ajout des sources qui seront distribuees aux etudiants
 
      Revision 1.11  2004/12/26 16:15:15  afraboul
+  
+     Version  1.2   2013/06/06 aduque/tfordeveaux
  ***/
 
 #include <stdlib.h>
@@ -372,13 +374,12 @@ int p2p_tcp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
         return P2P_OK;
     }
 
-
-
 }
 
 // Recoie dans msg un message depuis la socket fd
 
 int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
+    
     int tot = 0;
     int i = 0;
     unsigned short int length = 0;
@@ -391,6 +392,7 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
     data_payload = (unsigned char *) malloc (sizeof(unsigned char) * P2P_MSG_MAX_SIZE);
     memset (data_payload, 0, P2P_MSG_MAX_SIZE * sizeof (char));
     if (length > 0) {
+        
         while (tot < length)
         {
             i = read (fd, data_payload + tot, length - tot);
@@ -398,8 +400,6 @@ int p2p_tcp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
         }
         p2p_msg_init_payload(msg, length, data_payload);
     }
-    
-    //read(fd, data_payload, length);
 
     p2p_msg_display(msg);
     free(data_payload);
@@ -414,7 +414,6 @@ int p2p_tcp_msg_send(server_params* sp, const p2p_msg msg) {
     int socketTMP = p2p_tcp_socket_create(sp, p2p_msg_get_dst(msg));
     if (socketTMP == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "TCP socket creation impossible \n");
-        //printf("Impossible de créer la socket TCP \n");
         return (P2P_ERROR);
     }
 
@@ -477,11 +476,9 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 
     if (write(fd, toWrite, P2P_HDR_SIZE + message_size) == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "Unable to send msg\n");
-        //   free(toWrite);
         return P2P_ERROR;
     }
     p2p_msg_display(msg);
-    //free(toWrite);
     VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
     return P2P_OK;
 
@@ -494,7 +491,7 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
 
     //Declaration du buffer
     char data[200];
-    //free(msg->payload);
+    
     // Allocation de la mémoire pour le payload
     msg->payload = (unsigned char*) malloc(sizeof (unsigned char)*200);
 
@@ -589,7 +586,6 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
 
     }
     p2p_addr_delete(initiator);
-    //p2p_addr_delete(src);
 
     return P2P_OK;
 

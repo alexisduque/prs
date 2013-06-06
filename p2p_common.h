@@ -89,7 +89,7 @@
 /****************************************************/
 
 /*************************************
-  get_tokens : d�coupage d'une cha�ne en �l�ments
+  get_tokens : decoupage d'une chaine en elements
 *************************************/
 
 #define MAX_TOK 3

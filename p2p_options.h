@@ -16,6 +16,8 @@
    ajout des sources qui seront distribuees aux etudiants
 
    Revision 1.3  2005/02/08 16:09:49  afraboul
+  
+   Version  1.4   2013/06/06 aduque/tfordeveaux
 ***/
 
 #ifndef __P2P_OPTIONS
@@ -145,13 +147,11 @@ struct server_params_t {
   
   p2p_topology p2p_neighbors;	/* Ses voisins */
   
-  //p2p_addr right_neighbor;
-  //p2p_addr left_neighbor;
   p2p_table friends; 
   
   /* Search */
   search_list p2pSearchList;	/* la liste des requetes envoyees */
-  int search_id ; // L'id de la recherche
+  int search_id ;               /* L'id de la recherche */
   
 };
 

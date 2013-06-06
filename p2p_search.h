@@ -3,6 +3,9 @@
  * Author: alexis
  *
  * Created on 3 avril 2013, 14:45
+ * 
+ * Version  1.2   2013/06/06 aduque/tfordeveaux
+ * 
  */
 
 
@@ -40,8 +43,6 @@ int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** fi
 int p2p_insert_reply (search_list *pliste, int id, p2p_addr file_owner, int taille_fichier);
 
 int p2p_list_results(server_params *sp, int id);
-
-
 
 #endif	/* P2P_SEARCH_H */
 

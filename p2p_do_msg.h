@@ -3,6 +3,8 @@
  * Author: alexis
  *
  * Created on 27 mars 2013, 08:48
+ *  
+ * Version  1.2   2013/06/06 aduque/tfordeveaux
  */
 
 #ifndef P2P_DO_MSG_H
@@ -51,5 +53,6 @@ int p2p_get_file(server_params *sp, int searchID, int replyID);
 
 //Traitement du message DATA
 int p2p_do_data(server_params *sp, p2p_msg data, char* filename, unsigned long int beginOffset, unsigned long int endOffset);
+
 int p2p_send_neighbor_req(server_params *sp);
 #endif /* __P2P_DO_MSG */

@@ -3,6 +3,10 @@
  * Author: alexis
  *
  * Created on 3 avril 2013, 14:45
+ * Version  1.2   2013/06/06 aduque/tfordeveaux
+ * 
+ * Fonctions utiles pour la gestion des listes de recherches/resultats
+ * 
  */
 
 #include <stdlib.h>

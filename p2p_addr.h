@@ -12,21 +12,21 @@
    Qqc comments dans les .h
 
    Revision 1.1  2005/03/01 21:50:12  afraboul
-   ajour des adresses pour les étudiants
+   ajour des adresses pour les ï¿½tudiants
 
    Revision 1.6  2005/02/21 18:34:32  afraboul
-   ajout des sources qui seront distribuées aux étudiants
+   ajout des sources qui seront distribuï¿½es aux ï¿½tudiants
 
    Revision 1.5  2005/02/08 16:09:49  afraboul
    quelques modification
-    - ajout d'un champs listening_ipn dans l'état du server
+    - ajout d'un champs listening_ipn dans l'ï¿½tat du server
       adresse IP locale de bind
     - bind sur adresse locale dans le server
     - ajout d'un timer pour tuer le server au bout de 2 heures
     - correction d'erreurs de typo
 
    Revision 1.4  2004/07/26 08:24:34  afraboul
-   	* [all]: première version complète du noeud de référence
+   	* [all]: premiï¿½re version complï¿½te du noeud de rï¿½fï¿½rence
 
    Revision 1.3  2004/06/15 21:45:21  afraboul
      join+ack+update link fonctionne. Le select de la boucle principale est
@@ -34,7 +34,7 @@
 
    Revision 1.2  2004/06/14 16:18:47  afraboul
      mise en place des canaux de comm. pour envoyer et recevoir des paquets
-     udp et tcp. Le join_req et join_ack fonctionnent. Il faut compléter avec
+     udp et tcp. Le join_req et join_ack fonctionnent. Il faut complï¿½ter avec
      les autres types de paquet.
 
    Revision 1.1  2004/06/10 23:21:05  afraboul
@@ -48,6 +48,7 @@
 
 
 ***/
+
 #ifndef __P2P_ADDR
 #define __P2P_ADDR
 
@@ -57,19 +58,19 @@
 #define P2P_ADDR_SIZE (P2P_INT_SIZE + 2 * P2P_SHORT_SIZE)
 
 //On n'exporte qu'un pointeur sur la structure p2p_addr qui elle reste
-//cachée au sien du module p2p_addr.c
+//cachï¿½e au sien du module p2p_addr.c
 typedef struct p2p_addr_struct *p2p_addr;
 
-//Créer et donc alloue une structure p2p_addr. retourne une p2p_addr,
-//donc un pointeur sur la structure crée
+//Crï¿½er et donc alloue une structure p2p_addr. retourne une p2p_addr,
+//donc un pointeur sur la structure crï¿½e
 p2p_addr p2p_addr_create();
 
-//Supprime une adresse p2p_addr. (i.e., supprime la structure pointé
+//Supprime une adresse p2p_addr. (i.e., supprime la structure pointï¿½
 //par addr
 void     p2p_addr_delete(p2p_addr addr);
 
 //Copie l'adresse source src dans l'adress destination dst. La
-//structure dst doit être allouée avant.
+//structure dst doit ï¿½tre allouï¿½e avant.
 void     p2p_addr_copy(p2p_addr dst, p2p_addr src);
 
 //Duplique l'adresse p2p addr et retourne une nouvelle structure
@@ -77,36 +78,36 @@ void     p2p_addr_copy(p2p_addr dst, p2p_addr src);
 //structure. 
 p2p_addr p2p_addr_duplicate(p2p_addr addr);
 
-//Compare les 2 adresses P2P. Renvoie 0 si elle sont différentes,
-//i.e., si la partie IP n'est pas la même ou si les ports employés
-//sont différents.
+//Compare les 2 adresses P2P. Renvoie 0 si elle sont diffï¿½rentes,
+//i.e., si la partie IP n'est pas la mï¿½me ou si les ports employï¿½s
+//sont diffï¿½rents.
 int p2p_addr_is_equal(const p2p_addr addr1, const p2p_addr addr2);
 
 //Renvoie 0 si l'adresse addr n'est pas uen adresse de broadcast P2P
 int p2p_addr_is_broadcast(const p2p_addr addr);
 
-//Renvoie 0 si l'adresse addr n'est pas l'adresse non définie P2P
+//Renvoie 0 si l'adresse addr n'est pas l'adresse non dï¿½finie P2P
 int p2p_addr_is_undefined(const p2p_addr addr);
 
 //renvoie un pointeur sur l'adresse P2P de broadcast
 p2p_addr p2p_addr_broadcast();
 
-//renvoie un pointeur sur l'adresse P2P non définie
+//renvoie un pointeur sur l'adresse P2P non dï¿½finie
 p2p_addr p2p_addr_undefined();
 
-//assigne l'adresse P2P dst. Les paramètres sont l'adresse IP ip_str sous
+//assigne l'adresse P2P dst. Les paramï¿½tres sont l'adresse IP ip_str sous
 //forme de chaine, l eportt tcp et udp sous la forme d entier short
-//non signé. 
+//non signï¿½. 
 int   p2p_addr_set(p2p_addr dst, const char* ip_str, unsigned short tcp, unsigned short udp);
 
-//assigne l'adresse dst à partir d'une adresse sous forme de string,
+//assigne l'adresse dst ï¿½ partir d'une adresse sous forme de string,
 //i.e., IP:TCP_PORT:UDP_PORT
 int   p2p_addr_setstr(p2p_addr dst, const char* p2p_str);
 
-//assigne l'adresse addr à P2P broadcast : 255.255.255.255:0:0
+//assigne l'adresse addr ï¿½ P2P broadcast : 255.255.255.255:0:0
 void  p2p_addr_set_broadcast(p2p_addr addr);
 
-//assigne l'adresse addr à P2P undifinied : 0.0.0.0:0:0
+//assigne l'adresse addr ï¿½ P2P undifinied : 0.0.0.0:0:0
 void  p2p_addr_set_undefined(p2p_addr addr);
 
 //renvoie addr sous forme de chaine
@@ -124,7 +125,7 @@ unsigned short p2p_addr_get_udp_port(p2p_addr addr);
 //ecrit l'adresse addr dans le fichier fd (file descriptor)
 void p2p_addr_dump(const p2p_addr addr, int fd);
 
-//ecrit l'adresse formatée addr dans le fichier fd 
+//ecrit l'adresse formatï¿½e addr dans le fichier fd 
 void p2p_addr_dumpfile(const p2p_addr addr, const FILE *fd);
 
 #endif /* __P2P_ADDR */
