@@ -458,11 +458,9 @@ int p2p_udp_msg_sendfd(server_params* sp, p2p_msg msg, int fd) {
 
     if (write(fd, toWrite, P2P_HDR_SIZE + message_size) == P2P_ERROR) {
         VERBOSE(sp, VPROTO, "Unable to send msg\n");
-     //   free(toWrite);
         return P2P_ERROR;
     }
     p2p_msg_display(msg);
-    //free(toWrite);
     VERBOSE(sp, VPROTO, "UDP MSG SEND\n\n");
     return P2P_OK;
 
@@ -475,7 +473,6 @@ int p2p_udp_msg_recvfd(server_params* sp, p2p_msg msg, int fd) {
 
     //Declaration du buffer
     char data[200];
-    //free(msg->payload);
     // Allocation de la mémoire pour le payload
     msg->payload = (unsigned char*) malloc(sizeof (unsigned char)*200);
 
@@ -570,7 +567,6 @@ int p2p_udp_msg_rebroadcast(server_params* sp, p2p_msg msg) {
 
     }
     p2p_addr_delete(initiator);
-    //p2p_addr_delete(src);
 
     return P2P_OK;
 

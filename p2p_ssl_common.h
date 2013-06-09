@@ -9,7 +9,6 @@
 #define	P2P_COMMON_SSL_H
 
 #define CAFILE "./keys/rootcert.pem" 
-#define CAKEY "./keys/rootkey.pem"
 #define CADIR "./keys/"
 #define SERVER_CERTFILE "./keys/server.pem"
 #define KEY_PASSWD "alex"

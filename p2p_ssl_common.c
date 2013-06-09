@@ -285,6 +285,14 @@ int p2p_ssl_gen_cert(server_params* sp) {
     }
     fclose(fp);
 
+    
+    /********************************************************
+     * 
+     *  Attention, la suite devrait etre effectuee
+     *  uniquement par la CA !!
+     *  Les noeuds ne doivent pas implementer la suite
+     *******************************************************/
+    
     //verification de la signature et la cle public
     if (!(pkey = X509_REQ_get_pubkey(req))) {
         int_error("Error getting public key from request");
@@ -307,7 +315,7 @@ int p2p_ssl_gen_cert(server_params* sp) {
     fclose(fp);
 
     //lecture de sa clee privee
-    if (!(fp = fopen(CAKEY, "r"))) {
+    if (!(fp = fopen("./keys/rootkey.pem", "r"))) {
         int_error("Error reading CA private key file");
         return P2P_ERROR;
     }
@@ -323,19 +331,14 @@ int p2p_ssl_gen_cert(server_params* sp) {
         int_error("Error getting subject name from request");
                 return P2P_ERROR;
     }
-    
    
-    //X509_NAME_print(out, name, 0);
-    //fputc('\n', stdout);
     if (!(req_exts = X509_REQ_get_extensions(req)))
         int_error("Error getting the request's extensions");
     subjAltName_pos = X509v3_get_ext_by_NID(req_exts,
             OBJ_sn2nid("subjectAltName"), -1);
     subjAltName = X509v3_get_ext(req_exts, subjAltName_pos);
-    //X509V3_EXT_print(out, subjAltName, 0, 0);
-    //fputc('\n', stdout);
-    
-    //creation du certifixazt X509
+
+    //creation du certificat X509
     if (!(cert = X509_new()))
         int_error("Error creating X509 object");
 
@@ -740,7 +743,7 @@ void p2p_ssl_showCerts(server_params* sp, SSL* ssl) {
 
  /****************  UDP Functions  *******************************************
  * 
- *   TODO - Fonctions implementer pour l'envoi de message par UDP en
+ *   TODO - Fonctions implementew pour l'envoi de message par UDP en
  *          utilisant DTLS
  *          Ne fonctionne pas et n'est pas utilise dans la version
  *          actuelle

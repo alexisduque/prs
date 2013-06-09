@@ -88,8 +88,8 @@ static struct cmd_t commands[] = {
     { "list_result", 1, "list the results of search [n]", p2plist_result},
     { "get", 2, "get [result] from [search]", p2pget},
     { "show_cert", 0, "show node certificate", p2pshow_sslcert},
-    { "set_cert", 1, "set node certificate from file (0 = default cert) ", p2pset_sslcert},
-    { "generate_cert", 0, "generate new certificate", p2pgenerate_sslcert},
+    { "set_cert", 1, "set node certificate from file (0 => use cert obtained with generate_cert function) ", p2pset_sslcert},
+    { "generate_cert", 0, "ask for new certificate !! SIGNED ITSELF !! ", p2pgenerate_sslcert},
     { NULL, 0, NULL, NULL}
 };
 

@@ -89,7 +89,7 @@ void p2p_list_search(server_params *sp) {
 int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** file_name, p2p_addr * owner) {
 
     search_result *visitor = NULL;
-    search_quidonc *quidonc = NULL;
+    search_owners *owners = NULL;
     visitor = liste;
 
     // On parcourt la liste
@@ -100,25 +100,25 @@ int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** fi
             memcpy(*file_name, visitor->file_name, strlen(visitor->file_name));
             (*file_name)[strlen(visitor->file_name)] = '\0';
             // On parcourt les réponses
-            quidonc = visitor->list_owners;
-            while (quidonc != NULL) {
-                if (reply_id == quidonc->reply_id) {
+            owners = visitor->list_owners;
+            while (owners != NULL) {
+                if (reply_id == owners->reply_id) {
                     // On récupère l'adresse du proprio
-                    p2p_addr_copy(*owner, quidonc->file_owner);
+                    p2p_addr_copy(*owner, owners->file_owner);
                     //*owner = p2p_addr_duplicate(quidonc->file_owner);
-                    return quidonc->filesize;
+                    return owners->filesize;
                 }
                 if (visitor->list_owners->next != NULL) {
-                    quidonc = visitor->list_owners->next;
+                    owners = visitor->list_owners->next;
                 } else {
-                    quidonc = NULL;
+                    owners = NULL;
                 }
             }
         }
         visitor = visitor->next;
     }
     free(visitor);
-    free(quidonc);
+    free(owners);
     // Rien trouvé
     return P2P_ERROR;
 }
@@ -127,12 +127,12 @@ int p2p_get_owner_file(search_list liste, int search_id, int reply_id, char** fi
 // Insertion d'une réponse
 
 int p2p_insert_reply(search_list *pliste, int id, p2p_addr file_owner, int taille_fichier) {
-    search_quidonc *newelem;
+    search_owners *newelem;
     search_list liste;
     liste = *pliste;
 
     search_result *visitor;
-    search_quidonc *parcouror;
+    search_owners *parcouror;
     int present = 0;
 
     visitor = liste;
@@ -153,7 +153,7 @@ int p2p_insert_reply(search_list *pliste, int id, p2p_addr file_owner, int taill
 
     // Si non, on l'ajoute
     if (present == 0) {
-        newelem = (search_quidonc *) malloc(sizeof (search_quidonc));
+        newelem = (search_owners *) malloc(sizeof (search_owners));
         if (newelem == 0) perror("p2p_search_insert_reply : MEMORY FULL");
         newelem->reply_id = ++visitor->nb_reply;
         newelem->filesize = taille_fichier;
@@ -174,7 +174,7 @@ int p2p_insert_reply(search_list *pliste, int id, p2p_addr file_owner, int taill
 int p2p_list_results(server_params *sp, int id) {
 
     struct search_result *visitor;
-    search_quidonc *terminator;
+    search_owners *terminator;
     visitor = sp->p2pSearchList;
 
     // Initialisation de la chaine resultat
