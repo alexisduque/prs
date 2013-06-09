@@ -221,10 +221,7 @@ int p2p_do_join_ack(server_params *sp, p2p_msg ack_msg) {
 
     //pour moi  
     p2p_addr_copy(sp->p2p_neighbors.left_neighbor, left);
-
-//    printf("Left neighbor : %s \n", p2p_addr_get_str(sp->p2p_neighbors.right_neighbor));
-//    printf("Right neighbor : %s \n", p2p_addr_get_str(sp->p2p_neighbors.left_neighbor));
-
+    
     //free
     p2p_addr_delete(right); 
     p2p_addr_delete(left);

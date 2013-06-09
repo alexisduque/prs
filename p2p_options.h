@@ -67,18 +67,18 @@
 #include "p2p_addr.h"
 
 //Strucuture de recherche
-typedef struct search_quidonc {
+typedef struct search_owners {
         int reply_id;
         int filesize;
         p2p_addr file_owner;
-        struct search_quidonc* next;
-} search_quidonc;
+        struct search_owners* next;
+} search_owners;
 
 typedef struct search_result {
         int search_id;
         int nb_reply;
         char file_name[P2P_NOM_FICHIER_MAX];
-        struct search_quidonc* list_owners;
+        struct search_owners* list_owners;
         struct search_result* next;
 } search_result;
 
